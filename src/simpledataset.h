@@ -159,7 +159,22 @@ namespace H5 {
 
   template<class T>
   std::string SimpleDataSet<T>::getDescription() {
-    return SimpleAttribute<std::string>::getData(*this, "Description");
+    // save and disable c error printing
+    H5E_auto2_t func;
+    void* client_data;
+    Exception::getAutoPrint(func, &client_data);
+    Exception::dontPrint();
+    std::string ret;
+    // catch error if Attribute is not found
+    try {
+      ret=SimpleAttribute<std::string>::getData(*this, "Description");
+    }
+    catch(AttributeIException e) {
+      ret=std::string();
+    }
+    // restore c error printing
+    Exception::setAutoPrint(func, client_data);
+    return ret;
   }
 
   template<class T>
@@ -268,7 +283,22 @@ namespace H5 {
 
   template<class T>
   std::string SimpleDataSet<std::vector<T> >::getDescription() {
-    return SimpleAttribute<std::string>::getData(*this, "Description");
+    // save and disable c error printing
+    H5E_auto2_t func;
+    void* client_data;
+    Exception::getAutoPrint(func, &client_data);
+    Exception::dontPrint();
+    std::string ret;
+    // catch error if Attribute is not found
+    try {
+      ret=SimpleAttribute<std::string>::getData(*this, "Description");
+    }
+    catch(AttributeIException e) {
+      ret=std::string();
+    }
+    // restore c error printing
+    Exception::setAutoPrint(func, client_data);
+    return ret;
   }
 
   template<class T>
@@ -390,7 +420,22 @@ namespace H5 {
 
   template<class T>
   std::string SimpleDataSet<std::vector<std::vector<T> > >::getDescription() {
-    return SimpleAttribute<std::string>::getData(*this, "Description");
+    // save and disable c error printing
+    H5E_auto2_t func;
+    void* client_data;
+    Exception::getAutoPrint(func, &client_data);
+    Exception::dontPrint();
+    std::string ret;
+    // catch error if Attribute is not found
+    try {
+      ret=SimpleAttribute<std::string>::getData(*this, "Description");
+    }
+    catch(AttributeIException e) {
+      ret=std::string();
+    }
+    // restore c error printing
+    Exception::setAutoPrint(func, client_data);
+    return ret;
   }
 
   template<class T>

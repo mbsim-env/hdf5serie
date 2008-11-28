@@ -84,10 +84,15 @@ namespace H5 {
     hsize_t chunkDims[]={1000};
     prop.setChunk(1, chunkDims);
 
-    size_t size=0;
-    for(int i=0; i<nameType.size(); i++)
+    size_t size=0, structSize=0;
+    for(int i=0; i<nameType.size(); i++) {
       size+=strToH5Type(nameType[i].type).getSize();
-    assert(size=sizeof(T));
+      if(nameType[i].name!="String")
+        structSize+=strToH5Type(nameType[i].type).getSize();
+      else
+        structSize+=sizeof(std::string);
+    }
+    assert(structSize==sizeof(T));
     CompType comptype(size);
     size=0;
     for(int i=0; i<nameType.size(); i++) {
@@ -100,6 +105,8 @@ namespace H5 {
     p_setId(dataset.getId());
     incRefCount();
   }
+  template<>
+  void Serie1D<char*>::create(const CommonFG& parent, const std::string& name, const std::vector<MemberNameType>& nameType);
 
   template<class T>
   void Serie1D<T>::open(const CommonFG& parent, const std::string& name) {
@@ -118,6 +125,8 @@ namespace H5 {
     datatype=getCompType();
     assert(datatype.getSize()==sizeof(T));
   }
+  template<>
+  void Serie1D<char*>::open(const CommonFG& parent, const std::string& name);
 
   template<class T>
   void Serie1D<T>::setDescription(const std::string& description) {
@@ -134,8 +143,30 @@ namespace H5 {
     DataSpace dataspace=getSpace();
     dataspace.selectHyperslab(H5S_SELECT_SET, count, start);
 
-    write(&data, datatype, memdataspace, dataspace);
+    std::vector<char*> delMe;
+    int offset=0, offsetCStr=0;
+    char* buf=new char[datatype.getSize()+datatype.getNmembers()*sizeof(char*)]; // this is always enough memory
+    for(int i=0; i<datatype.getNmembers(); i++) {
+      int size=datatype.getMemberDataType(i).getSize();
+      if(!(datatype.getMemberDataType(i)==strToH5Type("String"))) {
+        memcpy(buf+offsetCStr, ((char*)&data)+offset, size);
+        offsetCStr+=size;
+      }
+      else {
+        *(char**)(buf+offsetCStr)=new char[datatype.getMemberDataType(i).getSize()+1];
+        delMe.push_back(*(char**)(buf+offsetCStr));
+        strcpy(*(char**)(buf+offsetCStr), (*(std::string*)(((char*)&data)+offset)).c_str());
+        offsetCStr+=sizeof(char*);
+      }
+      offset+=size;
+    }
+    write(buf, datatype, memdataspace, dataspace);
+    delete[]buf;
+    for(int i=0; i<delMe.size(); i++)
+      delete[]delMe[i];
   }
+  template<>
+  void Serie1D<char*>::append(char*const& data);
 
   template<class T>
   int Serie1D<T>::getRows() {
@@ -161,9 +192,27 @@ namespace H5 {
     dataspace.selectHyperslab(H5S_SELECT_SET, count, start);
 
     T data;
-    read(&data, datatype, memdataspace, dataspace);
+    char* buf=new char[datatype.getSize()+datatype.getNmembers()*sizeof(char*)]; // this is always enough memory
+    read(buf, datatype, memdataspace, dataspace);
+    int offset=0, offsetCStr=0;
+    for(int i=0; i<datatype.getNmembers(); i++) {
+      int size=datatype.getMemberDataType(i).getSize();
+      if(!(datatype.getMemberDataType(i)==strToH5Type("String"))) {
+        memcpy(((char*)&data)+offset, buf+offsetCStr, size);
+        offsetCStr+=size;
+      }
+      else {
+        (*(std::string*)(((char*)&data)+offset))=*(char**)(buf+offsetCStr);
+        free(*(char**)(buf+offsetCStr));
+        offsetCStr+=sizeof(char*);
+      }
+      offset+=size;
+    }
+    delete[]buf;
     return data;
   }
+  template<>
+  char* Serie1D<char*>::getRow(const int row);
 
 /*  template<class T>
   std::vector<T> Serie1D<T>::getColumn(const int column) {
