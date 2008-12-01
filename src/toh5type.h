@@ -9,17 +9,10 @@
 
 namespace H5 {
 
-  template<class T>
-  DataType toH5Type(const T dummy);
-
-  /////////// not needed till noy BEGIN
-  //template<class T>
-  //std::string toType(const T dummy);
-
-  DataType strToH5Type(const std::string& type);
-
-  //std::string toType(const DataType& datatype);
-  /////////// not needed till noy END
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+  DataType toH5Type(const CTYPE& dummy);
+# include "knowntypes.def"
+# undef FOREACHKNOWNTYPE
 
 }
 

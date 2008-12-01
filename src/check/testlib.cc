@@ -11,24 +11,14 @@ using namespace H5;
 using namespace std;
 //using namespace fmatvec;
 
-#pragma pack(push)
-#pragma pack(1)
 struct MyStruct {
   double d;
-  float f;
-  int i;
-};
-#pragma pack(pop)
-
-#pragma pack(push)
-#pragma pack(1)
-struct MyStruct2 {
-  double d;
+  vector<int> v;
+  vector<string> vs;
   float f;
   string s;
   int i;
 };
-#pragma pack(pop)
 
 int main() {
 
@@ -299,6 +289,7 @@ int main() {
   H5File file("test.h5", H5F_ACC_RDONLY);
   DataSet data=file.openDataSet("data");
   cout<<SimpleAttribute<double>::getData(data, "dsd")<<endl;
+  cout<<SimpleAttribute<double>::getData(file, "data/dsd")<<endl;
   file.close();
   }
   
@@ -631,125 +622,51 @@ int main() {
   {
   H5File file("test.h5", H5F_ACC_TRUNC);
   Serie1D<MyStruct> s1;
-  vector<MemberNameType> nt;
-  nt.push_back(MemberNameType("mydouble", "Double"));
-  nt.push_back(MemberNameType("myfloat", "Float"));
-  nt.push_back(MemberNameType("myint", "Int"));
-  s1.create(file, "serie1d", nt);
-  MyStruct data; data.d=6.1; data.f=1.2; data.i=4;
-  s1.append(data);
-  data.d=7.1; data.f=2.2; data.i=5;
-  s1.append(data);
-  MyStruct out;
-  out=s1.getRow(1);
-  cout<<out.d<<" "<<out.f<<" "<<out.i<<endl;
+  MyStruct data;
+  s1.insertMember(data, data.d, "mydouble");
+  s1.insertMember(data, data.v, 3, "myvector");
+  s1.insertMember(data, data.vs, 3, "myvectorstring");
+  s1.insertMember(data, data.f, "myfloat");
+  s1.insertMember(data, data.s, "mystring");
+  s1.insertMember(data, data.i, "myint");
+  s1.create(file, "serie1d");
+  s1.setDescription("myserie1ddesc");
+  cout<<s1.getDescription()<<endl;
+  cout<<s1.getRows()<<endl;
   cout<<s1.getMembers()<<endl;
-  vector<string> lab=s1.getMemberLabel();
+  vector<string> lab;
+  lab=s1.getMemberLabel();
   for(int i=0; i<lab.size(); i++)
     cout<<lab[i]<<endl;
+  vector<int> vv; vv.push_back(1111); vv.push_back(2222); vv.push_back(3333);
+  vector<string> vvstr; vvstr.push_back("str1"); vvstr.push_back("str2"); vvstr.push_back("str3");
+  data.d=6.1; data.f=1.2; data.s="teststr"; data.v=vv; data.vs=vvstr; data.i=4;
+  s1.append(data);
+  data.d=7.1; data.f=2.2; data.s="teststr2"; data.v=vv; data.vs=vvstr; data.i=5;
+  s1.append(data);
   file.close();
   }
   {
   H5File file("test.h5", H5F_ACC_RDONLY);
-  Serie1D<MyStruct> s1(file, "serie1d");
-  MyStruct out;
-  out=s1.getRow(1);
-  cout<<out.d<<" "<<out.f<<" "<<out.i<<endl;
-  vector<string> lab=s1.getMemberLabel();
-  for(int i=0; i<lab.size(); i++)
-    cout<<lab[i]<<endl;
-  file.close();
-  }
-  {
-  H5File file("test.h5", H5F_ACC_TRUNC);
-  Serie1D<MyStruct2> s2;
-  vector<MemberNameType> nt2;
-  nt2.push_back(MemberNameType("mydouble", "Double"));
-  nt2.push_back(MemberNameType("myfloat", "Float"));
-  nt2.push_back(MemberNameType("mystring", "String"));
-  nt2.push_back(MemberNameType("myint", "Int"));
-  s2.create(file, "serie1dstr", nt2);
-  MyStruct2 data3; data3.d=6.1; data3.f=1.2; data3.s="teststr"; data3.i=4;
-  s2.append(data3);
-  data3.d=7.1; data3.f=2.2; data3.s="teststr2"; data3.i=5;
-  s2.append(data3);
-  MyStruct2 out=s2.getRow(1);
-  cout<<out.d<<endl;
-  cout<<out.f<<endl;
-  cout<<out.s<<endl;
-  cout<<out.i<<endl;
-  file.close();
-  }
-  
-
-
-
-
-
-
-
-
-  {
-  H5File file("test.h5", H5F_ACC_TRUNC);
   Serie1D<MyStruct> s1;
-  vector<MemberNameType> nt;
-  nt.push_back(MemberNameType("mydouble", "Double"));
-  nt.push_back(MemberNameType("myfloat", "Float"));
-  nt.push_back(MemberNameType("myint", "Int"));
-  s1.create(file, "serie1d", nt);
-  MyStruct data; data.d=6.1; data.f=1.2; data.i=4;
-  s1.append(data);
-  data.d=7.1; data.f=2.2; data.i=5;
-  s1.append(data);
-
-  Serie2D<double> ts;
-  vector<string> colhead;
-  colhead.push_back("col1");
-  colhead.push_back("col22");
-  colhead.push_back("col333");
-  ts.create(file, "timeserie", colhead);
-  ts.setDescription("mydesctipsldfk");
-  vector<double> data2;
-  data2.push_back(1.2);
-  data2.push_back(2.3);
-  data2.push_back(3.4);
-  ts.append(data2);
-  ts.append(data2);
-  ts.append(data2);
-
-  SimpleDataSet<double> dsd;
-  dsd.create(file, "dsd");
-  double d=5.67;
-  dsd.write(d);
-
-  SimpleDataSet<vector<double> > dsdv;
-  dsdv.create(file, "dsdv");
-  vector<double> dv; dv.push_back(5.67); dv.push_back(7.34);
-  dsdv.write(dv);
-
-  SimpleDataSet<vector<vector<double> > > dvv(file, "d", true);
-  vector<double> d1; d1.push_back(1); d1.push_back(2); d1.push_back(3);
-  vector<double> d2; d2.push_back(4); d2.push_back(5); d2.push_back(6);
-  vector<vector<double> > datavv; datavv.push_back(d1); datavv.push_back(d2);
-  dvv.write(datavv);
-
-  Serie1D<MyStruct2> s2;
-  vector<MemberNameType> nt2;
-  nt2.push_back(MemberNameType("mydouble", "Double"));
-  nt2.push_back(MemberNameType("myfloat", "Float"));
-  nt2.push_back(MemberNameType("mystring", "String"));
-  nt2.push_back(MemberNameType("myint", "Int"));
-  s2.create(file, "serie1dstr", nt2);
-  MyStruct2 data3; data3.d=6.1; data3.f=1.2; data3.s="teststr"; data3.i=4;
-  s2.append(data3);
-  data3.d=7.1; data3.f=2.2; data3.s="teststr2"; data3.i=5;
-  s2.append(data3);
-  MyStruct2 out=s2.getRow(1);
+  MyStruct data;
+  s1.insertMember(data, data.d, "mydouble");
+  s1.insertMember(data, data.v, 3, "myvector");
+  s1.insertMember(data, data.vs, 3, "myvectorstring");
+  s1.insertMember(data, data.f, "myfloat");
+  s1.insertMember(data, data.s, "mystring");
+  s1.insertMember(data, data.i, "myint");
+  s1.open(file, "serie1d");
+  MyStruct out;
+  out=s1.getRow(0);
   cout<<out.d<<endl;
+  for(int i=0; i<out.v.size(); i++) 
+    cout<<out.v[i]<<endl;
+  for(int i=0; i<out.vs.size(); i++) 
+    cout<<out.vs[i]<<endl;
   cout<<out.f<<endl;
   cout<<out.s<<endl;
   cout<<out.i<<endl;
-
   file.close();
   }
 
