@@ -20,7 +20,7 @@ int string2int(string str) {
   return i;
 }
 
-template<class T>
+/*template<class T>
 void dumpHeader(Serie2D<T>& s2d, vector<int>& column, int& col) {
   string desc=s2d.getDescription();
   if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
@@ -104,7 +104,7 @@ void dumpSubRow(SimpleDataSet<vector<string> > sdsv, vector<int>& column, int r)
     cout<<quote<<data[r]<<quote<<" ";
   else
     cout<<nan<<" ";
-}
+}*/
 
 int main(int argc, char* argv[]) {
   vector<string> arg;
@@ -168,24 +168,10 @@ int main(int argc, char* argv[]) {
     arg.erase(i, i+2);
   }
 
-  DataType* datatype=new DataType[arg.size()];
-  vector<int>* column=new vector<int>[arg.size()];
   int maxrows=0;
-  int col=1;
-
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  vector<Serie2D<CTYPE> > s2d##TYPE; \
-  int ks2d##TYPE=0;
-# include "../knowntypes.def"
-# undef FOREACHKNOWNTYPE
-  vector<Serie1D<char*> > s1d;
-  int ks1d=0;
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  vector<SimpleDataSet<vector<CTYPE> > > sdsv##TYPE; \
-  int ksdsv##TYPE=0;
-# include "../knowntypes.def"
-# undef FOREACHKNOWNTYPE
-
+  vector<int>* column=new vector<int>[arg.size()];
+  DataSet* dataSet=new DataSet[arg.size()];
+  int col=0;
   for(int k=0; k<arg.size(); k++) {
     string para=arg[k];
 
@@ -206,17 +192,17 @@ int main(int argc, char* argv[]) {
       columnname=dummy.substr(i+1)+',';
     }
 
-    DataSet ds=file.openDataSet(datasetname);
-    datatype[k]=ds.getDataType();
+    dataSet[i]=file.openDataSet(datasetname);
+    DataType datatype=dataSet[i].getDataType();
 
-    DataSpace space=ds.getSpace();
+    DataSpace space=dataSet[i].getSpace();
     int N=space.getSimpleExtentNdims();
     hsize_t* dims=new hsize_t[N];
     space.getSimpleExtentDims(dims);
     int columns;
-    if(datatype[k].getClass()==H5T_COMPOUND)
-      columns=ds.getCompType().getNmembers();
-    else //(datatype[k].getClass()==H5T_ARRAY)
+    if(datatype.getClass()==H5T_COMPOUND)
+      columns=dataSet[i].getCompType().getNmembers();
+    else
       columns=dims[1];
     maxrows=maxrows>dims[0]?maxrows:dims[0];
     delete[]dims;
@@ -234,6 +220,45 @@ int main(int argc, char* argv[]) {
           column[k].push_back(j);
       }
     }
+    if(header) {
+      cout<<comment<<" File/DataSet: "<<filename<<datasetname<<endl;
+      string desc=SimpleAttribute<string>::getData(dataSet[i], "Description");
+      if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
+      if(dataSet[i].getDataType().getClass()==H5T_COMPOUND) {
+        cout<<comment<<"   Member Label:"<<desc<<endl;
+        CompType dataType=dataSet[i].getCompType();
+        for(int j=0; j<column[i].size(); j++)
+          cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[i][j]-1)<<endl;
+      }
+      else {
+        cout<<comment<<"   Column Label:"<<desc<<endl;
+        vector<string> cols=SimpleAttribute<vector<string> >::getData(dataSet[i], "Column Label");
+        for(int j=0; j<column[i].size(); j++)
+          cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<cols[column[i][j]-1]<<endl;
+      }
+    }
+  }
+  delete[]column;
+  delete[]dataSet;
+
+/*  DataType* datatype=new DataType[arg.size()];
+  vector<int>* column=new vector<int>[arg.size()];
+  int maxrows=0;
+  int col=1;
+
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+  vector<Serie2D<CTYPE> > s2d##TYPE; \
+  int ks2d##TYPE=0;
+# include "../knowntypes.def"
+# undef FOREACHKNOWNTYPE
+  vector<Serie1D<char*> > s1d;
+  int ks1d=0;
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+  vector<SimpleDataSet<vector<CTYPE> > > sdsv##TYPE; \
+  int ksdsv##TYPE=0;
+# include "../knowntypes.def"
+# undef FOREACHKNOWNTYPE
+
 
     if(header) cout<<comment<<" File/DataSet: "<<filename<<datasetname<<endl;
     if(0);
@@ -300,5 +325,5 @@ int main(int argc, char* argv[]) {
   }
 
   delete[]datatype;
-  delete[]column;
+  delete[]column;*/
 }

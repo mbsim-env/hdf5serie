@@ -9,34 +9,35 @@
 
 namespace H5 {
 
-  class MemberNameType {
-    public:
-      MemberNameType() {}
-      MemberNameType(const std::string& name_, const std::string& type_) { name=name_; type=type_; }
-      std::string name;
-      std::string type;
-  };
-
-  template<class T>
+  template<class S>
   class Serie1D : public DataSet {
     private:
-      CompType datatype;
-      DataSpace memdataspace;
+      CompType memDataType;
+      DataSpace memDataSpace;
       hsize_t dims[1];
+      bool firstCall;
+      std::vector<int> structOffset;
     public:
       Serie1D();
-      Serie1D(const Serie1D<T>& dataset);
-      Serie1D(const CommonFG& parent, const std::string& name);
-      Serie1D(const CommonFG& parent, const std::string& name, const std::vector<MemberNameType>& nameType);
-      void create(const CommonFG& parent, const std::string& name, const std::vector<MemberNameType>& nameType);
+
+#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+      void insertMember(const S& s, const CTYPE& e, const std::string name);
+#     include "knowntypes.def"
+#     undef FOREACHKNOWNTYPE
+
+#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+      void insertMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name);
+#     include "knowntypes.def"
+#     undef FOREACHKNOWNTYPE
+
+      void create(const CommonFG& parent, const std::string& name);
       void open(const CommonFG& parent, const std::string& name);
       void setDescription(const std::string& desc);
-      void append(const T& data);
+      std::string getDescription();
+      void append(const S& data);
       inline int getRows();
       inline int getMembers();
-      T getRow(const int row);
-      //std::vector<T> getColumn(const int column);
-      std::string getDescription();
+      S getRow(const int row);
       std::vector<std::string> getMemberLabel();
 
       void extend(const hsize_t* size);
@@ -44,193 +45,91 @@ namespace H5 {
 
 
 
-  template<class T>
-  Serie1D<T>::Serie1D() : DataSet(), datatype() {
+  template<class S>
+  Serie1D<S>::Serie1D() : DataSet(), memDataType(), firstCall(true) {
     dims[0]=0;
     hsize_t memDims[]={1};
-    memdataspace=DataSpace(1, memDims);
+    memDataSpace=DataSpace(1, memDims);
   }
 
-  template<class T>
-  Serie1D<T>::Serie1D(const Serie1D<T>& dataset) : DataSet(dataset) {
-    assert(dataset.getDataType().getClass()==H5T_COMPOUND);
-    datatype=dataset.getCompType();
-    DataSpace dataspace=getSpace();
-    dataspace.getSimpleExtentDims(dims);
-    hsize_t memDims[]={1};
-    memdataspace=DataSpace(1, memDims);
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+  template<class S> \
+  void Serie1D<S>::insertMember(const S& s, const CTYPE& e, const std::string name) { \
+    int size; \
+    if(!firstCall) size=memDataType.getSize(); else size=0; \
+    CompType oldMemDataType(memDataType); \
+    memDataType=CompType(size+toH5Type(e).getSize()); \
+    for(int i=0; i<(firstCall?0:oldMemDataType.getNmembers()); i++) \
+      memDataType.insertMember(oldMemDataType.getMemberName(i), oldMemDataType.getMemberOffset(i), oldMemDataType.getMemberDataType(i)); \
+    memDataType.insertMember(name, size, toH5Type(e)); \
+    structOffset.push_back((char*)&e-(char*)&s); \
+    firstCall=false; \
   }
+# include "knowntypes.def"
+# undef FOREACHKNOWNTYPE
 
-  template<class T>
-  Serie1D<T>::Serie1D(const CommonFG& parent, const std::string& name) {
-    hsize_t memDims[]={1};
-    memdataspace=DataSpace(1, memDims);
-    open(parent, name);
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+  template<class S> \
+  void Serie1D<S>::insertMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name) { \
+    int size; \
+    if(!firstCall) size=memDataType.getSize(); else size=0; \
+    CTYPE dummy; \
+    hsize_t dims[]={N}; \
+    CompType oldMemDataType(memDataType); \
+    memDataType=CompType(size+ArrayType(toH5Type(dummy), 1, dims).getSize()); \
+    for(int i=0; i<(firstCall?0:oldMemDataType.getNmembers()); i++) \
+      memDataType.insertMember(oldMemDataType.getMemberName(i), oldMemDataType.getMemberOffset(i), oldMemDataType.getMemberDataType(i)); \
+    memDataType.insertMember(name, size, ArrayType(toH5Type(dummy), 1, dims)); \
+    structOffset.push_back((char*)&e-(char*)&s); \
+    firstCall=false; \
   }
+# include "knowntypes.def"
+# undef FOREACHKNOWNTYPE
 
-  template<class T>
-  Serie1D<T>::Serie1D(const CommonFG& parent, const std::string& name, const std::vector<MemberNameType>& nameType) {
-    hsize_t memDims[]={1};
-    memdataspace=DataSpace(1, memDims);
-    create(parent, name, nameType);
-  }
-
-  template<class T>
-  void Serie1D<T>::create(const CommonFG& parent, const std::string& name, const std::vector<MemberNameType>& nameType) {
+  template<class S>
+  void Serie1D<S>::create(const CommonFG& parent, const std::string& name) {
+    assert(!firstCall);
     dims[0]=0;
     hsize_t maxDims[]={H5S_UNLIMITED};
-    DataSpace dataspace(1, dims, maxDims);
+    DataSpace fileDataSpace(1, dims, maxDims);
     DSetCreatPropList prop;
     hsize_t chunkDims[]={1000};
     prop.setChunk(1, chunkDims);
-
-    size_t size=0, structSize=0;
-    for(int i=0; i<nameType.size(); i++) {
-      size+=strToH5Type(nameType[i].type).getSize();
-      if(nameType[i].name!="String")
-        structSize+=strToH5Type(nameType[i].type).getSize();
-      else
-        structSize+=sizeof(std::string);
-    }
-    assert(structSize==sizeof(T));
-    CompType comptype(size);
-    size=0;
-    for(int i=0; i<nameType.size(); i++) {
-      comptype.insertMember(nameType[i].name, size, strToH5Type(nameType[i].type));
-      size+=strToH5Type(nameType[i].type).getSize();
-    }
-    datatype=comptype;
-
-    DataSet dataset=parent.createDataSet(name, datatype, dataspace, prop);
-    p_setId(dataset.getId());
+  
+    DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop);
+    p_setId(dataSet.getId());
     incRefCount();
   }
-  template<>
-  void Serie1D<char*>::create(const CommonFG& parent, const std::string& name, const std::vector<MemberNameType>& nameType);
-
-  template<class T>
-  void Serie1D<T>::open(const CommonFG& parent, const std::string& name) {
-    DataSet dataset=parent.openDataSet(name);
-    p_setId(dataset.getId());
+  
+  template<class S>
+  void Serie1D<S>::open(const CommonFG& parent, const std::string& name) {
+    DataSet dataSet=parent.openDataSet(name);
+    p_setId(dataSet.getId());
     incRefCount();
-
-    DataSpace dataspace=getSpace();
+  
+    DataSpace fileDataSpace=getSpace();
     // Check if dataspace and datatype complies with the class
-    assert(dataspace.getSimpleExtentNdims()==1);
+    assert(fileDataSpace.getSimpleExtentNdims()==1);
     hsize_t maxDims[1];
-    dataspace.getSimpleExtentDims(dims, maxDims);
+    fileDataSpace.getSimpleExtentDims(dims, maxDims);
     assert(maxDims[0]==H5S_UNLIMITED);
-
-    assert(dataset.getDataType().getClass()==H5T_COMPOUND);
-    datatype=getCompType();
-    assert(datatype.getSize()==sizeof(T));
+  
+    assert(dataSet.getDataType().getClass()==H5T_COMPOUND);
+    assert(structOffset.size()==getCompType().getNmembers());
+    for(int i=0; i<structOffset.size(); i++) {
+      assert(getCompType().getMemberName(i)==memDataType.getMemberName(i));
+      assert(getCompType().getMemberOffset(i)==memDataType.getMemberOffset(i));
+      assert(getCompType().getMemberDataType(i).getClass()==memDataType.getMemberDataType(i).getClass());
+    }
   }
-  template<>
-  void Serie1D<char*>::open(const CommonFG& parent, const std::string& name);
-
-  template<class T>
-  void Serie1D<T>::setDescription(const std::string& description) {
+  
+  template<class S>
+  void Serie1D<S>::setDescription(const std::string& description) {
     SimpleAttribute<std::string> desc(*this, "Description", description);
   }
-
-  template<class T>
-  void Serie1D<T>::append(const T& data) {
-    dims[0]++;
-    DataSet::extend(dims);
-
-    hsize_t start[]={dims[0]-1};
-    hsize_t count[]={1};
-    DataSpace dataspace=getSpace();
-    dataspace.selectHyperslab(H5S_SELECT_SET, count, start);
-
-    std::vector<char*> delMe;
-    int offset=0, offsetCStr=0;
-    char* buf=new char[datatype.getSize()+datatype.getNmembers()*sizeof(char*)]; // this is always enough memory
-    for(int i=0; i<datatype.getNmembers(); i++) {
-      int size=datatype.getMemberDataType(i).getSize();
-      if(!(datatype.getMemberDataType(i)==strToH5Type("String"))) {
-        memcpy(buf+offsetCStr, ((char*)&data)+offset, size);
-        offsetCStr+=size;
-      }
-      else {
-        *(char**)(buf+offsetCStr)=new char[datatype.getMemberDataType(i).getSize()+1];
-        delMe.push_back(*(char**)(buf+offsetCStr));
-        strcpy(*(char**)(buf+offsetCStr), (*(std::string*)(((char*)&data)+offset)).c_str());
-        offsetCStr+=sizeof(char*);
-      }
-      offset+=size;
-    }
-    write(buf, datatype, memdataspace, dataspace);
-    delete[]buf;
-    for(int i=0; i<delMe.size(); i++)
-      delete[]delMe[i];
-  }
-  template<>
-  void Serie1D<char*>::append(char*const& data);
-
-  template<class T>
-  int Serie1D<T>::getRows() {
-    //////////
-    return dims[0];
-    //////////
-    //DataSpace dataspace=getSpace();
-    //dataspace.getSimpleExtentDims(dims);
-    //return dims[0];
-    //////////
-  }
-
-  template<class T>
-  int Serie1D<T>::getMembers() {
-    return datatype.getNmembers();
-  }
-
-  template<class T>
-  T Serie1D<T>::getRow(const int row) {
-    hsize_t start[]={row};
-    hsize_t count[]={1};
-    DataSpace dataspace=getSpace();
-    dataspace.selectHyperslab(H5S_SELECT_SET, count, start);
-
-    T data;
-    char* buf=new char[datatype.getSize()+datatype.getNmembers()*sizeof(char*)]; // this is always enough memory
-    read(buf, datatype, memdataspace, dataspace);
-    int offset=0, offsetCStr=0;
-    for(int i=0; i<datatype.getNmembers(); i++) {
-      int size=datatype.getMemberDataType(i).getSize();
-      if(!(datatype.getMemberDataType(i)==strToH5Type("String"))) {
-        memcpy(((char*)&data)+offset, buf+offsetCStr, size);
-        offsetCStr+=size;
-      }
-      else {
-        (*(std::string*)(((char*)&data)+offset))=*(char**)(buf+offsetCStr);
-        free(*(char**)(buf+offsetCStr));
-        offsetCStr+=sizeof(char*);
-      }
-      offset+=size;
-    }
-    delete[]buf;
-    return data;
-  }
-  template<>
-  char* Serie1D<char*>::getRow(const int row);
-
-/*  template<class T>
-  std::vector<T> Serie1D<T>::getColumn(const int column) {
-    hsize_t rows=getRows();
-    hsize_t start[]={0, column};
-    hsize_t count[]={rows, 1};
-    DataSpace dataspace=getSpace();
-    dataspace.selectHyperslab(H5S_SELECT_SET, count, start);
-
-    DataSpace coldataspace(2, count);
-
-    std::vector<T> data(rows);
-    read(&data[0], datatype, coldataspace, dataspace);
-    return data;
-  }*/
-
-  template<class T>
-  std::string Serie1D<T>::getDescription() {
+  
+  template<class S>
+  std::string Serie1D<S>::getDescription() {
     // save and disable c error printing
     H5E_auto2_t func;
     void* client_data;
@@ -248,17 +147,127 @@ namespace H5 {
     Exception::setAutoPrint(func, client_data);
     return ret;
   }
-
-  template<class T>
-  std::vector<std::string> Serie1D<T>::getMemberLabel() {
+  
+  template<class S>
+  void Serie1D<S>::append(const S& data) {
+    dims[0]++;
+    DataSet::extend(dims);
+  
+    hsize_t start[]={dims[0]-1};
+    hsize_t count[]={1};
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+  
+    char* buf=new char[memDataType.getSize()];
+    std::vector<char*> charptr;
+    for(int i=0; i<memDataType.getNmembers(); i++) {
+#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+      if(memDataType.getMemberDataType(i)==H5TYPE) \
+        *(CTYPE*)(buf+memDataType.getMemberOffset(i))=*(CTYPE*)((char*)&data+structOffset[i]);
+#     include "knownpodtypes.def"
+#     undef FOREACHKNOWNTYPE
+      if(memDataType.getMemberDataType(i)==StrType(PredType::C_S1, H5T_VARIABLE)) {
+        char* str=new char[((std::string*)((char*)&data+structOffset[i]))->size()+1];
+        charptr.push_back(str);
+        strcpy(str, ((std::string*)((char*)&data+structOffset[i]))->c_str());
+        *(char**)(buf+memDataType.getMemberOffset(i))=str;
+      }
+      if(memDataType.getMemberDataType(i).getClass()==H5T_ARRAY) {
+        hsize_t dims[1];
+        memDataType.getMemberArrayType(i).getArrayDims(dims);
+#       define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+        if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) \
+          memcpy(buf+memDataType.getMemberOffset(i), &((*((std::vector<CTYPE>*)((char*)&data+structOffset[i])))[0]), dims[0]*sizeof(CTYPE));
+#       include "knownpodtypes.def"
+#       undef FOREACHKNOWNTYPE
+        if(memDataType.getMemberDataType(i)==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
+          for(int j=0; j<dims[0]; j++) {
+            char* str=new char[(*((std::vector<std::string>*)((char*)&data+structOffset[i])))[j].size()+1];
+            charptr.push_back(str);
+            strcpy(str, (*((std::vector<std::string>*)((char*)&data+structOffset[i])))[j].c_str());
+            *(char**)(buf+memDataType.getMemberOffset(i)+j*sizeof(char*))=str;
+          }
+      }
+    }
+    write(buf, memDataType, memDataSpace, fileDataSpace);
+    for(int i=0; i<charptr.size(); i++)
+      delete[]charptr[i];
+    delete[]buf;
+  }
+  
+  template<class S>
+  int Serie1D<S>::getRows() {
+    //////////
+    return dims[0];
+    //////////
+    //DataSpace dataspace=getSpace();
+    //dataspace.getSimpleExtentDims(dims);
+    //return dims[0];
+    //////////
+  }
+  
+  template<class S>
+  int Serie1D<S>::getMembers() {
+    return memDataType.getNmembers();
+  }
+  
+  template<class S>
+  S Serie1D<S>::getRow(const int row) {
+    hsize_t start[]={row};
+    hsize_t count[]={1};
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+    
+    char* buf=new char[memDataType.getSize()];
+    read(buf, memDataType, memDataSpace, fileDataSpace);
+    S data;
+    for(int i=0; i<memDataType.getNmembers(); i++) {
+#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+      if(memDataType.getMemberDataType(i)==H5TYPE) \
+        *(CTYPE*)((char*)&data+structOffset[i])=*(CTYPE*)(buf+memDataType.getMemberOffset(i));
+#     include "knownpodtypes.def"
+#     undef FOREACHKNOWNTYPE
+      if(memDataType.getMemberDataType(i)==StrType(PredType::C_S1, H5T_VARIABLE)) {
+        char* str=*(char**)(buf+memDataType.getMemberOffset(i));
+        *((std::string*)((char*)&data+structOffset[i]))=str;
+        free(str);
+      }
+      if(memDataType.getMemberDataType(i).getClass()==H5T_ARRAY) {
+        hsize_t dims[1];
+        memDataType.getMemberArrayType(i).getArrayDims(dims);
+#       define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+        if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) { \
+          std::vector<CTYPE>* vec=(std::vector<CTYPE>*)((char*)&data+structOffset[i]); \
+          vec->resize(dims[0]); \
+          memcpy(&((*vec)[0]), buf+memDataType.getMemberOffset(i), dims[0]*sizeof(CTYPE)); \
+        }
+#       include "knownpodtypes.def"
+#       undef FOREACHKNOWNTYPE
+        if(memDataType.getMemberDataType(i)==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims)) {
+          std::vector<std::string>* vec=(std::vector<std::string>*)((char*)&data+structOffset[i]);
+          vec->resize(dims[0]);
+          for(int j=0; j<dims[0]; j++) {
+            char* str=*(char**)(buf+memDataType.getMemberOffset(i)+j*sizeof(char*));
+            (*vec)[j]=str;
+            free(str);
+          }
+        }
+      }
+    }
+    delete[]buf;
+    return data;
+  }
+  
+  template<class S>
+  std::vector<std::string> Serie1D<S>::getMemberLabel() {
     std::vector<std::string> ret;
-    for(int i=0; i<datatype.getNmembers(); i++)
-      ret.push_back(datatype.getMemberName(i));
+    for(int i=0; i<memDataType.getNmembers(); i++)
+      ret.push_back(memDataType.getMemberName(i));
     return ret;
   }
-
-  template<class T>
-  void Serie1D<T>::extend(const hsize_t* size) {
+  
+  template<class S>
+  void Serie1D<S>::extend(const hsize_t* size) {
     assert(1);
   }
 
