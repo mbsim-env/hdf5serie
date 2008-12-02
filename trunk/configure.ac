@@ -9,8 +9,8 @@ AC_PROG_LIBTOOL
 AC_PROG_CXX
 
 AC_C_CONST
-# kill memcpy
-AC_HEADER_STDC
+AC_C_INLINE
+AC_HEADER_STDBOOL
 
 dnl Check for hdf5 library
 AC_ARG_WITH(hdf5-prefix,
