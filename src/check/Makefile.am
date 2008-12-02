@@ -1,7 +1,12 @@
 check_PROGRAMS = testlib
-check_SCRIPTS = valgrindtestlib.sh
+check_SCRIPTS = valgrindtestlib.sh \
+  testdump.sh \
+  valgrindtestdump.sh
 
-TESTS = testlib valgrindtestlib.sh
+TESTS = testlib \
+  valgrindtestlib.sh \
+  testdump.sh \
+  valgrindtestdump.sh
 
 testlib_SOURCES = testlib.cc
 

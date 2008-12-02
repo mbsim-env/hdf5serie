@@ -466,7 +466,7 @@ int main() {
   /***** MYTIMESERIE *****/
   cout<<"TIMESERIE\n";
   {
-  H5File file("test.h5", H5F_ACC_TRUNC);
+  H5File file("test2d.h5", H5F_ACC_TRUNC);
   Serie2D<double> ts;
   vector<string> colhead;
   colhead.push_back("col1");
@@ -492,7 +492,7 @@ int main() {
   file.close();
   }
   {
-  H5File file("test.h5", H5F_ACC_RDWR);
+  H5File file("test2d.h5", H5F_ACC_RDWR);
   Serie2D<double> ts;
   ts.open(file, "timeserie");
   cout<<ts.getDescription()<<endl;
@@ -620,7 +620,7 @@ int main() {
 
   cout<<"SERIE1D\n";
   {
-  H5File file("test.h5", H5F_ACC_TRUNC);
+  H5File file("testcompound.h5", H5F_ACC_TRUNC);
   Serie1D<MyStruct> s1;
   MyStruct data;
   s1.insertMember(data, data.d, "mydouble");
@@ -647,7 +647,7 @@ int main() {
   file.close();
   }
   {
-  H5File file("test.h5", H5F_ACC_RDONLY);
+  H5File file("testcompound.h5", H5F_ACC_RDONLY);
   Serie1D<MyStruct> s1;
   MyStruct data;
   s1.insertMember(data, data.d, "mydouble");

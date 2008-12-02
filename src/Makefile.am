@@ -1,4 +1,4 @@
-SUBDIRS = . check dump rereadmetadata
+SUBDIRS = . dump check rereadmetadata
 
 lib_LTLIBRARIES = libhdf5serie.la
 libhdf5serie_la_SOURCES = toh5type.cc \

@@ -20,92 +20,6 @@ int string2int(string str) {
   return i;
 }
 
-/*template<class T>
-void dumpHeader(Serie2D<T>& s2d, vector<int>& column, int& col) {
-  string desc=s2d.getDescription();
-  if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
-  vector<string> colLabel=s2d.getColumnLabel();
-  cout<<comment<<"   Column Label: "<<endl;
-  for(int i=0; i<column.size(); i++)
-    cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<colLabel[column[i]-1]<<endl;
-}
-
-void dumpHeader(Serie1D<char*> s1d, vector<int>& column, int& col) {
-  string desc=s1d.getDescription();
-  if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
-  vector<string> memberLabel=s1d.getMemberLabel();
-  cout<<comment<<"   Member Label: "<<endl;
-  for(int i=0; i<column.size(); i++)
-    cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<memberLabel[column[i]-1]<<endl;
-}
-
-template<class T>
-void dumpHeader(SimpleDataSet<vector<T> >& sdsv, vector<int>& column, int& col) {
-  cout<<comment<<"   "<<setfill('0')<<setw(4)<<col++<<": "<<sdsv.getDescription()<<endl;
-}
-
-template<class T>
-void dumpSubRow(Serie2D<T>& s2d, vector<int>& column, int r) {
-  int rows=s2d.getRows();
-  if(r<rows) {
-    std::vector<T> row=s2d.getRow(r);
-    for(int j=0; j<column.size(); j++)
-      cout<<row[column[j]-1]<<" ";
-  }
-  else
-    for(int j=0; j<column.size(); j++)
-      cout<<nan<<" ";
-}
-template<>
-void dumpSubRow(Serie2D<string>& s2d, vector<int>& column, int r) {
-  int rows=s2d.getRows();
-  if(r<rows) {
-    std::vector<string> row=s2d.getRow(r);
-    for(int j=0; j<column.size(); j++)
-      cout<<quote<<row[column[j]-1]<<quote<<" ";
-  }
-  else
-    for(int j=0; j<column.size(); j++)
-      cout<<nan<<" ";
-}
-
-void dumpSubRow(Serie1D<char*>& s1d, vector<int>& column, int r) {
-  int rows=s1d.getRows();
-  if(r<rows) {
-    char* buf;
-    buf=s1d.getRow(r);
-    CompType comptype=s1d.getCompType();
-    for(int j=0; j<column.size(); j++) {
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      if(comptype.getMemberDataType(column[j]-1)==H5TYPE) \
-        cout<<*(CTYPE*)((char*)buf+comptype.getMemberOffset(column[j]-1))<<" ";
-#     include "../knowntypes.def"
-#     undef FOREACHKNOWNTYPE
-    }
-    delete[]buf;
-  }
-  else
-    for(int j=0; j<column.size(); j++)
-      cout<<nan<<" ";
-}
-
-template<class T>
-void dumpSubRow(SimpleDataSet<vector<T> > sdsv, vector<int>& column, int r) {
-  vector<T> data=sdsv.read();
-  if(r<data.size())
-    cout<<data[r]<<" ";
-  else
-    cout<<nan<<" ";
-}
-template<>
-void dumpSubRow(SimpleDataSet<vector<string> > sdsv, vector<int>& column, int r) {
-  vector<string> data=sdsv.read();
-  if(r<data.size())
-    cout<<quote<<data[r]<<quote<<" ";
-  else
-    cout<<nan<<" ";
-}*/
-
 int main(int argc, char* argv[]) {
   vector<string> arg;
   for(int i=1; i<argc; i++)
@@ -171,7 +85,7 @@ int main(int argc, char* argv[]) {
   int maxrows=0;
   vector<int>* column=new vector<int>[arg.size()];
   DataSet* dataSet=new DataSet[arg.size()];
-  int col=0;
+  int col=1;
   for(int k=0; k<arg.size(); k++) {
     string para=arg[k];
 
@@ -192,16 +106,16 @@ int main(int argc, char* argv[]) {
       columnname=dummy.substr(i+1)+',';
     }
 
-    dataSet[i]=file.openDataSet(datasetname);
-    DataType datatype=dataSet[i].getDataType();
+    dataSet[k]=file.openDataSet(datasetname);
+    DataType datatype=dataSet[k].getDataType();
 
-    DataSpace space=dataSet[i].getSpace();
+    DataSpace space=dataSet[k].getSpace();
     int N=space.getSimpleExtentNdims();
     hsize_t* dims=new hsize_t[N];
     space.getSimpleExtentDims(dims);
     int columns;
     if(datatype.getClass()==H5T_COMPOUND)
-      columns=dataSet[i].getCompType().getNmembers();
+      columns=dataSet[k].getCompType().getNmembers();
     else
       columns=dims[1];
     maxrows=maxrows>dims[0]?maxrows:dims[0];
@@ -222,108 +136,102 @@ int main(int argc, char* argv[]) {
     }
     if(header) {
       cout<<comment<<" File/DataSet: "<<filename<<datasetname<<endl;
-      string desc=SimpleAttribute<string>::getData(dataSet[i], "Description");
+      string desc=SimpleAttribute<string>::getData(dataSet[k], "Description");
       if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
-      if(dataSet[i].getDataType().getClass()==H5T_COMPOUND) {
-        cout<<comment<<"   Member Label:"<<desc<<endl;
-        CompType dataType=dataSet[i].getCompType();
-        for(int j=0; j<column[i].size(); j++)
-          cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[i][j]-1)<<endl;
+      if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
+        cout<<comment<<"   Member Label:"<<endl;
+        CompType dataType=dataSet[k].getCompType();
+        for(int j=0; j<column[k].size(); j++) {
+          if(dataType.getMemberDataType(column[k][j]-1).getClass()==H5T_ARRAY) {
+            hsize_t dims[1];
+            dataType.getMemberArrayType(column[k][j]-1).getArrayDims(dims);
+            for(int l=0; l<dims[0]; l++)
+              cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<"("<<l+1<<")"<<endl;
+          }
+          else
+            cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<endl;
+        }
       }
       else {
-        cout<<comment<<"   Column Label:"<<desc<<endl;
-        vector<string> cols=SimpleAttribute<vector<string> >::getData(dataSet[i], "Column Label");
-        for(int j=0; j<column[i].size(); j++)
-          cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<cols[column[i][j]-1]<<endl;
+        cout<<comment<<"   Column Label:"<<endl;
+        vector<string> cols=SimpleAttribute<vector<string> >::getData(dataSet[k], "Column Label");
+        for(int j=0; j<column[k].size(); j++)
+          cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<cols[column[k][j]-1]<<endl;
       }
     }
   }
-  delete[]column;
-  delete[]dataSet;
 
-/*  DataType* datatype=new DataType[arg.size()];
-  vector<int>* column=new vector<int>[arg.size()];
-  int maxrows=0;
-  int col=1;
-
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  vector<Serie2D<CTYPE> > s2d##TYPE; \
-  int ks2d##TYPE=0;
-# include "../knowntypes.def"
-# undef FOREACHKNOWNTYPE
-  vector<Serie1D<char*> > s1d;
-  int ks1d=0;
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  vector<SimpleDataSet<vector<CTYPE> > > sdsv##TYPE; \
-  int ksdsv##TYPE=0;
-# include "../knowntypes.def"
-# undef FOREACHKNOWNTYPE
-
-
-    if(header) cout<<comment<<" File/DataSet: "<<filename<<datasetname<<endl;
-    if(0);
-#   define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-    else if(datatype[k]==H5TYPE && ds.getSpace().getSimpleExtentNdims()==2) { \
-      s2d##TYPE.push_back(Serie2D<CTYPE>(file, datasetname)); \
-      if(header) dumpHeader(s2d##TYPE[ks2d##TYPE], column[k], col); \
-      ks2d##TYPE++; \
-    }
-#   include "../knowntypes.def"
-#   undef FOREACHKNOWNTYPE
-    else if(datatype[k].getClass()==H5T_COMPOUND) {
-      s1d.push_back(Serie1D<char*>(file, datasetname));
-      if(header) dumpHeader(s1d[ks1d], column[k], col);
-      ks1d++;
-    }
-#   define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-    else if(datatype[k]==H5TYPE && ds.getSpace().getSimpleExtentNdims()==1) { \
-      sdsv##TYPE.push_back(SimpleDataSet<vector<CTYPE> >(file, datasetname)); \
-      if(header) dumpHeader(sdsv##TYPE[ksdsv##TYPE], column[k], col); \
-      ksdsv##TYPE++; \
-    }
-#   include "../knowntypes.def"
-#   undef FOREACHKNOWNTYPE
-    else cerr<<"Unknown datatype"<<endl;
-
-    file.close();
-  }
-
-  for(int r=0; r<maxrows; r++) {
-#   define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-    ks2d##TYPE=0;
-#   include "../knowntypes.def"
-#   undef FOREACHKNOWNTYPE
-    ks1d=0;
-#   define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-    ksdsv##TYPE=0;
-#   include "../knowntypes.def"
-#   undef FOREACHKNOWNTYPE
-
+  for(int row=0; row<maxrows; row++) {
     for(int k=0; k<arg.size(); k++) {
-      if(0);
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      else if(datatype[k]==H5TYPE && ks2d##TYPE<s2d##TYPE.size() && s2d##TYPE[ks2d##TYPE].getSpace().getSimpleExtentNdims()==2) { \
-        dumpSubRow(s2d##TYPE[ks2d##TYPE], column[k], r); \
-        ks2d##TYPE++; \
+      if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
+        hsize_t dims[]={1};
+        DataSpace memDataSpace(1, dims);
+        DataSpace fileDataSpace=dataSet[k].getSpace();
+        hsize_t start[]={row}, count[]={1};
+        fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+        CompType memDataType=dataSet[k].getCompType();//////////
+        char* buf=new char[memDataType.getSize()];
+        dataSet[k].read(buf, memDataType, memDataSpace, fileDataSpace);
+        for(int i=0; i<column[k].size(); i++) {
+          DataType memberDataType=memDataType.getMemberDataType(column[k][i]-1);
+          int memberOffset=memDataType.getMemberOffset(column[k][i]-1);
+#         define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+          if(memberDataType==H5TYPE) \
+            cout<<*(CTYPE*)(buf+memberOffset)<<" ";
+#         include "knownpodtypes.def"
+#         undef FOREACHKNOWNTYPE
+          if(memberDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
+            char* str=*(char**)(buf+memberOffset);
+            cout<<quote<<str<<quote<<" ";
+            free(str);
+          }
+          if(memberDataType.getClass()==H5T_ARRAY) {
+            hsize_t dims[1];
+            memDataType.getMemberArrayType(column[k][i]-1).getArrayDims(dims);
+#           define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+            if(memberDataType==ArrayType(H5TYPE,1,dims)) \
+              for(int l=0; l<dims[0]; l++) \
+                cout<<*(CTYPE*)(buf+memberOffset+sizeof(CTYPE)*l)<<" ";
+#           include "knownpodtypes.def"
+#           undef FOREACHKNOWNTYPE
+            if(memberDataType==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
+              for(int l=0; l<dims[0]; l++) {
+                char* str=*(char**)(buf+memberOffset+sizeof(char*)*l);
+                cout<<quote<<str<<quote<<" ";
+                free(str);
+              }
+          }
+        }
+        delete[]buf;
       }
-#     include "../knowntypes.def"
-#     undef FOREACHKNOWNTYPE
-      else if(datatype[k].getClass()==H5T_COMPOUND) {
-        dumpSubRow(s1d[ks1d], column[k], r);
-        ks1d++;
+      else {
+        hsize_t dims[2];
+        DataSpace fileDataSpace=dataSet[k].getSpace();
+        fileDataSpace.getSimpleExtentDims(dims);
+        hsize_t start[]={row,0}, count[]={1,dims[1]};
+        fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+        DataSpace memDataSpace(2, count);
+        DataType memDataType=dataSet[k].getDataType();//////////
+        char* buf=new char[memDataType.getSize()*dims[1]];
+        dataSet[k].read(buf, memDataType, memDataSpace, fileDataSpace);
+        for(int i=0; i<column[k].size(); i++) {
+#         define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+          if(memDataType==H5TYPE) \
+            cout<<*(CTYPE*)(buf+sizeof(CTYPE)*(column[k][i]-1))<<" ";
+#         include "knownpodtypes.def"
+#         undef FOREACHKNOWNTYPE
+          if(memDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
+            char* str=*(char**)(buf+sizeof(char*)*(column[k][i]-1));
+            cout<<quote<<str<<quote<<" ";
+            free(str);
+          }
+        }
+        delete[]buf;
       }
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      else if(datatype[k]==H5TYPE && ksdsv##TYPE<sdsv##TYPE.size() && sdsv##TYPE[ksdsv##TYPE].getSpace().getSimpleExtentNdims()==1) { \
-        dumpSubRow(sdsv##TYPE[ksdsv##TYPE], column[k], r); \
-        ksdsv##TYPE++; \
-      }
-#     include "../knowntypes.def"
-#     undef FOREACHKNOWNTYPE
-      else cerr<<"Unknown datatype"<<endl;
     }
     cout<<endl;
   }
 
-  delete[]datatype;
-  delete[]column;*/
+  delete[]column;
+  delete[]dataSet;
 }
