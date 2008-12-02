@@ -5,5 +5,3 @@ add h5serielist.exe
 add simpleattribute to RO.cc
 add simpledataset to RO.cc
 add serie1d to RO.cc
-
-add string member to serie1d.cc
