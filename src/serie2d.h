@@ -1,5 +1,5 @@
-#ifndef _TIMESERIE2D_H_
-#define _TIMESERIE2D_H_
+#ifndef _SERIE2D_H_
+#define _SERIE2D_H_
 
 #include <H5Cpp.h>
 #include <vector>
