@@ -16,6 +16,9 @@ H5FileRO::H5FileRO(const std::string& name, unsigned int flags, const FileCreatP
 GroupRO H5FileRO::openGroup(const std::string& name) {
   GroupRO newGroup(H5File::openGroup(name));
   newGroup.setROFile(this);
+  grp.push_back(&newGroup);
+  grpName.push_back(name);
+  grpParent.push_back((GroupRO*)this);
   return newGroup;
 }
 
