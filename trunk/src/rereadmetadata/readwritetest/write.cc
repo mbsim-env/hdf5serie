@@ -1,15 +1,27 @@
 #include <config.h>
 #include <serie2d.h>
+#include <serie1d.h>
 #include <iostream>
 
 using namespace std;
 using namespace H5;
 
+struct St {
+  double d;
+  int i;
+};
+
 int main() {
   H5File file("test.h5", H5F_ACC_TRUNC);
 
   Group grp=file.createGroup("mygrp");
-  Serie2D<double> ts(grp, "ts", vector<string>(4));
+  Group grp2=grp.createGroup("mygrp2");
+  Serie2D<double> ts(grp2, "ts", vector<string>(4));
+  Serie1D<St> ts1d;
+  St s;
+  ts1d.insertMember(s, s.d, "mydouble");
+  ts1d.insertMember(s, s.i, "myint");
+  ts1d.create(grp2, "ts1d");
   vector<double> data(4);
   int i=0;
   while(1) {
@@ -18,6 +30,9 @@ int main() {
     data[2]=i/100;
     data[3]=i/1000;
     ts.append(data);
+    s.d=9.9;
+    s.i=i;
+    ts1d.append(s);
     file.flush(H5F_SCOPE_GLOBAL);
     cout<<i<<endl;
     sleep(1);

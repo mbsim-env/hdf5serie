@@ -1,5 +1,5 @@
-#ifndef _TIMESERIE1D_H_
-#define _TIMESERIE1D_H_
+#ifndef _SERIE1D_H_
+#define _SERIE1D_H_
 
 #include <H5Cpp.h>
 #include <vector>
@@ -71,6 +71,7 @@ namespace H5 {
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template<class S> \
   void Serie1D<S>::insertMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name) { \
+    assert(e.size()==0 || e.size()==N); \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \
     CTYPE dummy; \
@@ -176,15 +177,20 @@ namespace H5 {
         hsize_t dims[1];
         memDataType.getMemberArrayType(i).getArrayDims(dims);
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-        if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) \
-          memcpy(buf+memDataType.getMemberOffset(i), &((*((std::vector<CTYPE>*)((char*)&data+structOffset[i])))[0]), dims[0]*sizeof(CTYPE));
+        if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) { \
+          std::vector<CTYPE>* vec=(std::vector<CTYPE>*)((char*)&data+structOffset[i]); \
+          assert(vec->size()==dims[0]); \
+          memcpy(buf+memDataType.getMemberOffset(i), &((*vec)[0]), dims[0]*sizeof(CTYPE)); \
+        }
 #       include "knownpodtypes.def"
 #       undef FOREACHKNOWNTYPE
         if(memDataType.getMemberDataType(i)==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
           for(int j=0; j<dims[0]; j++) {
-            char* str=new char[(*((std::vector<std::string>*)((char*)&data+structOffset[i])))[j].size()+1];
+            std::vector<std::string>* vec=(std::vector<std::string>*)((char*)&data+structOffset[i]);
+            assert(vec->size()==dims[0]);
+            char* str=new char[(*vec)[j].size()+1];
             charptr.push_back(str);
-            strcpy(str, (*((std::vector<std::string>*)((char*)&data+structOffset[i])))[j].c_str());
+            strcpy(str, (*vec)[j].c_str());
             *(char**)(buf+memDataType.getMemberOffset(i)+j*sizeof(char*))=str;
           }
       }
