@@ -64,7 +64,7 @@ namespace H5 {
 #   define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
     if(DataSet::getDataType()==H5TYPE) roFile->ts##TYPE.push_back((Serie2DRO<CTYPE>*)this); \
     if(DataSet::getDataType()==H5TYPE) roFile->ts##TYPE##Name.push_back(name); \
-    if(DataSet::getDataType()=H5TYPE) roFile->ts##TYPE##Parent.push_back(&parent);
+    if(DataSet::getDataType()==H5TYPE) roFile->ts##TYPE##Parent.push_back(&parent);
 #   include "knowntypes.def"
 #   undef FOREACHKNOWNTYPE
   }

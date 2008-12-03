@@ -30,8 +30,9 @@ int main() {
 
   H5FileRO file;
   file.openFile("test.h5", H5F_ACC_RDONLY);
+  GroupRO grp=file.openGroup("mygrp");
   Serie2DRO<double> ts;
-  ts.open(file, "ts");
+  ts.open(grp, "ts");
   vector<double> data;
   while(1) {
     int r=ts.getRows();

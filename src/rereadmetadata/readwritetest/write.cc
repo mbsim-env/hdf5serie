@@ -8,7 +8,8 @@ using namespace H5;
 int main() {
   H5File file("test.h5", H5F_ACC_TRUNC);
 
-  Serie2D<double> ts(file, "ts", vector<string>(4));
+  Group grp=file.createGroup("mygrp");
+  Serie2D<double> ts(grp, "ts", vector<string>(4));
   vector<double> data(4);
   int i=0;
   while(1) {
