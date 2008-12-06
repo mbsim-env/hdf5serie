@@ -24,6 +24,7 @@ namespace H5 {
       void open(const CommonFG& parent, const std::string& name);
       void setDescription(const std::string& desc);
       void append(const std::vector<T> &data);
+      void operator<<(const std::vector<T>& data);
       inline int getRows();
       inline int getColumns();
       std::vector<T> getRow(const int row);
@@ -33,6 +34,26 @@ namespace H5 {
 
       void extend(const hsize_t* size);
   };
+
+
+
+  // inline definitions
+
+  template<class T>
+  int Serie2D<T>::getRows() {
+    //////////
+    return dims[0];
+    //////////
+    //DataSpace fileDataSpace=getSpace();
+    //fileDataSpace.getSimpleExtentDims(dims);
+    //return dims[0];
+    //////////
+  }
+
+  template<class T>
+  int Serie2D<T>::getColumns() {
+    return dims[1];
+  }
 
 }
 
