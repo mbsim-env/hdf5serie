@@ -35,6 +35,7 @@ namespace H5 {
       void setDescription(const std::string& desc);
       std::string getDescription();
       void append(const S& data);
+      void operator<<(const S& data);
       inline int getRows();
       inline int getMembers();
       S getRow(const int row);
@@ -201,6 +202,11 @@ namespace H5 {
     delete[]buf;
   }
   
+  template<class S>
+  void Serie1D<S>::operator<<(const S& data) {
+    append(data);
+  }
+
   template<class S>
   int Serie1D<S>::getRows() {
     //////////

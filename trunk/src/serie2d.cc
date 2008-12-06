@@ -99,19 +99,8 @@ namespace H5 {
   void Serie2D<std::string>::append(const std::vector<std::string> &data);
 
   template<class T>
-  int Serie2D<T>::getRows() {
-    //////////
-    return dims[0];
-    //////////
-    //DataSpace fileDataSpace=getSpace();
-    //fileDataSpace.getSimpleExtentDims(dims);
-    //return dims[0];
-    //////////
-  }
-
-  template<class T>
-  int Serie2D<T>::getColumns() {
-    return dims[1];
+  void Serie2D<T>::operator<<(const std::vector<T>& data) {
+    append(data);
   }
 
   template<class T>
