@@ -14,6 +14,18 @@ namespace H5 {
 # include "knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
+  class StreamManip {
+    private:
+      int row;
+    public:
+      StreamManip(int row_) { row=row_; }
+      int getRow() { return row; }
+  };
+
+  inline StreamManip gotoRow(int row_) {
+    return StreamManip(row_);
+  }
+
 }
 
 #endif

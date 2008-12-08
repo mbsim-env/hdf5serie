@@ -28,19 +28,19 @@ int main(int argc, char* argv[]) {
   if(arg.size()==0 ||
      find(arg.begin(), arg.end(), "-h")!=arg.end() ||
      find(arg.begin(), arg.end(), "--help")!=arg.end() ) {
-    cout<<"Dumps one and two dimensional datasets of a HDF5 file as a space separated"<<endl;
-    cout<<"table."<<endl;
+    cout<<"Dumps two dimensional datasets of simple datatype and one dimensional dataset"<<endl;
+    cout<<"of compound datatype as a space separated table."<<endl;
     cout<<"If more file/datasets (DATA) are given the output tabel will be merged"<<endl;
-    cout<<"row-wise. If the number of rows in multi DATA output differs, <nan> will be"<<endl;
-    cout<<"appended for to short DATAs."<<endl;
+    cout<<"row-wise. If the number of rows in multi dataset output differs, <nan> will be"<<endl;
+    cout<<"appended for to short datasets."<<endl;
     cout<<endl;
     cout<<"Usage:"<<endl;
-    cout<<"  h5dumptimeserie [options] DATA [DATA] ..."<<endl;
+    cout<<"  h5dumpserie [options] DATA [DATA] ..."<<endl;
     cout<<"    DATA: FILENAME/DATASET[:COLUMNS]"<<endl;
     cout<<"      FILENAME: <dir/to/hdf5/file/filetodump.h5>"<<endl;
     cout<<"      DATASET: <dir/to/dataset/in/hdf5file/datasettodump>"<<endl;
     cout<<"      COLUMNS: COL|RANGE[,COL|RANGE]... (dump all columns if not given)"<<endl;
-    cout<<"        COL: column number in dataset to dump (starting with 1)"<<endl;
+    cout<<"        COL: column/member number in dataset to dump (starting with 1)"<<endl;
     cout<<"        RANGE: [BEGINCOL]-[ENDCOL] dump columns from BEGINCOL to ENDCOL"<<endl;
     cout<<"          (use 1/last if not given)"<<endl;
     cout<<"    options:"<<endl;
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     cout<<"      -n <nan>: use <nan> for not a number in output (Default 'nan')"<<endl;
     cout<<endl;
     cout<<"Example:"<<endl;
-    cout<<"  h5dumptimeserie dir/test1.h5/grp1/grp2/mydata:1,3,5-,2 dir/test1.h5/mydata:-4"<<endl;
+    cout<<"  h5dumpserie dir/test1.h5/grp1/grp2/mydata:1,3,5-,2 dir/test1.h5/mydata:-4"<<endl;
     return 0;
   }
 

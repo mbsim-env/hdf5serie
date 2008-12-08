@@ -8,13 +8,16 @@
 #include <simpleattribute.h>
 
 namespace H5 {
-
+   
   template<class T>
   class Serie2D : public DataSet {
     private:
       DataType memDataType;
       DataSpace memDataSpace;
       hsize_t dims[2];
+      std::vector<T> dataToWrite;
+      std::vector<T> dataToRead;
+      int dataToReadElementNr, dataToReadRow;
     public:
       Serie2D();
       Serie2D(const Serie2D<T>& dataset);
@@ -24,10 +27,14 @@ namespace H5 {
       void open(const CommonFG& parent, const std::string& name);
       void setDescription(const std::string& desc);
       void append(const std::vector<T> &data);
-      void operator<<(const std::vector<T>& data);
+      Serie2D<T>& operator<<(const std::vector<T>& data);
+      Serie2D<T>& operator<<(const T& ele);
       inline int getRows();
       inline int getColumns();
       std::vector<T> getRow(const int row);
+      Serie2D<T>& operator>>(StreamManip s);
+      Serie2D<T>& operator>>(std::vector<T>& data);
+      Serie2D<T>& operator>>(T& ele);
       std::vector<T> getColumn(const int column);
       std::string getDescription();
       std::vector<std::string> getColumnLabel();
