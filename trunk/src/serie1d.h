@@ -17,10 +17,6 @@ namespace H5 {
       hsize_t dims[1];
       bool firstCall;
       std::vector<int> structOffset;
-      S dataToWrite;
-      int dataToWriteElementNr;
-      S dataToRead;
-      int dataToReadElementNr, dataToReadRow;
     public:
       Serie1D();
 
@@ -39,34 +35,9 @@ namespace H5 {
       void setDescription(const std::string& desc);
       std::string getDescription();
       void append(const S& data);
-      Serie1D<S>& operator<<(const S& data);
-
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      Serie1D<S>& operator<<(const CTYPE& ele);
-#     include "knowntypes.def"
-#     undef FOREACHKNOWNTYPE
-
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      Serie1D<S>& operator<<(const std::vector<CTYPE>& ele);
-#     include "knowntypes.def"
-#     undef FOREACHKNOWNTYPE
-
       inline int getRows();
       inline int getMembers();
       S getRow(const int row);
-      Serie1D<S>& operator>>(StreamManip s);
-      Serie1D<S>& operator>>(S& data);
-
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      Serie1D<S>& operator>>(CTYPE& ele);
-#     include "knowntypes.def"
-#     undef FOREACHKNOWNTYPE
-
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      Serie1D<S>& operator>>(std::vector<CTYPE>& ele);
-#     include "knowntypes.def"
-#     undef FOREACHKNOWNTYPE
-
       std::vector<std::string> getMemberLabel();
 
       void extend(const hsize_t* size);
@@ -75,7 +46,7 @@ namespace H5 {
 
 
   template<class S>
-  Serie1D<S>::Serie1D() : DataSet(), memDataType(), firstCall(true), dataToWriteElementNr(0), dataToReadRow(0) {
+  Serie1D<S>::Serie1D() : DataSet(), memDataType(), firstCall(true) {
     dims[0]=0;
     hsize_t memDims[]={1};
     memDataSpace=DataSpace(1, memDims);
@@ -151,8 +122,6 @@ namespace H5 {
       assert(getCompType().getMemberOffset(i)==memDataType.getMemberOffset(i));
       assert(getCompType().getMemberDataType(i).getClass()==memDataType.getMemberDataType(i).getClass());
     }
-
-    if(dims[0]>0) dataToRead=getRow(0);
   }
   
   template<class S>
@@ -231,44 +200,6 @@ namespace H5 {
       delete[]charptr[i];
     delete[]buf;
   }
-  
-  template<class S>
-  Serie1D<S>& Serie1D<S>::operator<<(const S& data) {
-    append(data);
-    return *this;
-  }
-
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  template<class S> \
-  Serie1D<S>& Serie1D<S>::operator<<(const CTYPE& ele) { \
-    assert(memDataType.getMemberDataType(dataToWriteElementNr)==H5TYPE); \
-    *(CTYPE*)((char*)&dataToWrite+structOffset[dataToWriteElementNr])=ele; \
-    dataToWriteElementNr++; \
-    if(dataToWriteElementNr==memDataType.getNmembers()) { \
-      append(dataToWrite); \
-      dataToWriteElementNr=0; \
-    } \
-    return *this; \
-  }
-# include "knowntypes.def"
-# undef FOREACHKNOWNTYPE
-
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  template<class S> \
-  Serie1D<S>& Serie1D<S>::operator<<(const std::vector<CTYPE>& ele) { \
-    hsize_t dims[1]; \
-    memDataType.getMemberArrayType(dataToWriteElementNr).getArrayDims(dims); \
-    assert(memDataType.getMemberDataType(dataToWriteElementNr)==ArrayType(H5TYPE,1,dims)); \
-    *(std::vector<CTYPE>*)((char*)&dataToWrite+structOffset[dataToWriteElementNr])=ele; \
-    dataToWriteElementNr++; \
-    if(dataToWriteElementNr==memDataType.getNmembers()) { \
-      append(dataToWrite); \
-      dataToWriteElementNr=0; \
-    } \
-    return *this; \
-  }
-# include "knowntypes.def"
-# undef FOREACHKNOWNTYPE
 
   template<class S>
   int Serie1D<S>::getRows() {
@@ -332,53 +263,6 @@ namespace H5 {
     delete[]buf;
     return data;
   }
-
-  template<class S>
-  Serie1D<S>& Serie1D<S>::operator>>(StreamManip s) {
-    dataToReadRow=s.getRow();
-    dataToRead=getRow(dataToReadRow);
-    dataToReadElementNr=0;
-    return *this;
-  }
-
-  template<class S>
-  Serie1D<S>& Serie1D<S>::operator>>(S& data) {
-    data=dataToRead;
-    dataToRead=getRow(dataToReadRow++);
-    return *this;
-  }
-
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  template<class S> \
-  Serie1D<S>& Serie1D<S>::operator>>(CTYPE& ele) { \
-    assert(memDataType.getMemberDataType(dataToReadElementNr)==H5TYPE); \
-    ele=*(CTYPE*)((char*)&dataToRead+structOffset[dataToReadElementNr]); \
-    dataToReadElementNr++; \
-    if(dataToReadElementNr>=memDataType.getNmembers()) { \
-      dataToRead=getRow(dataToReadRow++); \
-      dataToReadElementNr=0; \
-    } \
-    return *this; \
-  }
-# include "knowntypes.def"
-# undef FOREACHKNOWNTYPE
-
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  template<class S> \
-  Serie1D<S>& Serie1D<S>::operator>>(std::vector<CTYPE>& ele) { \
-    hsize_t dims[1]; \
-    memDataType.getMemberArrayType(dataToReadElementNr).getArrayDims(dims); \
-    assert(memDataType.getMemberDataType(dataToReadElementNr)==ArrayType(H5TYPE,1,dims)); \
-    ele=*(std::vector<CTYPE>*)((char*)&dataToRead+structOffset[dataToReadElementNr]); \
-    dataToReadElementNr++; \
-    if(dataToReadElementNr>=memDataType.getNmembers()) { \
-      dataToRead=getRow(dataToReadRow++); \
-      dataToReadElementNr=0; \
-    } \
-    return *this; \
-  }
-# include "knowntypes.def"
-# undef FOREACHKNOWNTYPE
   
   template<class S>
   std::vector<std::string> Serie1D<S>::getMemberLabel() {

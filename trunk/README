@@ -5,3 +5,7 @@ add h5serielist.exe
 add simpleattribute to RO.cc
 add simpledataset to RO.cc
 add serie1d to RO.cc
+
+===============================
+
+Stream operators added in rev. 4496 and deleted in rev. 4497.
