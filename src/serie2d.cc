@@ -8,7 +8,7 @@ namespace H5 {
   // template definitions
 
   template<class T>
-  Serie2D<T>::Serie2D() : DataSet(), memDataSpace(), dataToReadElementNr(0), dataToReadRow(0) {
+  Serie2D<T>::Serie2D() : DataSet(), memDataSpace() {
     T dummy;
     memDataType=toH5Type(dummy);
     dims[0]=0;
@@ -16,7 +16,7 @@ namespace H5 {
   }
 
   template<class T>
-  Serie2D<T>::Serie2D(const Serie2D<T>& dataset) : DataSet(dataset), dataToReadElementNr(0), dataToReadRow(0) {
+  Serie2D<T>::Serie2D(const Serie2D<T>& dataset) : DataSet(dataset) {
     T dummy;
     memDataType=toH5Type(dummy);
     DataSpace fileDataSpace=getSpace();
@@ -26,14 +26,14 @@ namespace H5 {
   }
 
   template<class T>
-  Serie2D<T>::Serie2D(const CommonFG& parent, const std::string& name) : dataToReadElementNr(0), dataToReadRow(0) {
+  Serie2D<T>::Serie2D(const CommonFG& parent, const std::string& name) {
     T dummy;
     memDataType=toH5Type(dummy);
     open(parent, name);
   }
 
   template<class T>
-  Serie2D<T>::Serie2D(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel) : dataToReadElementNr(0), dataToReadRow(0) {
+  Serie2D<T>::Serie2D(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel) {
     T dummy;
     memDataType=toH5Type(dummy);
     create(parent, name, columnLabel);
@@ -75,8 +75,6 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1]};
     memDataSpace=DataSpace(2, memDims);
-
-    if(dims[0]>0) dataToRead=getRow(0);
   }
 
   template<class T>
@@ -101,22 +99,6 @@ namespace H5 {
   void Serie2D<std::string>::append(const std::vector<std::string> &data);
 
   template<class T>
-  Serie2D<T>& Serie2D<T>::operator<<(const std::vector<T>& data) {
-    append(data);
-    return *this;
-  }
-
-  template<class T>
-  Serie2D<T>& Serie2D<T>::operator<<(const T& ele) {
-    dataToWrite.push_back(ele);
-    if(dataToWrite.size()==dims[1]) {
-      append(dataToWrite);
-      dataToWrite.clear();
-    }
-    return *this;
-  }
-
-  template<class T>
   std::vector<T> Serie2D<T>::getRow(const int row) {
     hsize_t start[]={row,0};
     hsize_t count[]={1, dims[1]};
@@ -129,32 +111,6 @@ namespace H5 {
   }
   template<>
   std::vector<std::string> Serie2D<std::string>::getRow(const int row);
-  
-  template<class T>
-  Serie2D<T>& Serie2D<T>::operator>>(StreamManip s) {
-    dataToReadRow=s.getRow();
-    dataToRead=getRow(dataToReadRow);
-    dataToReadElementNr=0;
-    return *this;
-  }
-
-  template<class T>
-  Serie2D<T>& Serie2D<T>::operator>>(std::vector<T>& data) {
-    data=dataToRead;
-    dataToRead=getRow(dataToReadRow++);
-    return *this;
-  }
-
-  template<class T>
-  Serie2D<T>& Serie2D<T>::operator>>(T& ele) {
-    ele=dataToRead[dataToReadElementNr];
-    dataToReadElementNr++;
-    if(dataToReadElementNr>=dims[1]) {
-      dataToRead=getRow(dataToReadRow++);
-      dataToReadElementNr=0;
-    }
-    return *this;
-  }
 
   template<class T>
   std::vector<T> Serie2D<T>::getColumn(const int column) {

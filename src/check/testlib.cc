@@ -480,9 +480,6 @@ int main() {
   data.push_back(3.4);
   ts.append(data);
   ts.append(data);
-  ts<<data<<data;
-  ts<<9.9<<8.8<<7.7;
-  ts<<9.9<<8.8<<7.7;
   vector<double> out;
   out=ts.getRow(1);
   for(int i=0; i<out.size(); i++) cout<<out[i]<<endl;
@@ -515,9 +512,6 @@ int main() {
   vector<string> outhead;
   outhead=ts.getColumnLabel();
   for(int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
-  ts>>gotoRow(1)>>data;
-  double a, b, c;
-  ts>>gotoRow(1)>>a>>b>>c;
   file.close();
   }
 
@@ -655,9 +649,6 @@ int main() {
   s1.append(data);
   data.d=7.1; data.f=2.2; data.s="teststr2"; data.v=vv; data.vs=vvstr; data.i=5;
   s1.append(data);
-  s1<<data<<data;
-  s1<<11.11<<vv<<vvstr<<(float)22.22<<string("operator")<<33;
-  s1<<11.11<<vv<<vvstr<<(float)22.22<<string("operator")<<33;
   file.close();
   }
   {
@@ -681,8 +672,6 @@ int main() {
   cout<<out.f<<endl;
   cout<<out.s<<endl;
   cout<<out.i<<endl;
-  s1>>gotoRow(1)>>out;
-  s1>>gotoRow(1)>>data.d>>data.v>>data.vs>>data.f>>data.s>>data.i;
   file.close();
   }
 
