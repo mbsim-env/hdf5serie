@@ -1,5 +1,5 @@
-#ifndef _SERIE1D_H_
-#define _SERIE1D_H_
+#ifndef _STRUCTSERIE_H_
+#define _STRUCTSERIE_H_
 
 #include <H5Cpp.h>
 #include <vector>
@@ -10,7 +10,7 @@
 namespace H5 {
 
   template<class S>
-  class Serie1D : public DataSet {
+  class StructSerie : public DataSet {
     private:
       CompType memDataType;
       DataSpace memDataSpace;
@@ -18,7 +18,7 @@ namespace H5 {
       bool firstCall;
       std::vector<int> structOffset;
     public:
-      Serie1D();
+      StructSerie();
 
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
       void insertMember(const S& s, const CTYPE& e, const std::string name);
@@ -46,7 +46,7 @@ namespace H5 {
 
 
   template<class S>
-  Serie1D<S>::Serie1D() : DataSet(), memDataType(), firstCall(true) {
+  StructSerie<S>::StructSerie() : DataSet(), memDataType(), firstCall(true) {
     dims[0]=0;
     hsize_t memDims[]={1};
     memDataSpace=DataSpace(1, memDims);
@@ -54,7 +54,7 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template<class S> \
-  void Serie1D<S>::insertMember(const S& s, const CTYPE& e, const std::string name) { \
+  void StructSerie<S>::insertMember(const S& s, const CTYPE& e, const std::string name) { \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \
     CompType oldMemDataType(memDataType); \
@@ -70,7 +70,7 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template<class S> \
-  void Serie1D<S>::insertMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name) { \
+  void StructSerie<S>::insertMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name) { \
     assert(e.size()==0 || e.size()==N); \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \
@@ -88,7 +88,7 @@ namespace H5 {
 # undef FOREACHKNOWNTYPE
 
   template<class S>
-  void Serie1D<S>::create(const CommonFG& parent, const std::string& name) {
+  void StructSerie<S>::create(const CommonFG& parent, const std::string& name) {
     assert(!firstCall);
     dims[0]=0;
     hsize_t maxDims[]={H5S_UNLIMITED};
@@ -103,7 +103,7 @@ namespace H5 {
   }
   
   template<class S>
-  void Serie1D<S>::open(const CommonFG& parent, const std::string& name) {
+  void StructSerie<S>::open(const CommonFG& parent, const std::string& name) {
     DataSet dataSet=parent.openDataSet(name);
     p_setId(dataSet.getId());
     incRefCount();
@@ -125,12 +125,12 @@ namespace H5 {
   }
   
   template<class S>
-  void Serie1D<S>::setDescription(const std::string& description) {
+  void StructSerie<S>::setDescription(const std::string& description) {
     SimpleAttribute<std::string> desc(*this, "Description", description);
   }
   
   template<class S>
-  std::string Serie1D<S>::getDescription() {
+  std::string StructSerie<S>::getDescription() {
     // save and disable c error printing
     H5E_auto2_t func;
     void* client_data;
@@ -150,7 +150,7 @@ namespace H5 {
   }
   
   template<class S>
-  void Serie1D<S>::append(const S& data) {
+  void StructSerie<S>::append(const S& data) {
     dims[0]++;
     DataSet::extend(dims);
   
@@ -202,7 +202,7 @@ namespace H5 {
   }
 
   template<class S>
-  int Serie1D<S>::getRows() {
+  int StructSerie<S>::getRows() {
     //////////
     return dims[0];
     //////////
@@ -213,12 +213,12 @@ namespace H5 {
   }
   
   template<class S>
-  int Serie1D<S>::getMembers() {
+  int StructSerie<S>::getMembers() {
     return memDataType.getNmembers();
   }
   
   template<class S>
-  S Serie1D<S>::getRow(const int row) {
+  S StructSerie<S>::getRow(const int row) {
     hsize_t start[]={row};
     hsize_t count[]={1};
     DataSpace fileDataSpace=getSpace();
@@ -265,7 +265,7 @@ namespace H5 {
   }
   
   template<class S>
-  std::vector<std::string> Serie1D<S>::getMemberLabel() {
+  std::vector<std::string> StructSerie<S>::getMemberLabel() {
     std::vector<std::string> ret;
     for(int i=0; i<memDataType.getNmembers(); i++)
       ret.push_back(memDataType.getMemberName(i));
@@ -273,7 +273,7 @@ namespace H5 {
   }
   
   template<class S>
-  void Serie1D<S>::extend(const hsize_t* size) {
+  void StructSerie<S>::extend(const hsize_t* size) {
     assert(1);
   }
 

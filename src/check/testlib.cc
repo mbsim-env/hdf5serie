@@ -1,7 +1,7 @@
 #include <config.h>
 #include <H5Cpp.h>
-#include <serie2d.h>
-#include <serie1d.h>
+#include <vectorserie.h>
+#include <structserie.h>
 #include <simpleattribute.h>
 #include <simpledataset.h>
 #include <iostream>
@@ -467,7 +467,7 @@ int main() {
   cout<<"TIMESERIE\n";
   {
   H5File file("test2d.h5", H5F_ACC_TRUNC);
-  Serie2D<double> ts;
+  VectorSerie<double> ts;
   vector<string> colhead;
   colhead.push_back("col1");
   colhead.push_back("col22");
@@ -491,14 +491,14 @@ int main() {
   for(int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
 
   Group grp1=file.createGroup("mygrp1");
-  Serie2D<double> ts2;
+  VectorSerie<double> ts2;
   ts2.create(grp1, "timeserie", colhead);
   ts2.setDescription("mydesctipsldfk");
   file.close();
   }
   {
   H5File file("test2d.h5", H5F_ACC_RDWR);
-  Serie2D<double> ts;
+  VectorSerie<double> ts;
   ts.open(file, "timeserie");
   cout<<ts.getDescription()<<endl;
   vector<double> data;
@@ -626,7 +626,7 @@ int main() {
   cout<<"SERIE1D\n";
   {
   H5File file("testcompound.h5", H5F_ACC_TRUNC);
-  Serie1D<MyStruct> s1;
+  StructSerie<MyStruct> s1;
   MyStruct data;
   s1.insertMember(data, data.d, "mydouble");
   s1.insertMember(data, data.v, 3, "myvector");
@@ -653,7 +653,7 @@ int main() {
   }
   {
   H5File file("testcompound.h5", H5F_ACC_RDONLY);
-  Serie1D<MyStruct> s1;
+  StructSerie<MyStruct> s1;
   MyStruct data;
   s1.insertMember(data, data.d, "mydouble");
   s1.insertMember(data, data.v, 3, "myvector");

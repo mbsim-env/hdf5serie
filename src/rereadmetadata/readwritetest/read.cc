@@ -1,7 +1,7 @@
 #include <config.h>
 #include <h5filero.h>
-#include <serie2dro.h>
-#include <serie1dro.h>
+#include <vectorseriero.h>
+#include <structseriero.h>
 #include <iostream>
 
 using namespace std;
@@ -17,9 +17,9 @@ int main() {
   file.openFile("test.h5", H5F_ACC_RDONLY);
   GroupRO grp=file.openGroup("mygrp");
   GroupRO grp2=grp.openGroup("mygrp2");
-  Serie2DRO<double> ts;
+  VectorSerieRO<double> ts;
   ts.open(grp2, "ts");
-  Serie1DRO<St> ts1d;
+  StructSerieRO<St> ts1d;
   St s;
   ts1d.insertMember(s, s.d, "mydouble");
   ts1d.insertMember(s, s.i, "myint");

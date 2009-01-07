@@ -1,6 +1,6 @@
 #include <config.h>
-#include <serie2d.h>
-#include <serie1d.h>
+#include <vectorserie.h>
+#include <structserie.h>
 #include <simpledataset.h>
 #include <iostream>
 #include <iomanip>
@@ -28,11 +28,11 @@ int main(int argc, char* argv[]) {
   if(arg.size()==0 ||
      find(arg.begin(), arg.end(), "-h")!=arg.end() ||
      find(arg.begin(), arg.end(), "--help")!=arg.end() ) {
-    cout<<"Dumps two dimensional datasets of simple datatype and one dimensional dataset"<<endl;
+    cout<<"Dumps two dimensional datasets of simple datatype and one dimensional datasets"<<endl;
     cout<<"of compound datatype as a space separated table."<<endl;
-    cout<<"If more file/datasets (DATA) are given the output tabel will be merged"<<endl;
-    cout<<"row-wise. If the number of rows in multi dataset output differs, <nan> will be"<<endl;
-    cout<<"appended for to short datasets."<<endl;
+    cout<<"If more file/datasets (DATAs) are given the output tabel will be merged"<<endl;
+    cout<<"row-wise. If the number of rows in multi DATA output differs, <nan> will be"<<endl;
+    cout<<"appended to too short DATAs."<<endl;
     cout<<endl;
     cout<<"Usage:"<<endl;
     cout<<"  h5dumpserie [options] DATA [DATA] ..."<<endl;
@@ -47,8 +47,8 @@ int main(int argc, char* argv[]) {
     cout<<"      -h, --help: show this help"<<endl;
     cout<<"      -c <string>: use <string> as comment in header (Default '#')"<<endl;
     cout<<"      -s: suppress header"<<endl;
-    cout<<"      -q <quote>: use <quote> to quote string in output (Default '\"')"<<endl;
-    cout<<"      -n <nan>: use <nan> for not a number in output (Default 'nan')"<<endl;
+    cout<<"      -q <quote>: use <quote> to quote strings in output (Default '\"')"<<endl;
+    cout<<"      -n <nan>: use <nan> for 'not a number' in output (Default 'nan')"<<endl;
     cout<<endl;
     cout<<"Example:"<<endl;
     cout<<"  h5dumpserie dir/test1.h5/grp1/grp2/mydata:1,3,5-,2 dir/test1.h5/mydata:-4"<<endl;

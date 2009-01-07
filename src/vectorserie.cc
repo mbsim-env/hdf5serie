@@ -1,5 +1,5 @@
 #include <config.h>
-#include <serie2d.h>
+#include <vectorserie.h>
 
 using namespace std;
 
@@ -8,7 +8,7 @@ namespace H5 {
   // template definitions
 
   template<class T>
-  Serie2D<T>::Serie2D() : DataSet(), memDataSpace() {
+  VectorSerie<T>::VectorSerie() : DataSet(), memDataSpace() {
     T dummy;
     memDataType=toH5Type(dummy);
     dims[0]=0;
@@ -16,7 +16,7 @@ namespace H5 {
   }
 
   template<class T>
-  Serie2D<T>::Serie2D(const Serie2D<T>& dataset) : DataSet(dataset) {
+  VectorSerie<T>::VectorSerie(const VectorSerie<T>& dataset) : DataSet(dataset) {
     T dummy;
     memDataType=toH5Type(dummy);
     DataSpace fileDataSpace=getSpace();
@@ -26,21 +26,21 @@ namespace H5 {
   }
 
   template<class T>
-  Serie2D<T>::Serie2D(const CommonFG& parent, const std::string& name) {
+  VectorSerie<T>::VectorSerie(const CommonFG& parent, const std::string& name) {
     T dummy;
     memDataType=toH5Type(dummy);
     open(parent, name);
   }
 
   template<class T>
-  Serie2D<T>::Serie2D(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel) {
+  VectorSerie<T>::VectorSerie(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel) {
     T dummy;
     memDataType=toH5Type(dummy);
     create(parent, name, columnLabel);
   }
 
   template<class T>
-  void Serie2D<T>::create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel) {
+  void VectorSerie<T>::create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel) {
     dims[0]=0;
     dims[1]=columnLabel.size();
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
@@ -59,7 +59,7 @@ namespace H5 {
   }
 
   template<class T>
-  void Serie2D<T>::open(const CommonFG& parent, const std::string& name) {
+  void VectorSerie<T>::open(const CommonFG& parent, const std::string& name) {
     DataSet dataset=parent.openDataSet(name);
     p_setId(dataset.getId());
     incRefCount();
@@ -78,12 +78,12 @@ namespace H5 {
   }
 
   template<class T>
-  void Serie2D<T>::setDescription(const std::string& description) {
+  void VectorSerie<T>::setDescription(const std::string& description) {
     SimpleAttribute<std::string> desc(*this, "Description", description);
   }
 
   template<class T>
-  void Serie2D<T>::append(const std::vector<T> &data) {
+  void VectorSerie<T>::append(const std::vector<T> &data) {
     assert(data.size()==dims[1]);
     dims[0]++;
     DataSet::extend(dims);
@@ -96,10 +96,10 @@ namespace H5 {
     write(&data[0], memDataType, memDataSpace, fileDataSpace);
   }
   template<>
-  void Serie2D<std::string>::append(const std::vector<std::string> &data);
+  void VectorSerie<std::string>::append(const std::vector<std::string> &data);
 
   template<class T>
-  std::vector<T> Serie2D<T>::getRow(const int row) {
+  std::vector<T> VectorSerie<T>::getRow(const int row) {
     hsize_t start[]={row,0};
     hsize_t count[]={1, dims[1]};
     DataSpace fileDataSpace=getSpace();
@@ -110,10 +110,10 @@ namespace H5 {
     return data;
   }
   template<>
-  std::vector<std::string> Serie2D<std::string>::getRow(const int row);
+  std::vector<std::string> VectorSerie<std::string>::getRow(const int row);
 
   template<class T>
-  std::vector<T> Serie2D<T>::getColumn(const int column) {
+  std::vector<T> VectorSerie<T>::getColumn(const int column) {
     hsize_t rows=getRows();
     hsize_t start[]={0, column};
     hsize_t count[]={rows, 1};
@@ -127,10 +127,10 @@ namespace H5 {
     return data;
   }
   template<>
-  std::vector<std::string> Serie2D<std::string>::getColumn(const int column);
+  std::vector<std::string> VectorSerie<std::string>::getColumn(const int column);
 
   template<class T>
-  std::string Serie2D<T>::getDescription() {
+  std::string VectorSerie<T>::getDescription() {
     // save and disable c error printing
     H5E_auto2_t func;
     void* client_data;
@@ -150,7 +150,7 @@ namespace H5 {
   }
 
   template<class T>
-  std::vector<std::string> Serie2D<T>::getColumnLabel() {
+  std::vector<std::string> VectorSerie<T>::getColumnLabel() {
     // save and disable c error printing
     H5E_auto2_t func;
     void* client_data;
@@ -170,7 +170,7 @@ namespace H5 {
   }
 
   template<class T>
-  void Serie2D<T>::extend(const hsize_t* size) {
+  void VectorSerie<T>::extend(const hsize_t* size) {
     assert(1);
   }
 
@@ -179,7 +179,7 @@ namespace H5 {
   // explizit template spezialisations
 
   template<>
-  void Serie2D<string>::append(const vector<string> &data) {
+  void VectorSerie<string>::append(const vector<string> &data) {
     assert(data.size()==dims[1]);
     dims[0]++;
     DataSet::extend(dims);
@@ -200,7 +200,7 @@ namespace H5 {
   }
   
   template<>
-  vector<string> Serie2D<string>::getRow(const int row) {
+  vector<string> VectorSerie<string>::getRow(const int row) {
     hsize_t start[]={row,0};
     hsize_t count[]={1, dims[1]};
     DataSpace fileDataSpace=getSpace();
@@ -218,7 +218,7 @@ namespace H5 {
   }
   
   template<>
-  vector<string> Serie2D<string>::getColumn(const int column) {
+  vector<string> VectorSerie<string>::getColumn(const int column) {
     hsize_t rows=getRows();
     hsize_t start[]={0, column};
     hsize_t count[]={rows, 1};
@@ -243,7 +243,7 @@ namespace H5 {
   // explizit template instantations
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  template class Serie2D<CTYPE>;
+  template class VectorSerie<CTYPE>;
 # include "knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
