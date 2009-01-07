@@ -1,6 +1,6 @@
 #include <config.h>
-#include <serie2d.h>
-#include <serie1d.h>
+#include <vectorserie.h>
+#include <structserie.h>
 #include <iostream>
 
 using namespace std;
@@ -16,8 +16,8 @@ int main() {
 
   Group grp=file.createGroup("mygrp");
   Group grp2=grp.createGroup("mygrp2");
-  Serie2D<double> ts(grp2, "ts", vector<string>(4));
-  Serie1D<St> ts1d;
+  VectorSerie<double> ts(grp2, "ts", vector<string>(4));
+  StructSerie<St> ts1d;
   St s;
   ts1d.insertMember(s, s.d, "mydouble");
   ts1d.insertMember(s, s.i, "myint");

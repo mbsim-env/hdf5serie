@@ -11,5 +11,5 @@ hdf5rereadmetadataincludedir = $(includedir)/hdf5serie
 hdf5rereadmetadatainclude_HEADERS = h5filero.h \
   groupro.h \
   base.h \
-  serie2dro.h \
-  serie1dro.h
+  structseriero.h \
+  vectorseriero.h

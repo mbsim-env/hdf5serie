@@ -1,5 +1,5 @@
-#ifndef _SERIE2D_H_
-#define _SERIE2D_H_
+#ifndef _VECTORSERIE_H_
+#define _VECTORSERIE_H_
 
 #include <H5Cpp.h>
 #include <vector>
@@ -10,16 +10,16 @@
 namespace H5 {
    
   template<class T>
-  class Serie2D : public DataSet {
+  class VectorSerie : public DataSet {
     private:
       DataType memDataType;
       DataSpace memDataSpace;
       hsize_t dims[2];
     public:
-      Serie2D();
-      Serie2D(const Serie2D<T>& dataset);
-      Serie2D(const CommonFG& parent, const std::string& name);
-      Serie2D(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel);
+      VectorSerie();
+      VectorSerie(const VectorSerie<T>& dataset);
+      VectorSerie(const CommonFG& parent, const std::string& name);
+      VectorSerie(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel);
       void create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel);
       void open(const CommonFG& parent, const std::string& name);
       void setDescription(const std::string& desc);
@@ -39,7 +39,7 @@ namespace H5 {
   // inline definitions
 
   template<class T>
-  int Serie2D<T>::getRows() {
+  int VectorSerie<T>::getRows() {
     //////////
     return dims[0];
     //////////
@@ -50,7 +50,7 @@ namespace H5 {
   }
 
   template<class T>
-  int Serie2D<T>::getColumns() {
+  int VectorSerie<T>::getColumns() {
     return dims[1];
   }
 

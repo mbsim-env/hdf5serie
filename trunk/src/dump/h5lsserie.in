@@ -1,0 +1,31 @@
+#! /usr/bin/python
+
+import os
+import re
+import sys
+
+if len(sys.argv)!=2:
+  print 'Usage h5lsserie <filename>'
+
+result=os.popen('@h5ls@ -rv '+sys.argv[1]).read()
+line=result.split('\n')
+for i in range(0,len(line)):
+  if re.match('^/',line[i]):
+    print line[i]
+  if re.match('^ +Attribute: +Description +scalar$',line[i]):
+    print '    Description:',
+    print re.sub('^.*"([^"]*)".*$',r'\1',line[i+2])
+
+#  # Output "Meber Labels" and "Column Labels" (ALPHA)
+#  if re.match('^ +Type: +struct +{',line[i]):
+#    print '    Member Labels:'
+#    j=0
+#    while 1<2:
+#      j=j+1
+#      if re.match('^ +}',line[i+j]):
+#        break
+#      print '        '+re.sub('^.*"([^"]*)".*$',r'\1',line[i+j])
+#  if re.match('^ +Attribute: +Column\\\ Label ',line[i]):
+#    print '    Column Label:'
+#    print '        ',
+#    print re.sub('^[^"]*(".*").*$',r'\1',line[i+2])
