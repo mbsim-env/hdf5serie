@@ -9,22 +9,120 @@
 
 namespace H5 {
 
+  /** \brief A scalar, vector or matrix attribute
+   *
+   * A HDF5 attribute of a scalar a vector or a matrix of fixed size of type CTYPE.
+   * CTYPE can be one of the folling types.
+   * - char
+   * - signed char
+   * - unsigned char
+   * - short
+   * - unsigned short
+   * - int
+   * - unsigned int
+   * - long
+   * - unsigned long
+   * - long long
+   * - unsigned long long
+   * - float
+   * - double
+   * - long double
+   * - std::string
+   *
+   * The template type T is simple CTYPE for a scalar, std::vector<CTYPE> for a vector
+   * and std::vector<std::vector<CTYPE> > for a matrix.
+   */
   template<class T>
   class SimpleAttribute : public Attribute {
     private:
       DataType memDataType;
     public:
+      /** \brief A stub constructor */
       SimpleAttribute();
+
+      /** \brief Copy constructor */
       SimpleAttribute(const SimpleAttribute<T>& attribute);
+
+      /** \brief Constructor for opening or creating a attribute
+       *
+       * For a scalar value T=CTYPE: 
+       * If \a create is true see create(), if \a create is false see open()
+       *
+       * For a vector value T=std::vector<CTYPE>:
+       * The declaration of this function is 
+       * SimpleAttribute(const DataSet& parent, const std::string& name, int count=0)
+       * If \a count is not 0 see create(), if \a create is 0 see open()
+       *
+       * For a matrix value T=std::vector<std::vector<CTYPE> >:
+       * The declaration of this function is 
+       * SimpleAttribute(const DataSet& parent, const std::string& name, int rows=0, int columns=0)
+       * If \a rows is not 0 and \a column is not 0 see create(), if \a rows and \a columns is 0 see open()
+       */
       SimpleAttribute(const DataSet& parent, const std::string& name, bool create=false);
+
+      /** \brief Constructor for creating and writing a attribute
+       *
+       * See create() and write().
+       */
       SimpleAttribute(const DataSet& parent, const std::string& name, const T& data);
+
+      /** Creating a attribute
+       *
+       * For a scalar value T=CTYPE: 
+       * Creates a scalar attribute named \a name as a child of \a parent.
+       *
+       * For a vector value T=std::vector<CTYPE>:
+       * The declaration of this function is 
+       * void create(const DataSet& parent, const std::string& name, int count);
+       * Creates a vector attribute of size \a count named \a name as a child of \a parent.
+       *
+       * For a matrix value T=std::vector<std::vector<CTYPE> >:
+       * The declaration of this function is 
+       * void create(const DataSet& parent, const std::string& name, int rows, int columns);
+       * Creates a matrix attribute of size \a count x \a columns named \a name as a child of \a parent.
+       */
       void create(const DataSet& parent, const std::string& name);
+
+      /** \brief Open a attribute
+       *
+       * Opens the attribute named \a name as a child of position \a parent.
+       */
       void open(const DataSet& parent, const std::string& name);
+
+      /** \brief Write data
+       *
+       * Writes the data \a data to the HDF5 file
+       */
       void write(const T& data);
+
+      /** \brief Read data
+       *
+       * Read the data from the HDF5 file
+       */
       T read();
+
+      /** \brief Creating and write a attribute
+       *
+       * See create() and write().
+       */
       void write(const DataSet& parent, const std::string& name, const T& data);
+
+      /** \brief Open and read data
+       *
+       * See open() and read()
+       */
       T read(const DataSet& parent, const std::string& name);
+
+      /** Static open and read data.
+       *
+       * This function can be called statically. See open() and read()
+       */
       static T getData(const DataSet& parent, const std::string& name);
+
+      /** Static open and read data.
+       *
+       * This function can be called statically. See open() and read()
+       */
       static T getData(const CommonFG& parent, const std::string& name);
   };
 

@@ -19,8 +19,8 @@ int main() {
   VectorSerie<double> ts(grp2, "ts", vector<string>(4));
   StructSerie<St> ts1d;
   St s;
-  ts1d.insertMember(s, s.d, "mydouble");
-  ts1d.insertMember(s, s.i, "myint");
+  ts1d.registerMember(s, s.d, "mydouble");
+  ts1d.registerMember(s, s.i, "myint");
   ts1d.create(grp2, "ts1d");
   vector<double> data(4);
   int i=0;

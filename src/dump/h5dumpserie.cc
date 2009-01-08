@@ -9,6 +9,28 @@
 using namespace H5;
 using namespace std;
 
+/** \page h5dumpserie Program h5dumpserie
+ * 
+ * The program h5dumpserie can be used to dump the content of a HDF5 file
+ * created by this library as a ascii table. This ascii table can then be
+ * read by programs like gnuplot, ...
+ *
+ * See the output of "h5dumpserie -h" - which is given (unformated) below - for a detailed description:
+ *
+ * \verbinclude h5dumpserie.txt
+ */
+
+/** \page h5lsserie Program h5lsserie
+ *
+ * The program h5lsserie can be used to list the content of a HDF5 file.
+ * If a dataset has been created by this library then the description
+ * attribute of the dataset is also be shown.
+ *
+ * Usage:
+ *
+ * h5lsserie <filename.h5>
+ */
+
 string comment="#";
 string quote="\"";
 string nan="nan";
@@ -28,30 +50,9 @@ int main(int argc, char* argv[]) {
   if(arg.size()==0 ||
      find(arg.begin(), arg.end(), "-h")!=arg.end() ||
      find(arg.begin(), arg.end(), "--help")!=arg.end() ) {
-    cout<<"Dumps two dimensional datasets of simple datatype and one dimensional datasets"<<endl;
-    cout<<"of compound datatype as a space separated table."<<endl;
-    cout<<"If more file/datasets (DATAs) are given the output tabel will be merged"<<endl;
-    cout<<"row-wise. If the number of rows in multi DATA output differs, <nan> will be"<<endl;
-    cout<<"appended to too short DATAs."<<endl;
-    cout<<endl;
-    cout<<"Usage:"<<endl;
-    cout<<"  h5dumpserie [options] DATA [DATA] ..."<<endl;
-    cout<<"    DATA: FILENAME/DATASET[:COLUMNS]"<<endl;
-    cout<<"      FILENAME: <dir/to/hdf5/file/filetodump.h5>"<<endl;
-    cout<<"      DATASET: <dir/to/dataset/in/hdf5file/datasettodump>"<<endl;
-    cout<<"      COLUMNS: COL|RANGE[,COL|RANGE]... (dump all columns if not given)"<<endl;
-    cout<<"        COL: column/member number in dataset to dump (starting with 1)"<<endl;
-    cout<<"        RANGE: [BEGINCOL]-[ENDCOL] dump columns from BEGINCOL to ENDCOL"<<endl;
-    cout<<"          (use 1/last if not given)"<<endl;
-    cout<<"    options:"<<endl;
-    cout<<"      -h, --help: show this help"<<endl;
-    cout<<"      -c <string>: use <string> as comment in header (Default '#')"<<endl;
-    cout<<"      -s: suppress header"<<endl;
-    cout<<"      -q <quote>: use <quote> to quote strings in output (Default '\"')"<<endl;
-    cout<<"      -n <nan>: use <nan> for 'not a number' in output (Default 'nan')"<<endl;
-    cout<<endl;
-    cout<<"Example:"<<endl;
-    cout<<"  h5dumpserie dir/test1.h5/grp1/grp2/mydata:1,3,5-,2 dir/test1.h5/mydata:-4"<<endl;
+     cout<<
+#    include "h5dumpserie.txt"
+     ;
     return 0;
   }
 
