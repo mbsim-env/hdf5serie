@@ -21,8 +21,8 @@ int main() {
   ts.open(grp2, "ts");
   StructSerieRO<St> ts1d;
   St s;
-  ts1d.insertMember(s, s.d, "mydouble");
-  ts1d.insertMember(s, s.i, "myint");
+  ts1d.registerMember(s, s.d, "mydouble");
+  ts1d.registerMember(s, s.i, "myint");
   ts1d.open(grp2, "ts1d");
   vector<double> data;
   while(1) {

@@ -9,6 +9,31 @@
 
 namespace H5 {
 
+  /** \brief Serie of structs (compount datas).
+   *
+   * A HDF5 dataset for reading and writing a serie of structs (compount datas).
+   * The type of each data of the struct can be of:
+   *   - char
+   *   - signed char
+   *   - unsigned char
+   *   - short
+   *   - unsigned short
+   *   - int
+   *   - unsigned int
+   *   - long
+   *   - unsigned long
+   *   - long long
+   *   - unsigned long long
+   *   - float
+   *   - double
+   *   - long double
+   *   - std::string
+   *
+   * Or a vector of fixed lenght of this type.
+   *
+   * The data is stored as a 1D array in the HDF5 file. Each element in the
+   * array is one struct.
+  */
   template<class S>
   class StructSerie : public DataSet {
     private:
@@ -18,26 +43,111 @@ namespace H5 {
       bool firstCall;
       std::vector<int> structOffset;
     public:
+      /** \brief A stub constructor
+       *
+       * Creates a empty object.
+      */
       StructSerie();
 
+#ifdef PARSED_BY_DOXYGEN
+// Use this code section if doxygen is running to generate documentation.
+      /** \brief Register a scalar member of the struct
+       *
+       * Register a scalar member of type CTYPE of the struct S and set the corrospondending member
+       * label to \a name.
+       * The type CTYPE can be one of the types defined in the class description.
+       *
+       * Example:
+       * \code
+struct S {
+  int i;
+  std::string s;
+  std::vector<double> vd;
+}
+StructSerie<S> serie;
+S s;
+serie.registerMember(s, s.i, "Integer Value");
+serie.registerMember(s, s.s, "String Value");
+serie.registerMember(s, s.vd, 3, "Vector of 3 doubles");
+serie.create(parent, "mystructserie");
+       * \endcode
+      */
+      void registerMember(const S& s, const CTYPE& e, const std::string name);
+
+      /** \brief Register a vector member of the struct
+       *
+       * Register a vector member of lenght \a N of type std::vector<CTYPE> of the struct S
+       * and set the corrospondending member label to \a name.
+       * Also see registerMember(const S& s, const CTYPE& e, const std::string name);
+      */
+      void registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name);
+#else
+// Use this code section else
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      void insertMember(const S& s, const CTYPE& e, const std::string name);
+      void registerMember(const S& s, const CTYPE& e, const std::string name);
 #     include "knowntypes.def"
 #     undef FOREACHKNOWNTYPE
 
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      void insertMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name);
+      void registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name);
 #     include "knowntypes.def"
 #     undef FOREACHKNOWNTYPE
+#endif
 
+      /** \brief Creating a dataset
+       *
+       * Creates a dataset named \a name as a child of position \a parent.
+       * NOTE that the object can not be created before the members of the struct
+       * are registered using registerMember(const S& s, const CTYPE& e, const std::string name) or
+       * registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name)
+      */
       void create(const CommonFG& parent, const std::string& name);
+
+      /** \brief Open a dataset
+       *
+       * Opens the dataset named \a name as a child of position \a parent.
+       * NOTE that the object can not be opened before the members of the struct
+       * are registered using registerMember(const S& s, const CTYPE& e, const std::string name) or
+       * registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name)
+       */
       void open(const CommonFG& parent, const std::string& name);
+
+      /** \brief Sets a description for the dataset
+       *
+       * The value of \a desc is stored as an string attribute named \p Description in the dataset.
+       */
       void setDescription(const std::string& desc);
+
+      /** \brief Return the description for the dataset
+       *
+       * Returns the value of the string attribute named \p Description of the dataset.
+       */
       std::string getDescription();
+
+      /** \brief Append a data struct
+       *
+       * Appends the data struct \a data at the end of the dataset.
+       * The number of elements of the HDF5 array will be incremented by this operation.
+       */
       void append(const S& data);
+
+      /** \brief Returns the number of elements in the dataset */
       inline int getRows();
+
+      /** \brief Returns the number of members in the struct */
       inline int getMembers();
+
+      /** \brief Returns the data struct at element \a row
+       *
+       * The first element is 0. The last avaliable element ist getRows()-1.
+       */
       S getRow(const int row);
+
+      /** \brief Returns the member labels
+       *
+       * Returns the value of the string vector of all member labels in
+       * the dataset.
+       */
       std::vector<std::string> getMemberLabel();
 
       void extend(const hsize_t* size);
@@ -54,7 +164,7 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template<class S> \
-  void StructSerie<S>::insertMember(const S& s, const CTYPE& e, const std::string name) { \
+  void StructSerie<S>::registerMember(const S& s, const CTYPE& e, const std::string name) { \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \
     CompType oldMemDataType(memDataType); \
@@ -70,7 +180,7 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template<class S> \
-  void StructSerie<S>::insertMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name) { \
+  void StructSerie<S>::registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name) { \
     assert(e.size()==0 || e.size()==N); \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \
@@ -104,6 +214,7 @@ namespace H5 {
   
   template<class S>
   void StructSerie<S>::open(const CommonFG& parent, const std::string& name) {
+    assert(!firstCall);
     DataSet dataSet=parent.openDataSet(name);
     p_setId(dataSet.getId());
     incRefCount();
