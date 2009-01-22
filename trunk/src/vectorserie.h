@@ -32,6 +32,14 @@ namespace H5 {
    *   - std::string
    *
    * The data is stored as a 2D array in the HDF5 file. Each row is onw data vector.
+   *
+   * A Note when using a vector-matrix-library:
+   * It is likly that the data in calculated by using a vector-matrix-library. If so,
+   * and the vector object (of type T) of the library (e.g. fmatvec from fmatvec.berlios.de) has a cast-operator
+   * to std::vector<T> and a constructor with a single parameter of type
+   * std::vector<T>, then you can use the vector-object wherever a object of type
+   * std::vector<T> is needed. E.g. in append(const std::vector<T>) or the return value of getRow(int r).
+   * The same applies to a matrix-object for std::vector<std::vector<T> >.
   */
   template<class T>
   class VectorSerie : public DataSet {

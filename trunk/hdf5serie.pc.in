@@ -3,6 +3,9 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
+#DOXYGENTAGFILES=@datadir@/doc/@PACKAGE@-@VERSION@/@PACKAGE@-@VERSION@.tag @DOXYGENDEPTAGFILES@
+DOXYGENTAGFILES=@datadir@/doc/@PACKAGE@-@VERSION@/@PACKAGE@-@VERSION@.tag
+
 Name: hdf5serie
 Description: A c++ wrapper for HDF5 to write data series
 Requires: 

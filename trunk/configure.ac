@@ -1,5 +1,5 @@
 AC_PREREQ(2.61)
-AC_INIT([hdf5serie],[1.0.0],[mafriedrich@users.berlios.de])
+AC_INIT([hdf5serie],[0.1.0],[mafriedrich@users.berlios.de])
 AC_CONFIG_SRCDIR([src/toh5type.cc])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
@@ -20,6 +20,8 @@ AC_PATH_PROG([doxygen],[doxygen],[no],[$doxygenpath:$PATH])
 if test $doxygen = "no" ; then
   AC_MSG_RESULT([can't generate API documentation. 'doxygen' is required.])
 fi
+#DOXYGENDEPTAGFILES=$(pkg-config deppackage --variable=DOXYGENTAGFILES)
+#AC_SUBST([DOXYGENDEPTAGFILES])
 
 dnl Check for hdf5 library
 AC_ARG_WITH(hdf5_prefix,

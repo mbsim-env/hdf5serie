@@ -2,10 +2,10 @@
 #define _TOH5TYPE_H_
 
 
-/** \mainpage HDF5Serie API Documentation
+/** \mainpage HDF5Serie API Documentation (Alpha; To be Reviewed)
  *
  * This library is a high level programming interface to the HDF5 library for
- * reading and writing data series. Thereby a data consists of a vector of
+ * reading and writing data series. A data consists of a vector of
  * equal simple types or a compount of diffrent simple types.
  *
  * The following code shows a usage example of the library.

@@ -24,7 +24,7 @@ using namespace std;
  *
  * The program h5lsserie can be used to list the content of a HDF5 file.
  * If a dataset has been created by this library then the description
- * attribute of the dataset is also be shown.
+ * attribute of the dataset is also shown.
  *
  * Usage:
  *
