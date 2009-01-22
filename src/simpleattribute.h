@@ -31,6 +31,8 @@ namespace H5 {
    *
    * The template type T is simple CTYPE for a scalar, std::vector<CTYPE> for a vector
    * and std::vector<std::vector<CTYPE> > for a matrix.
+   *
+   * A NOTE if using a vector-matrix-library: See class description of VectorSerie.
    */
   template<class T>
   class SimpleAttribute : public Attribute {
