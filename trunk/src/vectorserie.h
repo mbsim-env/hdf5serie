@@ -101,7 +101,7 @@ namespace H5 {
       inline int getRows();
 
       /** \brief Returns the number of columns(=number of data elements) in the dataset */
-      inline int getColumns();
+      inline unsigned int getColumns();
 
       /** \brief Returns the data vector at row \a row
        *
@@ -147,7 +147,7 @@ namespace H5 {
   }
 
   template<class T>
-  int VectorSerie<T>::getColumns() {
+  unsigned int VectorSerie<T>::getColumns() {
     return dims[1];
   }
 

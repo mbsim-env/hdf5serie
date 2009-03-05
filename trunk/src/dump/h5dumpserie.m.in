@@ -1,0 +1,25 @@
+function D=h5dumpserie(filedata)
+  TMP=tempname('/dev/shm');
+  fid=fopen(TMP, 'w');
+  if fid>0
+    fclose(fid);
+  elseif
+    TMP=tempname('/tmp');
+    fid=fopen(TMP, 'w');
+    if fid>0
+      fclose(fid);
+    elseif
+      TMP=tempname('.');
+      fid=fopen(TMP, 'w');
+      if fid>0
+        fclose(fid);
+      elseif
+        error("No write permission found!");
+        D=[];
+      end
+    end
+  end
+
+  system(['@prefix@/bin/h5dumpserie ' filedata ' > ' TMP]);
+  D=load(TMP);
+  delete(TMP);

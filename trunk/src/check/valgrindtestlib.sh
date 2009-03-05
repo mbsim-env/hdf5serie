@@ -7,5 +7,5 @@ if [ $? -ne 0 ]; then
   echo "Skipping valgrind test of testlib"
   exit 0
 else
-  valgrind --error-exitcode=1 .libs/lt-testlib
+  valgrind --error-exitcode=1 ./testlib
 fi

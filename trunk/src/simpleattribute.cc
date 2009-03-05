@@ -21,7 +21,7 @@ namespace H5 {
   }
 
   template<class T>
-  SimpleAttribute<T>::SimpleAttribute(const DataSet& parent, const string& name, bool create_) : Attribute() {
+  SimpleAttribute<T>::SimpleAttribute(const H5Object& parent, const string& name, bool create_) : Attribute() {
     T dummy;
     memDataType=toH5Type(dummy);
     if(create_)
@@ -31,14 +31,14 @@ namespace H5 {
   }
 
   template<class T>
-  SimpleAttribute<T>::SimpleAttribute(const DataSet& parent, const string& name, const T& data) : Attribute() {
+  SimpleAttribute<T>::SimpleAttribute(const H5Object& parent, const string& name, const T& data) : Attribute() {
     T dummy;
     memDataType=toH5Type(dummy);
     write(parent, name, data);
   }
 
   template<class T>
-  void SimpleAttribute<T>::create(const DataSet& parent, const string& name) {
+  void SimpleAttribute<T>::create(const H5Object& parent, const string& name) {
     DataSpace dataSpace(0, NULL);
     Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
     p_setId(attribute.getId());
@@ -46,7 +46,7 @@ namespace H5 {
   }
 
   template<class T>
-  void SimpleAttribute<T>::open(const DataSet& parent, const string& name) {
+  void SimpleAttribute<T>::open(const H5Object& parent, const string& name) {
     Attribute attribute=parent.openAttribute(name);
     p_setId(attribute.getId());
     incRefCount();
@@ -74,31 +74,27 @@ namespace H5 {
   string SimpleAttribute<string>::read();
 
   template<class T>
-  void SimpleAttribute<T>::write(const DataSet& parent, const string& name, const T& data) {
+  void SimpleAttribute<T>::write(const H5Object& parent, const string& name, const T& data) {
     create(parent, name);
     write(data);
   }
 
   template<class T>
-  T SimpleAttribute<T>::read(const DataSet& parent, const string& name)  {
+  T SimpleAttribute<T>::read(const H5Object& parent, const string& name)  {
     open(parent, name);
     return read();
   }
 
   template<class T>
-  T SimpleAttribute<T>::getData(const DataSet& parent, const string& name) {
+  T SimpleAttribute<T>::getData(const H5Object& parent, const string& name) {
     SimpleAttribute<T> attribute;
     return attribute.read(parent, name);
   }
 
   template<class T>
-  T SimpleAttribute<T>::getData(const CommonFG& parent, const string& name) {
-    string dataSetName, attrName;
-    int i=name.find_last_of('/');
-    dataSetName=name.substr(0, i);
-    attrName=name.substr(i+1);
+  void SimpleAttribute<T>::setData(const H5Object& parent, const std::string& name, const T& data) {
     SimpleAttribute<T> attribute;
-    return attribute.read(parent.openDataSet(dataSetName), attrName);
+    attribute.write(parent, name, data);
   }
 
 
@@ -116,7 +112,7 @@ namespace H5 {
   }
 
   template<class T>
-  SimpleAttribute<vector<T> >::SimpleAttribute(const DataSet& parent, const string& name, const int count) : Attribute() {
+  SimpleAttribute<vector<T> >::SimpleAttribute(const H5Object& parent, const string& name, const int count) : Attribute() {
     T dummy;
     memDataType=toH5Type(dummy);
     if(count)
@@ -126,14 +122,14 @@ namespace H5 {
   }
 
   template<class T>
-  SimpleAttribute<vector<T> >::SimpleAttribute(const DataSet& parent, const string& name, const vector<T>& data) : Attribute() {
+  SimpleAttribute<vector<T> >::SimpleAttribute(const H5Object& parent, const string& name, const vector<T>& data) : Attribute() {
     T dummy;
     memDataType=toH5Type(dummy);
     write(parent, name, data);
   }
 
   template<class T>
-  void SimpleAttribute<vector<T> >::create(const DataSet& parent, const string& name, const int count) {
+  void SimpleAttribute<vector<T> >::create(const H5Object& parent, const string& name, const int count) {
     hsize_t dims[]={count};
     DataSpace dataSpace(1, dims);
     Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
@@ -142,7 +138,7 @@ namespace H5 {
   }
 
   template<class T>
-  void SimpleAttribute<vector<T> >::open(const DataSet& parent, const string& name) {
+  void SimpleAttribute<vector<T> >::open(const H5Object& parent, const string& name) {
     Attribute attribute=parent.openAttribute(name);
     p_setId(attribute.getId());
     incRefCount();
@@ -177,31 +173,27 @@ namespace H5 {
   vector<string> SimpleAttribute<vector<string> >::read();
 
   template<class T>
-  void SimpleAttribute<vector<T> >::write(const DataSet& parent, const string& name, const vector<T>& data) {
+  void SimpleAttribute<vector<T> >::write(const H5Object& parent, const string& name, const vector<T>& data) {
     create(parent, name, data.size());
     write(data);
   }
 
   template<class T>
-  vector<T> SimpleAttribute<vector<T> >::read(const DataSet& parent, const string& name) {
+  vector<T> SimpleAttribute<vector<T> >::read(const H5Object& parent, const string& name) {
     open(parent, name);
     return read();
   }
 
   template<class T>
-  vector<T> SimpleAttribute<vector<T> >::getData(const DataSet& parent, const string& name) {
+  vector<T> SimpleAttribute<vector<T> >::getData(const H5Object& parent, const string& name) {
     SimpleAttribute<vector<T> > attribute;
     return attribute.read(parent, name);
   }
 
   template<class T>
-  vector<T> SimpleAttribute<vector<T> >::getData(const CommonFG& parent, const string& name) {
-    string dataSetName, attrName;
-    int i=name.find_last_of('/');
-    dataSetName=name.substr(0, i);
-    attrName=name.substr(i+1);
+  void SimpleAttribute<vector<T> >::setData(const H5Object& parent, const std::string& name, const vector<T>& data) {
     SimpleAttribute<vector<T> > attribute;
-    return attribute.read(parent.openDataSet(dataSetName), attrName);
+    attribute.write(parent, name, data);
   }
 
 
@@ -219,7 +211,7 @@ namespace H5 {
   }
 
   template<class T>
-  SimpleAttribute<vector<vector<T> > >::SimpleAttribute(const DataSet& parent, const string& name, const int rows, const int columns) : Attribute() {
+  SimpleAttribute<vector<vector<T> > >::SimpleAttribute(const H5Object& parent, const string& name, const int rows, const int columns) : Attribute() {
     T dummy;
     memDataType=toH5Type(dummy);
     if(rows && columns)
@@ -229,14 +221,14 @@ namespace H5 {
   }
 
   template<class T>
-  SimpleAttribute<vector<vector<T> > >::SimpleAttribute(const DataSet& parent, const string& name, const vector<vector<T> >& data) : Attribute() {
+  SimpleAttribute<vector<vector<T> > >::SimpleAttribute(const H5Object& parent, const string& name, const vector<vector<T> >& data) : Attribute() {
     T dummy;
     memDataType=toH5Type(dummy);
     write(parent, name, data);
   }
 
   template<class T>
-  void SimpleAttribute<vector<vector<T> > >::create(const DataSet& parent, const string& name, const int rows, const int columns) {
+  void SimpleAttribute<vector<vector<T> > >::create(const H5Object& parent, const string& name, const int rows, const int columns) {
     hsize_t dims[]={rows, columns};
     DataSpace dataSpace(2, dims);
     Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
@@ -245,7 +237,7 @@ namespace H5 {
   }
 
   template<class T>
-  void SimpleAttribute<vector<vector<T> > >::open(const DataSet& parent, const string& name) {
+  void SimpleAttribute<vector<vector<T> > >::open(const H5Object& parent, const string& name) {
     Attribute attribute=parent.openAttribute(name);
     p_setId(attribute.getId());
     incRefCount();
@@ -293,31 +285,27 @@ namespace H5 {
   vector<vector<string> > SimpleAttribute<vector<vector<string> > >::read();
 
   template<class T>
-  void SimpleAttribute<vector<vector<T> > >::write(const DataSet& parent, const string& name, const vector<vector<T> >& data) {
+  void SimpleAttribute<vector<vector<T> > >::write(const H5Object& parent, const string& name, const vector<vector<T> >& data) {
     create(parent, name, data.size(), data[0].size());
     write(data);
   }
 
   template<class T>
-  vector<vector<T> > SimpleAttribute<vector<vector<T> > >::read(const DataSet& parent, const string& name) {
+  vector<vector<T> > SimpleAttribute<vector<vector<T> > >::read(const H5Object& parent, const string& name) {
     open(parent, name);
     return read();
   }
 
   template<class T>
-  vector<vector<T> > SimpleAttribute<vector<vector<T> > >::getData(const DataSet& parent, const string& name) {
+  vector<vector<T> > SimpleAttribute<vector<vector<T> > >::getData(const H5Object& parent, const string& name) {
     SimpleAttribute<vector<vector<T> > > attribute;
     return attribute.read(parent, name);
   }
 
   template<class T>
-  vector<vector<T> > SimpleAttribute<vector<vector<T> > >::getData(const CommonFG& parent, const string& name) {
-    string dataSetName, attrName;
-    int i=name.find_last_of('/');
-    dataSetName=name.substr(0, i);
-    attrName=name.substr(i+1);
+  void SimpleAttribute<vector<vector<T> > >::setData(const H5Object& parent, const std::string& name, const vector<vector<T> >& data) {
     SimpleAttribute<vector<vector<T> > > attribute;
-    return attribute.read(parent.openDataSet(dataSetName), attrName);
+    attribute.write(parent, name, data);
   }
 
 

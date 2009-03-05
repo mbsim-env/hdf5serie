@@ -1,4 +1,4 @@
-AC_PREREQ(2.61)
+AC_PREREQ(2.59)
 AC_INIT([hdf5serie],[0.1.0],[mafriedrich@users.berlios.de])
 AC_CONFIG_SRCDIR([src/toh5type.cc])
 AC_CONFIG_HEADER([config.h])
@@ -28,8 +28,11 @@ AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
   [CPPFLAGS="$CPPFLAGS -I$withval/include"
     LDFLAGS="$LDFLAGS -L$withval/lib"
-    LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$withval], [])
-AC_PATH_PROG([h5ls],[h5ls],[no],[$hdf5_prefix/bin:$PATH])
+    LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$withval],
+  [CPPFLAGS="$CPPFLAGS -I$prefix/include"
+    LDFLAGS="$LDFLAGS -L$prefix/lib"
+    LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$prefix])
+AC_PATH_PROG([h5dump],[h5dump],[no],[$hdf5_prefix/bin:$PATH])
 AC_CHECK_HEADERS([H5Cpp.h], [],
   [AC_MSG_ERROR([Can not find hdf5 c++ header H5Cpp.h])])
 AC_MSG_CHECKING([for hdf5 c++ library])
@@ -39,7 +42,8 @@ AC_TRY_LINK([#include <H5Cpp.h>],[H5::H5File file],[AC_MSG_RESULT([yes])],
 AC_CONFIG_FILES([Makefile src/Makefile src/check/Makefile
   src/dump/Makefile hdf5serie.pc src/rereadmetadata/Makefile
   src/rereadmetadata/readwritetest/Makefile
-  doc/Doxyfile])
+  doc/Doxyfile src/dump/h5dumpserie.m])
 AC_CONFIG_FILES([src/dump/h5lsserie],[chmod +x src/dump/h5lsserie])
+
 
 AC_OUTPUT

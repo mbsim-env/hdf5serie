@@ -135,7 +135,7 @@ serie.create(parent, "mystructserie");
       inline int getRows();
 
       /** \brief Returns the number of members in the struct */
-      inline int getMembers();
+      inline unsigned int getMembers();
 
       /** \brief Returns the data struct at element \a row
        *
@@ -324,7 +324,7 @@ serie.create(parent, "mystructserie");
   }
   
   template<class S>
-  int StructSerie<S>::getMembers() {
+  unsigned int StructSerie<S>::getMembers() {
     return memDataType.getNmembers();
   }
   
