@@ -289,7 +289,6 @@ int main() {
   H5File file("test.h5", H5F_ACC_RDONLY);
   DataSet data=file.openDataSet("data");
   cout<<SimpleAttribute<double>::getData(data, "dsd")<<endl;
-  cout<<SimpleAttribute<double>::getData(file, "data/dsd")<<endl;
   file.close();
   }
   
@@ -491,6 +490,13 @@ int main() {
   for(int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
 
   Group grp1=file.createGroup("mygrp1");
+  ///////////////////
+  CommonFG *grp2;
+  grp2=new Group(grp1.createGroup("grp2"));
+
+  CommonFG *grp3;
+  grp3=new Group(grp2->createGroup("mygrp3"));
+  ///////////////////
   VectorSerie<double> ts2;
   ts2.create(grp1, "timeserie", colhead);
   ts2.setDescription("mydesctipsldfk");

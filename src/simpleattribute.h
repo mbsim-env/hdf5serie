@@ -52,21 +52,21 @@ namespace H5 {
        *
        * For a vector value T=std::vector<CTYPE>:
        * The declaration of this function is 
-       * SimpleAttribute(const DataSet& parent, const std::string& name, int count=0)
+       * SimpleAttribute(const H5Object& parent, const std::string& name, int count=0)
        * If \a count is not 0 see create(), if \a create is 0 see open()
        *
        * For a matrix value T=std::vector<std::vector<CTYPE> >:
        * The declaration of this function is 
-       * SimpleAttribute(const DataSet& parent, const std::string& name, int rows=0, int columns=0)
+       * SimpleAttribute(const H5Object& parent, const std::string& name, int rows=0, int columns=0)
        * If \a rows is not 0 and \a column is not 0 see create(), if \a rows and \a columns is 0 see open()
        */
-      SimpleAttribute(const DataSet& parent, const std::string& name, bool create=false);
+      SimpleAttribute(const H5Object& parent, const std::string& name, bool create=false);
 
       /** \brief Constructor for creating and writing a attribute
        *
        * See create() and write().
        */
-      SimpleAttribute(const DataSet& parent, const std::string& name, const T& data);
+      SimpleAttribute(const H5Object& parent, const std::string& name, const T& data);
 
       /** Creating a attribute
        *
@@ -75,21 +75,21 @@ namespace H5 {
        *
        * For a vector value T=std::vector<CTYPE>:
        * The declaration of this function is 
-       * void create(const DataSet& parent, const std::string& name, int count);
+       * void create(const H5Object& parent, const std::string& name, int count);
        * Creates a vector attribute of size \a count named \a name as a child of \a parent.
        *
        * For a matrix value T=std::vector<std::vector<CTYPE> >:
        * The declaration of this function is 
-       * void create(const DataSet& parent, const std::string& name, int rows, int columns);
+       * void create(const H5Object& parent, const std::string& name, int rows, int columns);
        * Creates a matrix attribute of size \a count x \a columns named \a name as a child of \a parent.
        */
-      void create(const DataSet& parent, const std::string& name);
+      void create(const H5Object& parent, const std::string& name);
 
       /** \brief Open a attribute
        *
        * Opens the attribute named \a name as a child of position \a parent.
        */
-      void open(const DataSet& parent, const std::string& name);
+      void open(const H5Object& parent, const std::string& name);
 
       /** \brief Write data
        *
@@ -107,25 +107,25 @@ namespace H5 {
        *
        * See create() and write().
        */
-      void write(const DataSet& parent, const std::string& name, const T& data);
+      void write(const H5Object& parent, const std::string& name, const T& data);
 
       /** \brief Open and read data
        *
        * See open() and read()
        */
-      T read(const DataSet& parent, const std::string& name);
+      T read(const H5Object& parent, const std::string& name);
 
       /** Static open and read data.
        *
        * This function can be called statically. See open() and read()
        */
-      static T getData(const DataSet& parent, const std::string& name);
+      static T getData(const H5Object& parent, const std::string& name);
 
-      /** Static open and read data.
+      /** Static write data.
        *
-       * This function can be called statically. See open() and read()
+       * This function can be called statically. See write()
        */
-      static T getData(const CommonFG& parent, const std::string& name);
+      static void setData(const H5Object& parent, const std::string& name, const T& data);
   };
 
   // a partial specialisation of class SimpleAttribute<T> for T=std::vector<T>
@@ -136,16 +136,16 @@ namespace H5 {
     public:
       SimpleAttribute();
       SimpleAttribute(const SimpleAttribute<std::vector<T> >& attribute);
-      SimpleAttribute(const DataSet& parent, const std::string& name, const int count=0);
-      SimpleAttribute(const DataSet& parent, const std::string& name, const std::vector<T>& data);
-      void create(const DataSet& parent, const std::string& name, const int count);
-      void open(const DataSet& parent, const std::string& name);
+      SimpleAttribute(const H5Object& parent, const std::string& name, const int count=0);
+      SimpleAttribute(const H5Object& parent, const std::string& name, const std::vector<T>& data);
+      void create(const H5Object& parent, const std::string& name, const int count);
+      void open(const H5Object& parent, const std::string& name);
       void write(const std::vector<T>& data);
       std::vector<T> read();
-      void write(const DataSet& parent, const std::string& name, const std::vector<T>& data);
-      std::vector<T> read(const DataSet& parent, const std::string& name);
-      static std::vector<T> getData(const DataSet& parent, const std::string& name);
-      static std::vector<T> getData(const CommonFG& parent, const std::string& name);
+      void write(const H5Object& parent, const std::string& name, const std::vector<T>& data);
+      std::vector<T> read(const H5Object& parent, const std::string& name);
+      static std::vector<T> getData(const H5Object& parent, const std::string& name);
+      static void setData(const H5Object& parent, const std::string& name, const std::vector<T>& data);
   };
 
   // a partial specialisation of class SimpleAttribute<T> for T=std::vector<std::vector<T> >
@@ -156,16 +156,16 @@ namespace H5 {
     public:
       SimpleAttribute();
       SimpleAttribute(const SimpleAttribute<std::vector<std::vector<T> > >& attribute);
-      SimpleAttribute(const DataSet& parent, const std::string& name, const int rows=0, const int columns=0);
-      SimpleAttribute(const DataSet& parent, const std::string& name, const std::vector<std::vector<T> >& data);
-      void create(const DataSet& parent, const std::string& name, const int rows, const int columns);
-      void open(const DataSet& parent, const std::string& name);
+      SimpleAttribute(const H5Object& parent, const std::string& name, const int rows=0, const int columns=0);
+      SimpleAttribute(const H5Object& parent, const std::string& name, const std::vector<std::vector<T> >& data);
+      void create(const H5Object& parent, const std::string& name, const int rows, const int columns);
+      void open(const H5Object& parent, const std::string& name);
       void write(const std::vector<std::vector<T> >& data);
       std::vector<std::vector<T> > read();
-      void write(const DataSet& parent, const std::string& name, const std::vector<std::vector<T> >& data);
-      std::vector<std::vector<T> > read(const DataSet& parent, const std::string& name);
-      static std::vector<std::vector<T> > getData(const DataSet& parent, const std::string& name);
-      static std::vector<std::vector<T> > getData(const CommonFG& parent, const std::string& name);
+      void write(const H5Object& parent, const std::string& name, const std::vector<std::vector<T> >& data);
+      std::vector<std::vector<T> > read(const H5Object& parent, const std::string& name);
+      static std::vector<std::vector<T> > getData(const H5Object& parent, const std::string& name);
+      static void setData(const H5Object& parent, const std::string& name, const std::vector<std::vector<T> >& data);
   };
 
 }
