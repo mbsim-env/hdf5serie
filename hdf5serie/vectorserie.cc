@@ -1,5 +1,7 @@
 #include <config.h>
 #include <hdf5serie/vectorserie.h>
+#include <cstdlib>
+#include <cstring>
 
 using namespace std;
 

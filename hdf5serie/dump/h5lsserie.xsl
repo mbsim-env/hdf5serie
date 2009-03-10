@@ -54,6 +54,7 @@
   <!-- output H5:Dataset -->
   <xsl:template match="hdf5:Dataset">
     <xsl:param name="INDENT"/>
+    <xsl:param name="PATH"/>
     <!-- output name and full path -->
     <xsl:value-of select="$INDENT"/>- <xsl:value-of select="@Name"/> (Path: <xsl:value-of select="concat($PATH,'/',@Name)"/>)<xsl:text>
 </xsl:text>

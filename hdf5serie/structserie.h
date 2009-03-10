@@ -6,6 +6,8 @@
 #include <string>
 #include <assert.h>
 #include <hdf5serie/simpleattribute.h>
+#include <cstring>
+#include <cstdlib>
 
 namespace H5 {
 

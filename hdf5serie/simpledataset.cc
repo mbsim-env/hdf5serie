@@ -1,6 +1,8 @@
 #include <config.h>
 #include <hdf5serie/simpledataset.h>
 #include <assert.h>
+#include <cstring>
+#include <cstdlib>
 
 using namespace std;
 
