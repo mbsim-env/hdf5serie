@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 #include <assert.h>
-#include <simpleattribute.h>
+#include <hdf5serie/simpleattribute.h>
 
 namespace H5 {
 
@@ -85,12 +85,12 @@ serie.create(parent, "mystructserie");
 // Use this code section else
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
       void registerMember(const S& s, const CTYPE& e, const std::string name);
-#     include "knowntypes.def"
+#     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
 
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
       void registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name);
-#     include "knowntypes.def"
+#     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
 #endif
 
@@ -175,7 +175,7 @@ serie.create(parent, "mystructserie");
     structOffset.push_back((char*)&e-(char*)&s); \
     firstCall=false; \
   }
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
@@ -194,7 +194,7 @@ serie.create(parent, "mystructserie");
     structOffset.push_back((char*)&e-(char*)&s); \
     firstCall=false; \
   }
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
   template<class S>
@@ -204,7 +204,7 @@ serie.create(parent, "mystructserie");
     hsize_t maxDims[]={H5S_UNLIMITED};
     DataSpace fileDataSpace(1, dims, maxDims);
     DSetCreatPropList prop;
-    hsize_t chunkDims[]={1000};
+    hsize_t chunkDims[]={10000};
     prop.setChunk(1, chunkDims);
   
     DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop);

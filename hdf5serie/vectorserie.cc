@@ -1,5 +1,5 @@
 #include <config.h>
-#include <vectorserie.h>
+#include <hdf5serie/vectorserie.h>
 
 using namespace std;
 
@@ -46,7 +46,7 @@ namespace H5 {
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
     DataSpace fileDataSpace(2, dims, maxDims);
     DSetCreatPropList prop;
-    hsize_t chunkDims[]={1000, dims[1]};
+    hsize_t chunkDims[]={10000, dims[1]};
     prop.setChunk(2, chunkDims);
     DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);
     p_setId(dataset.getId());
@@ -244,7 +244,7 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class VectorSerie<CTYPE>;
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 }

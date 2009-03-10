@@ -1,5 +1,5 @@
 #include <config.h>
-#include <simpleattribute.h>
+#include <hdf5serie/simpleattribute.h>
 #include <assert.h>
 
 using namespace std;
@@ -407,17 +407,17 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleAttribute<CTYPE>;
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleAttribute<vector<CTYPE> >;
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleAttribute<vector<vector<CTYPE> > >;
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 }

@@ -1,6 +1,4 @@
-SUBDIRS = src
-
-DIST_SUBDIRS = src doc
+SUBDIRS = hdf5serie
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = hdf5serie.pc

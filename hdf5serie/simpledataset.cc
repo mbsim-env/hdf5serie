@@ -1,5 +1,5 @@
 #include <config.h>
-#include <simpledataset.h>
+#include <hdf5serie/simpledataset.h>
 #include <assert.h>
 
 using namespace std;
@@ -474,17 +474,17 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleDataSet<CTYPE>;
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleDataSet<vector<CTYPE> >;
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleDataSet<vector<vector<CTYPE> > >;
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 }

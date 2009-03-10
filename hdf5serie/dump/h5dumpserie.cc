@@ -1,7 +1,7 @@
 #include <config.h>
-#include <vectorserie.h>
-#include <structserie.h>
-#include <simpledataset.h>
+#include <hdf5serie/vectorserie.h>
+#include <hdf5serie/structserie.h>
+#include <hdf5serie/simpledataset.h>
 #include <iostream>
 #include <iomanip>
 #include <sstream>

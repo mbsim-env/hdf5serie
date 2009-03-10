@@ -11,7 +11,7 @@
  * The following code shows a usage example of the library.
  * \code
 #include <H5Cpp.h>
-#include <vectorserie.h>
+#include <hdf5serie/vectorserie.h>
 #include <string>
 
 using namespace H5;
@@ -50,7 +50,7 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   DataType toH5Type(const CTYPE& dummy);
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 }

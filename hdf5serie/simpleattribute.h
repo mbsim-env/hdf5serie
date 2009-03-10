@@ -4,7 +4,7 @@
 #include <H5Cpp.h>
 #include <vector>
 #include <string>
-#include <toh5type.h>
+#include <hdf5serie/toh5type.h>
 #include <assert.h>
 
 namespace H5 {
