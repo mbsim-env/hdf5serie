@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 #include <assert.h>
-#include <simpleattribute.h>
+#include <hdf5serie/simpleattribute.h>
 
 namespace H5 {
 

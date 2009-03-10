@@ -1,6 +1,6 @@
 AC_PREREQ(2.59)
 AC_INIT([hdf5serie],[0.1.0],[mafriedrich@users.berlios.de])
-AC_CONFIG_SRCDIR([src/toh5type.cc])
+AC_CONFIG_SRCDIR([hdf5serie/toh5type.cc])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 AC_LANG([C++])
@@ -39,11 +39,11 @@ AC_MSG_CHECKING([for hdf5 c++ library])
 AC_TRY_LINK([#include <H5Cpp.h>],[H5::H5File file],[AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no]); AC_MSG_ERROR([Can not link with hdf5 c++ library])])
 
-AC_CONFIG_FILES([Makefile src/Makefile src/check/Makefile
-  src/dump/Makefile hdf5serie.pc src/rereadmetadata/Makefile
-  src/rereadmetadata/readwritetest/Makefile
-  doc/Doxyfile src/dump/h5dumpserie.m])
-AC_CONFIG_FILES([src/dump/h5lsserie],[chmod +x src/dump/h5lsserie])
+AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
+  hdf5serie/dump/Makefile hdf5serie.pc hdf5serie/rereadmetadata/Makefile
+  hdf5serie/rereadmetadata/readwritetest/Makefile
+  doc/Doxyfile hdf5serie/dump/h5dumpserie.m])
+AC_CONFIG_FILES([hdf5serie/dump/h5lsserie],[chmod +x hdf5serie/dump/h5lsserie])
 
 
 AC_OUTPUT

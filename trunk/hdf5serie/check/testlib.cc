@@ -1,9 +1,9 @@
 #include <config.h>
 #include <H5Cpp.h>
-#include <vectorserie.h>
-#include <structserie.h>
-#include <simpleattribute.h>
-#include <simpledataset.h>
+#include <hdf5serie/vectorserie.h>
+#include <hdf5serie/structserie.h>
+#include <hdf5serie/simpleattribute.h>
+#include <hdf5serie/simpledataset.h>
 #include <iostream>
 //#include <fmatvec.h>
 

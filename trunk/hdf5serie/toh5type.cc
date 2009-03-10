@@ -1,5 +1,5 @@
 #include <config.h>
-#include <toh5type.h> 
+#include <hdf5serie/toh5type.h> 
 
 using namespace std;
 
@@ -9,7 +9,7 @@ namespace H5 {
   DataType toH5Type(const CTYPE& dummy) { \
     return H5TYPE; \
   }
-# include "knowntypes.def"
+# include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 }
