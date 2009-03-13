@@ -1,0 +1,160 @@
+#include <config.h>
+#include <hdf5serie/matrixserie.h>
+#include <cstdlib>
+#include <cstring>
+
+using namespace std;
+
+namespace H5 {
+
+  // template definitions
+
+  template<class T>
+  MatrixSerie<T>::MatrixSerie() : DataSet(), memDataSpace() {
+    T dummy;
+    memDataType=toH5Type(dummy);
+    dims[0]=0;
+    dims[1]=0;
+    dims[2]=0;
+  }
+
+  template<class T>
+  MatrixSerie<T>::MatrixSerie(const MatrixSerie<T>& dataset) : DataSet(dataset) {
+    T dummy;
+    memDataType=toH5Type(dummy);
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.getSimpleExtentDims(dims);
+    hsize_t memDims[]={1, dims[1], dims[2]};
+    memDataSpace=DataSpace(3, memDims);
+  }
+
+  template<class T>
+  MatrixSerie<T>::MatrixSerie(const CommonFG& parent, const string& name) {
+    T dummy;
+    memDataType=toH5Type(dummy);
+    open(parent, name);
+  }
+
+  template<class T>
+  MatrixSerie<T>::MatrixSerie(const CommonFG& parent, const string& name, const int rows, const int cols) {
+    T dummy;
+    memDataType=toH5Type(dummy);
+    create(parent, name, rows, cols);
+  }
+
+  template<class T>
+  void MatrixSerie<T>::create(const CommonFG& parent, const string& name, const int rows, const int cols) {
+    dims[0]=0;
+    dims[1]=rows;
+    dims[2]=cols;
+    hsize_t maxDims[]={H5S_UNLIMITED, dims[1], dims[2]};
+    DataSpace fileDataSpace(3, dims, maxDims);
+    DSetCreatPropList prop;
+    hsize_t chunkDims[]={10000, dims[1], dims[2]};
+    prop.setChunk(3, chunkDims);
+    DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);
+    p_setId(dataset.getId());
+    incRefCount();
+
+    hsize_t memDims[]={1, dims[1], dims[2]};
+    memDataSpace=DataSpace(3, memDims);
+  }
+
+  template<class T>
+  void MatrixSerie<T>::open(const CommonFG& parent, const string& name) {
+    DataSet dataset=parent.openDataSet(name);
+    p_setId(dataset.getId());
+    incRefCount();
+
+    DataSpace fileDataSpace=getSpace();
+    // Check if fileDataSpace and memDataType complies with the class
+    assert(fileDataSpace.getSimpleExtentNdims()==3);
+    hsize_t maxDims[3];
+    fileDataSpace.getSimpleExtentDims(dims, maxDims);
+    assert(maxDims[0]==H5S_UNLIMITED);
+    T dummy;
+    assert(getDataType().getClass()==memDataType.getClass());
+
+    hsize_t memDims[]={1, dims[1], dims[2]};
+    memDataSpace=DataSpace(3, memDims);
+  }
+
+  template<class T>
+  void MatrixSerie<T>::setDescription(const string& description) {
+    SimpleAttribute<string> desc(*this, "Description", description);
+  }
+
+  template<class T>
+  void MatrixSerie<T>::append(const vector<vector<T> > &matrix) {
+    assert(matrix.size()==dims[1]);
+    dims[0]++;
+    DataSet::extend(dims);
+
+    hsize_t start[]={dims[0]-1,0,0};
+    hsize_t count[]={1, dims[1], dims[2]};
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+
+    T* data=new T[dims[1]*dims[2]];
+    for(int r=0; r<matrix.size(); r++) {
+      assert(matrix[r].size()==dims[2]);
+      memcpy(&data[r*dims[2]],&matrix[r][0],sizeof(double)*dims[2]);
+    }
+    write(data, memDataType, memDataSpace, fileDataSpace);
+    delete[]data;
+  }
+
+  template<class T>
+  vector<vector<T> > MatrixSerie<T>::getMatrix(const int number) {
+    hsize_t start[]={number,0,0};
+    hsize_t count[]={1, dims[1],dims[2]};
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+
+    T* data=new T[dims[1]*dims[2]];
+    read(data, memDataType, memDataSpace, fileDataSpace);
+    vector<vector<T> > matrix;
+    matrix.resize(dims[1]);
+    for(int r=0; r<matrix.size(); r++) {
+      matrix[r].resize(dims[2]);
+      memcpy(&matrix[r][0],&data[r*dims[2]],sizeof(double)*dims[2]);
+    }
+    delete[]data;
+    return matrix;
+  }
+
+  template<class T>
+  string MatrixSerie<T>::getDescription() {
+    // save and disable c error printing
+    H5E_auto2_t func;
+    void* client_data;
+    Exception::getAutoPrint(func, &client_data);
+    Exception::dontPrint();
+    string ret;
+    // catch error if Attribute is not found
+    try {
+      ret=SimpleAttribute<string>::getData(*this, "Description");
+    }
+    catch(AttributeIException e) {
+      ret=string();
+    }
+    // restore c error printing
+    Exception::setAutoPrint(func, client_data);
+    return ret;
+  }
+
+  template<class T>
+  void MatrixSerie<T>::extend(const hsize_t* size) {
+    assert(1);
+  }
+
+
+
+  // explizit template instantations
+
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+  template class MatrixSerie<CTYPE>;
+# include "hdf5serie/knowntypes.def"
+# undef FOREACHKNOWNTYPE
+
+}
