@@ -2,7 +2,7 @@
 #define _TOH5TYPE_H_
 
 
-/** \mainpage HDF5Serie API Documentation (Alpha; To be Reviewed)
+/** \mainpage HDF5Serie API Documentation
  *
  * This library is a high level programming interface to the HDF5 library for
  * reading and writing data series. A data consists of a vector of

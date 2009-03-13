@@ -34,6 +34,7 @@ using namespace std;
 
 string comment="#";
 string quote="\"";
+string delim=" ";
 string nan="nan";
 
 int string2int(string str) {
@@ -62,6 +63,12 @@ int main(int argc, char* argv[]) {
   i=find(arg.begin(), arg.end(), "-c");
   if(i!=arg.end()) {
     comment=*(i+1);
+    arg.erase(i, i+2);
+  }
+
+  i=find(arg.begin(), arg.end(), "-d");
+  if(i!=arg.end()) {
+    delim=*(i+1);
     arg.erase(i, i+2);
   }
 
@@ -132,14 +139,25 @@ int main(int argc, char* argv[]) {
         int begin, end;
         if(columnstr.substr(0,i)=="") begin=1; else begin=string2int(columnstr.substr(0,i));
         if(columnstr.substr(i+1)=="") end=columns; else end=string2int(columnstr.substr(i+1));
-        for(int j=begin; j<=end; j++)
-          column[k].push_back(j);
+        if(end>=begin)
+          for(int j=begin; j<=end; j++)
+            column[k].push_back(j);
+        else
+          for(int j=begin; j>=end; j--)
+            column[k].push_back(j);
       }
     }
     if(header) {
       cout<<comment<<" File/DataSet: "<<filename<<datasetname<<endl;
-      string desc=SimpleAttribute<string>::getData(dataSet[k], "Description");
-      if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
+      try {
+        H5E_auto2_t func;
+        void *client_data;
+        Exception::getAutoPrint(func, &client_data);
+        Exception::dontPrint();
+        string desc=SimpleAttribute<string>::getData(dataSet[k], "Description");
+        if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
+        Exception::setAutoPrint(func, client_data);
+      } catch(...) {}
       if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
         cout<<comment<<"   Member Label:"<<endl;
         CompType dataType=dataSet[k].getCompType();
@@ -165,6 +183,18 @@ int main(int argc, char* argv[]) {
 
   for(int row=0; row<maxrows; row++) {
     for(int k=0; k<arg.size(); k++) {
+      // Output nan for to short datasets
+      DataSpace space=dataSet[k].getSpace();
+      int N=space.getSimpleExtentNdims();
+      hsize_t* dims=new hsize_t[N];
+      space.getSimpleExtentDims(dims);
+      if(row>=dims[0]) {
+        for(int i=0; i<column[k].size(); i++)
+          cout<<(k==0&&i==0?"":delim)<<nan;
+        continue;
+      }
+      delete[]dims;
+      
       if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
         hsize_t dims[]={1};
         DataSpace memDataSpace(1, dims);
@@ -179,12 +209,12 @@ int main(int argc, char* argv[]) {
           int memberOffset=memDataType.getMemberOffset(column[k][i]-1);
 #         define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
           if(memberDataType==H5TYPE) \
-            cout<<*(CTYPE*)(buf+memberOffset)<<" ";
+            cout<<(k==0&&i==0?"":delim)<<*(CTYPE*)(buf+memberOffset);
 #         include "knownpodtypes.def"
 #         undef FOREACHKNOWNTYPE
           if(memberDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
             char* str=*(char**)(buf+memberOffset);
-            cout<<quote<<str<<quote<<" ";
+            cout<<(k==0&&i==0?"":delim)<<quote<<str<<quote;
             free(str);
           }
           if(memberDataType.getClass()==H5T_ARRAY) {
@@ -193,13 +223,13 @@ int main(int argc, char* argv[]) {
 #           define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
             if(memberDataType==ArrayType(H5TYPE,1,dims)) \
               for(int l=0; l<dims[0]; l++) \
-                cout<<*(CTYPE*)(buf+memberOffset+sizeof(CTYPE)*l)<<" ";
+                cout<<(k==0&&i==0&&l==0?"":delim)<<*(CTYPE*)(buf+memberOffset+sizeof(CTYPE)*l);
 #           include "knownpodtypes.def"
 #           undef FOREACHKNOWNTYPE
             if(memberDataType==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
               for(int l=0; l<dims[0]; l++) {
                 char* str=*(char**)(buf+memberOffset+sizeof(char*)*l);
-                cout<<quote<<str<<quote<<" ";
+                cout<<(k==0&&i==0&&l==0?"":delim)<<quote<<str<<quote;
                 free(str);
               }
           }
@@ -219,12 +249,12 @@ int main(int argc, char* argv[]) {
         for(int i=0; i<column[k].size(); i++) {
 #         define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
           if(memDataType==H5TYPE) \
-            cout<<*(CTYPE*)(buf+sizeof(CTYPE)*(column[k][i]-1))<<" ";
+            cout<<(k==0&&i==0?"":delim)<<*(CTYPE*)(buf+sizeof(CTYPE)*(column[k][i]-1));
 #         include "knownpodtypes.def"
 #         undef FOREACHKNOWNTYPE
           if(memDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
             char* str=*(char**)(buf+sizeof(char*)*(column[k][i]-1));
-            cout<<quote<<str<<quote<<" ";
+            cout<<(k==0&&i==0?"":delim)<<quote<<str<<quote;
             free(str);
           }
         }
