@@ -62,6 +62,10 @@
     <xsl:apply-templates select="hdf5:Attribute">
       <xsl:with-param name="INDENT" select="concat($INDENT,'  ')"/>
     </xsl:apply-templates>
+    <!-- apply H5:DataType; increase indent -->
+    <xsl:apply-templates select="hdf5:DataType">
+      <xsl:with-param name="INDENT" select="concat($INDENT,'  ')"/>
+    </xsl:apply-templates>
   </xsl:template>
 
   <!-- output H5:Attribute -->
@@ -83,6 +87,35 @@
 </xsl:text>
     </xsl:if>
     </xsl:if>
+  </xsl:template>
+
+  <!-- output H5:DataType (for Member Label) -->
+  <xsl:template match="hdf5:DataType">
+    <xsl:param name="INDENT"/>
+    <xsl:apply-templates select="hdf5:CompoundType">
+      <xsl:with-param name="INDENT" select="$INDENT"/>
+    </xsl:apply-templates>
+  </xsl:template>
+  <!-- output H5:CompoundType -->
+  <xsl:template match="hdf5:CompoundType">
+    <xsl:param name="INDENT"/>
+    <xsl:value-of select="$INDENT"/>Member Label: <xsl:text></xsl:text>
+    <xsl:apply-templates select="hdf5:Field">
+      <xsl:with-param name="INDENT" select="$INDENT"/>
+    </xsl:apply-templates>
+    <xsl:text>
+</xsl:text>
+  </xsl:template>
+  <!-- output H5:Field -->
+  <xsl:template match="hdf5:Field">
+    <xsl:param name="INDENT"/>
+    <xsl:text>"</xsl:text><xsl:value-of select="@FieldName"/>
+    <xsl:if test="hdf5:DataType/hdf5:ArrayType/hdf5:ArrayDimension">
+      <xsl:text>(</xsl:text>
+      <xsl:value-of select="hdf5:DataType/hdf5:ArrayType/hdf5:ArrayDimension/@DimSize"/>
+      <xsl:text>)</xsl:text>
+    </xsl:if>
+    <xsl:text>" </xsl:text>
   </xsl:template>
 
 </xsl:stylesheet>

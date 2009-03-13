@@ -1,6 +1,7 @@
 #include <config.h>
 #include <H5Cpp.h>
 #include <hdf5serie/vectorserie.h>
+#include <hdf5serie/matrixserie.h>
 #include <hdf5serie/structserie.h>
 #include <hdf5serie/simpleattribute.h>
 #include <hdf5serie/simpledataset.h>
@@ -519,6 +520,56 @@ int main() {
   outhead=ts.getColumnLabel();
   for(int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
   file.close();
+  }
+
+
+
+
+  /***** MYMATRIXSERIE *****/
+  cout<<"MATRIXSERIE\n";
+  {
+  H5File file("testmat.h5", H5F_ACC_TRUNC);
+  MatrixSerie<double> ts;
+  ts.create(file, "matserie", 4, 5);
+  ts.setDescription("mydesctipsldfk");
+  vector<vector<double> > mat;
+  vector<double> row;
+  row.push_back(1.2);
+  row.push_back(2.3);
+  row.push_back(3.4);
+  row.push_back(3.4);
+  row.push_back(3.4);
+  mat.push_back(row);
+  mat.push_back(row);
+  mat.push_back(row);
+  mat.push_back(row);
+  ts.append(mat);
+  ts.append(mat);
+  vector<vector<double> > out;
+  out=ts.getMatrix(0);
+  for(int r=0; r<out.size(); r++) { for(int c=0; c<out[r].size(); c++) cout<<out[r][c]<<" "; cout<<endl; }
+  out=ts.getMatrix(1);
+  for(int r=0; r<out.size(); r++) { for(int c=0; c<out[r].size(); c++) cout<<out[r][c]<<" "; cout<<endl; }
+  cout<<ts.getDescription()<<endl;
+  }
+  {
+  H5File file("testmat.h5", H5F_ACC_RDWR);
+  MatrixSerie<double> ts;
+  ts.open(file, "matserie");
+  cout<<ts.getDescription()<<endl;
+  vector<vector<double> > mat;
+  vector<double> row;
+  row.push_back(1.2);
+  row.push_back(2.3);
+  row.push_back(3.4);
+  row.push_back(3.4);
+  row.push_back(3.4);
+  mat.push_back(row);
+  mat.push_back(row);
+  mat.push_back(row);
+  mat.push_back(row);
+  ts.append(mat);
+  cout<<ts.getNumberOfMatrices()<<endl;
   }
 
 

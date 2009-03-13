@@ -16,6 +16,7 @@
 "    options:\n"
 "      -h, --help: show this help\n"
 "      -c <string>: use <string> as comment in header (Default '#')\n"
+"      -d <string>: use <string> as column delimiter (Default ' ')\n"
 "      -s: suppress header\n"
 "      -q <quote>: use <quote> to quote strings in output (Default '\"')\n"
 "      -n <nan>: use <nan> for 'not a number' in output (Default 'nan')\n"
