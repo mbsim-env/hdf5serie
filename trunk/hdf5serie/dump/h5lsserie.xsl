@@ -5,6 +5,7 @@
 
   <xsl:param name="DESCRIPTION"/>
   <xsl:param name="LABEL"/>
+  <xsl:param name="FOLLOW"/>
   <xsl:param name="FILENAME"/>
 
   <xsl:output method="text"/>
@@ -116,6 +117,21 @@
       <xsl:text>)</xsl:text>
     </xsl:if>
     <xsl:text>" </xsl:text>
+  </xsl:template>
+
+  <!-- output H5:ExternalLink -->
+  <xsl:template match="hdf5:ExternalLink">
+    <xsl:param name="INDENT"/>
+    <xsl:param name="PATH"/>
+    <xsl:value-of select="$INDENT"/>+ <xsl:value-of select="@LinkName"/> (External Link: <xsl:value-of select="concat(@TargetFilename,@TargetPath)"/>)<xsl:text>
+</xsl:text>
+    <xsl:if test="$FOLLOW=1">
+      <!-- apply linked file -->
+      <xsl:apply-templates select="document('.TS.Hauptgruppe2.mbsim.h5.xml')/hdf5:HDF5-File">
+        <xsl:with-param name="INDENT" select="concat($INDENT,'  ')"/>
+        <xsl:with-param name="PATH" select="concat($PATH,'/',@LinkName)"/>
+      </xsl:apply-templates>
+    </xsl:if>
   </xsl:template>
 
 </xsl:stylesheet>
