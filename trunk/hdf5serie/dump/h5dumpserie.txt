@@ -4,6 +4,8 @@
 "row-wise. If the number of rows in multi DATA output differs, <nan> will\n"
 "be appended to too short DATAs.\n"
 "\n"
+"Licensed under the GNU Lesser General Public License (LGPL)\n"
+"\n"
 "Usage:\n"
 "  h5dumpserie [options] DATA [DATA] ...\n"
 "    DATA: FILENAME/DATASET[:COLUMNS]\n"
