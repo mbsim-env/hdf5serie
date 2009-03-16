@@ -13,9 +13,9 @@ doc:
 	$(doxygen)
 doc_install:
 	cd doc; \
-	$(MKDIR_P) $(datadir)/doc/$(PACKAGE)-$(VERSION); \
-	cp -r html $(datadir)/doc/$(PACKAGE)-$(VERSION); \
-	cp $(PACKAGE)-$(VERSION).tag $(datadir)/doc/$(PACKAGE)-$(VERSION)
+	$(MKDIR_P) $(docdir); \
+	cp -r html $(docdir); \
+	cp $(PACKAGE).tag $(docdir)
 doc_uninstall:
-	rm -rf $(datadir)/doc/$(PACKAGE)-$(VERSION)/html
-	rm -rf $(datadir)/doc/$(PACKAGE)-$(VERSION)/$(PACKAGE)-$(VERSION).tag
+	rm -rf $(docdir)/html
+	rm -rf $(docdir)/$(PACKAGE).tag

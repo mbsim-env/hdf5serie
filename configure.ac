@@ -23,6 +23,23 @@ fi
 #DOXYGENDEPTAGFILES=$(pkg-config deppackage --variable=DOXYGENTAGFILES)
 #AC_SUBST([DOXYGENDEPTAGFILES])
 
+dnl Check for xslt
+AC_ARG_ENABLE([xslt],[  --disable-xslt  Disable usage of xslt (h5lsserie will not work)],
+  [],[enable_xslt="yes"])
+AM_CONDITIONAL([COND_XSLT], [test "$enable_xslt" = "yes"])
+if test $enable_xslt = "yes"; then
+  AC_ARG_WITH([xsltprocpath],
+    [  --with-xsltproc-path=PATHTOXSLTPROC  The path to the 'xsltproc' program.],
+    [xsltprocpath="$withval"],[xsltprocpath=""])
+  AC_PATH_PROG([xsltproc],[xsltproc],[no],[$xsltprocpath:$prefix/bin:$PATH])
+  if test $xsltproc = "no"; then
+    AC_MSG_ERROR([
+  xsltproc program not found!
+  Disable with --disable-xslt (h5lsserie will not work),
+  or specify --with-xsltproc-path!])
+  fi
+fi
+
 dnl Check for hdf5 library
 AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
