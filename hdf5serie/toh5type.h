@@ -1,12 +1,35 @@
+/* Copyright (C) 2009 Markus Friedrich
+ *
+ * This library is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU Lesser General Public 
+ * License as published by the Free Software Foundation; either 
+ * version 2.1 of the License, or (at your option) any later version. 
+ *  
+ * This library is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+ * Lesser General Public License for more details. 
+ *  
+ * You should have received a copy of the GNU Lesser General Public 
+ * License along with this library; if not, write to the Free Software 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+ *
+ * Contact:
+ *   mafriedrich@users.berlios.de
+ *
+ */
+
 #ifndef _TOH5TYPE_H_
 #define _TOH5TYPE_H_
 
 
-/** \mainpage HDF5Serie API Documentation
+/** \mainpage HDF5Serie - A HDF5 Wrapper for Time Series - API Documentation
  *
  * This library is a high level programming interface to the HDF5 library for
  * reading and writing data series. A data consists of a vector of
  * equal simple types or a compount of diffrent simple types.
+ *
+ * The library is licensed under the GNU Lesser General Public License (LGPL)
  *
  * The following code shows a usage example of the library.
  * \code
