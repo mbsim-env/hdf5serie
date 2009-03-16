@@ -37,16 +37,21 @@
 <xsl:text>
 </xsl:text>
     <!-- apply H5:Attributes; increase indent -->
-    <xsl:apply-templates select="hdf5:Attribute">
+    <!--<xsl:apply-templates select="hdf5:Attribute">
       <xsl:with-param name="INDENT" select="concat($INDENT,'  ')"/>
-    </xsl:apply-templates>
+    </xsl:apply-templates>-->
     <!-- apply H5:Dataset; increase indent -->
-    <xsl:apply-templates select="hdf5:Dataset">
+    <!--<xsl:apply-templates select="hdf5:Dataset">
       <xsl:with-param name="INDENT" select="concat($INDENT,'  ')"/>
       <xsl:with-param name="PATH" select="concat($PATH,'/',@Name)"/>
-    </xsl:apply-templates>
+    </xsl:apply-templates>-->
     <!-- apply H5:Group; increase indent -->
-    <xsl:apply-templates select="hdf5:Group">
+    <!--<xsl:apply-templates select="hdf5:Group">
+      <xsl:with-param name="INDENT" select="concat($INDENT,'  ')"/>
+      <xsl:with-param name="PATH" select="concat($PATH,'/',@Name)"/>
+    </xsl:apply-templates>-->
+    <!-- apply all with increased indent -->
+    <xsl:apply-templates select="*">
       <xsl:with-param name="INDENT" select="concat($INDENT,'  ')"/>
       <xsl:with-param name="PATH" select="concat($PATH,'/',@Name)"/>
     </xsl:apply-templates>
@@ -123,7 +128,7 @@
   <xsl:template match="hdf5:ExternalLink">
     <xsl:param name="INDENT"/>
     <xsl:param name="PATH"/>
-    <xsl:value-of select="$INDENT"/>+ <xsl:value-of select="@LinkName"/> (External Link: <xsl:value-of select="concat(@TargetFilename,@TargetPath)"/>)<xsl:text>
+    <xsl:value-of select="$INDENT"/>* <xsl:value-of select="@LinkName"/> (External Link: <xsl:value-of select="concat(@TargetFilename,@TargetPath)"/>)<xsl:text>
 </xsl:text>
     <xsl:if test="$FOLLOW=1">
       <!-- apply linked file -->
@@ -132,6 +137,14 @@
         <xsl:with-param name="PATH" select="concat($PATH,'/',@LinkName)"/>
       </xsl:apply-templates>
     </xsl:if>
+  </xsl:template>
+
+  <!-- output H5:SoftLink -->
+  <xsl:template match="hdf5:SoftLink">
+    <xsl:param name="INDENT"/>
+    <xsl:param name="PATH"/>
+    <xsl:value-of select="$INDENT"/>* <xsl:value-of select="@LinkName"/> (Soft Link: <xsl:value-of select="@TargetPath"/>)<xsl:text>
+</xsl:text>
   </xsl:template>
 
 </xsl:stylesheet>
