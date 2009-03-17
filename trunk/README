@@ -1,10 +1,31 @@
-ToDo:
+Insallation from SVN
+====================
 
-add h5serielist.exe
+This project needs HDF5 version >= 1.8.2 . You can download it from
+http://www.hdfgroup.org . After the installation of HDF5 proceed with the
+following steps.
 
-add simpleattribute to RO.cc
-add simpledataset to RO.cc
 
-===============================
+1. Checkout from SVN
+--------------------
 
-Stream operators added in rev. 4496 and deleted in rev. 4497.
+If not already done, checkout the SVN tree
+# svn checkout http://svn.berlios.de/svnroot/repos/hdf5serie/trunk hdf5serie
+OR
+# svn checkout svn://svn.berlios.de/hdf5serie/trunk hdf5serie
+
+
+2. Run AutoTools
+----------------
+
+# aclocal
+# autoheader
+# libtoolize -c --force
+# autoconf
+# automake -a -c --force
+
+
+3. Proceed with configure
+-------------------------
+
+See file INSTALL.
