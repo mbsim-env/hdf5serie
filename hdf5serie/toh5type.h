@@ -25,13 +25,30 @@
 
 /** \mainpage HDF5Serie - A HDF5 Wrapper for Time Series - API Documentation
  *
- * This library is a high level programming interface to the HDF5 library for
- * reading and writing data series. A data consists of a vector of
- * equal simple types or a compount of diffrent simple types.
+ * \section purpse Purpose of this Project
+ *
+ * This project has the purpose to provide a template based high level C++
+ * interface/wrapper to HDF5 (http://www.hdfgroup.org) especially/just for
+ * reading and writing series of data. It provides a simple interface to
+ * append data to an existing HDF5-Dataset with one unlimited dimension.
+ * The data to append can be vectors/matrices of elementary type or structs.
+ * The use of the HDF5 DataType and DataSpace is totally encapsulated by the
+ * templates structure of this project (of course only for the provided
+ * functionality).
+ *
+ * \section install Download/Installation
+ *
+ * The source code of this project is only avaliable via svn. See the
+ * "BerliOS Project Page of HDF5Serie" for more informations.
+ *
+ * For installation instructions see the README file of the "checkout" from svn.
+ *
+ * \section license License
  *
  * The library is licensed under the GNU Lesser General Public License (LGPL)
  *
- * The following code shows a usage example of the library.
+ * \section example Example Code
+ *
  * \code
 #include <H5Cpp.h>
 #include <hdf5serie/vectorserie.h>
