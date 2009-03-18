@@ -132,7 +132,7 @@
 </xsl:text>
     <xsl:if test="$FOLLOW=1">
       <!-- apply linked file -->
-      <xsl:apply-templates select="document('.TS.Hauptgruppe2.mbsim.h5.xml')/hdf5:HDF5-File">
+      <xsl:apply-templates select="document(concat('.',@TargetFilename,'.xml'))/hdf5:HDF5-File">
         <xsl:with-param name="INDENT" select="concat($INDENT,'  ')"/>
         <xsl:with-param name="PATH" select="concat($PATH,'/',@LinkName)"/>
       </xsl:apply-templates>
