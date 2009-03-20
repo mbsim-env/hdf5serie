@@ -5,6 +5,7 @@ libhdf5serie_la_SOURCES = toh5type.cc \
   simpleattribute.cc \
   simpledataset.cc \
   vectorserie.cc \
+  fileserie.cc \
   matrixserie.cc
 
 hdf5serieincludedir = $(includedir)/hdf5serie
@@ -14,4 +15,5 @@ hdf5serieinclude_HEADERS = toh5type.h \
   structserie.h \
   vectorserie.h \
   matrixserie.h \
+  fileserie.h \
   knowntypes.def

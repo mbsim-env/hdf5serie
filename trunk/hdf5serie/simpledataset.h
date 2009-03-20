@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _SIMPLEDATASET_H_
-#define _SIMPLEDATASET_H_
+#ifndef _HDF5SERIE_SIMPLEDATASET_H_
+#define _HDF5SERIE_SIMPLEDATASET_H_
 
 #include <H5Cpp.h>
 #include <vector>

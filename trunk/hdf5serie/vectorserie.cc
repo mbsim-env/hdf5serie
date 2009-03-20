@@ -69,7 +69,7 @@ namespace H5 {
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
     DataSpace fileDataSpace(2, dims, maxDims);
     DSetCreatPropList prop;
-    hsize_t chunkDims[]={10000, dims[1]};
+    hsize_t chunkDims[]={hdf5SerieChunkSize, dims[1]};
     prop.setChunk(2, chunkDims);
     DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);
     p_setId(dataset.getId());

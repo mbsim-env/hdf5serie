@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _STRUCTSERIE_H_
-#define _STRUCTSERIE_H_
+#ifndef _HDF5SERIE_STRUCTSERIE_H_
+#define _HDF5SERIE_STRUCTSERIE_H_
 
 #include <H5Cpp.h>
 #include <vector>
@@ -227,7 +227,7 @@ serie.create(parent, "mystructserie");
     hsize_t maxDims[]={H5S_UNLIMITED};
     DataSpace fileDataSpace(1, dims, maxDims);
     DSetCreatPropList prop;
-    hsize_t chunkDims[]={10000};
+    hsize_t chunkDims[]={hdf5SerieChunkSize};
     prop.setChunk(1, chunkDims);
   
     DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop);

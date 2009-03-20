@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _TOH5TYPE_H_
-#define _TOH5TYPE_H_
+#ifndef _HDF5SERIE_TOH5TYPE_H_
+#define _HDF5SERIE_TOH5TYPE_H_
 
 
 /** \mainpage HDF5Serie - A HDF5 Wrapper for Time Series - API Documentation
@@ -87,6 +87,8 @@ int main() {
 #endif
 
 namespace H5 {
+
+  extern int hdf5SerieChunkSize;
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   DataType toH5Type(const CTYPE& dummy);
