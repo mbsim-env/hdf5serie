@@ -20,6 +20,7 @@
  */
 
 #include <config.h>
+#include <fstream>
 #include <hdf5serie/vectorserie.h>
 #include <hdf5serie/structserie.h>
 #include <hdf5serie/simpledataset.h>
@@ -27,6 +28,9 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
+#ifdef HAVE_ANSICSIGNAL
+#  include <signal.h>
+#endif
 
 using namespace H5;
 using namespace std;
@@ -122,6 +126,15 @@ int main(int argc, char* argv[]) {
     int i;
     i=para.find(".h5/");
     string filename=para.substr(0, i+3);
+#ifdef HAVE_ANSICSIGNAL
+    ifstream lockFile(("."+filename).c_str());
+    if(lockFile.good() && ! lockFile.eof()) {
+      pid_t pid;
+      lockFile>>pid;
+      lockFile.close();
+      kill(pid, SIGUSR2);
+    }
+#endif
     H5File file(filename, H5F_ACC_RDONLY);
 
     string dummy=para.substr(i+3);
@@ -202,6 +215,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  cout<<setprecision(17);
   for(int row=0; row<maxrows; row++) {
     for(int k=0; k<arg.size(); k++) {
       // Output nan for to short datasets

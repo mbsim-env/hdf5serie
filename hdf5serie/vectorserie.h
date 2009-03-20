@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _VECTORSERIE_H_
-#define _VECTORSERIE_H_
+#ifndef _HDF5SERIE_VECTORSERIE_H_
+#define _HDF5SERIE_VECTORSERIE_H_
 
 #include <H5Cpp.h>
 #include <vector>

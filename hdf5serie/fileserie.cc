@@ -1,0 +1,91 @@
+/* Copyright (C) 2009 Markus Friedrich
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+ *
+ * Contact:
+ *   mafriedrich@users.berlios.de
+ *
+ */
+
+#include <config.h>
+#include <hdf5serie/fileserie.h>
+#include <fstream>
+#include <unistd.h>
+#include <iostream>
+#ifdef HAVE_ANSICSIGNAL
+#  include <signal.h>
+#endif
+
+using namespace H5;
+using namespace std;
+
+list<FileSerie*> FileSerie::openedFile;
+
+void FileSerie::sigUSR2Handler(int i) {
+  cout<<"HDF5Serie: Received USR2 signal! Flushing files!"<<endl;
+  for(list<FileSerie*>::iterator i=openedFile.begin(); i!=openedFile.end(); ++i)
+    (*i)->flush(H5F_SCOPE_GLOBAL);
+}
+
+FileSerie::FileSerie(const char *name, unsigned int flags,
+                     const FileCreatPropList &create_plist,
+                     const FileAccPropList &access_plist) : H5File(name, flags, create_plist, access_plist) {
+  ofstream lockFile((string(".")+name).c_str());
+  lockFile<<getpid()<<endl;
+  lockFile.close();
+  openedFile.push_back(this);
+#ifdef HAVE_ANSICSIGNAL
+  signal(SIGUSR2, sigUSR2Handler);
+#endif
+}
+
+FileSerie::FileSerie(const H5std_string &name, unsigned int flags,
+                     const FileCreatPropList &create_plist,
+                     const FileAccPropList &access_plist) : H5File(name, flags, create_plist, access_plist) {
+  ofstream lockFile((string(".")+name).c_str());
+  lockFile<<getpid()<<endl;
+  lockFile.close();
+  openedFile.push_back(this);
+#ifdef HAVE_ANSICSIGNAL
+  signal(SIGUSR2, sigUSR2Handler);
+#endif
+}
+
+FileSerie::~FileSerie() {
+  ofstream lockFile((string(".")+getFileName()).c_str());
+  lockFile.close();
+  openedFile.remove(this);
+}
+
+void FileSerie::close() {
+  H5File::close();
+  openedFile.remove(this);
+}
+
+void FileSerie::openFile(const H5std_string &name, unsigned int flags, const FileAccPropList &access_plist) {
+  H5File::openFile(name, flags, access_plist);
+  ofstream lockFile((string(".")+name).c_str());
+  lockFile<<getpid()<<endl;
+  lockFile.close();
+  openedFile.push_back(this);
+}
+
+void FileSerie::openFile(const char *name, unsigned int flags, const FileAccPropList &access_plist) {
+  H5File::openFile(name, flags, access_plist);
+  ofstream lockFile((string(".")+name).c_str());
+  lockFile<<getpid()<<endl;
+  lockFile.close();
+  openedFile.push_back(this);
+}

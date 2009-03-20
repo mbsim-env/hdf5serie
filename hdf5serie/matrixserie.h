@@ -19,8 +19,8 @@
  *
  */
 
-#ifndef _MATRIXSERIE_H_
-#define _MATRIXSERIE_H_
+#ifndef _HDF5SERIE_MATRIXSERIE_H_
+#define _HDF5SERIE_MATRIXSERIE_H_
 
 #include <H5Cpp.h>
 #include <vector>
