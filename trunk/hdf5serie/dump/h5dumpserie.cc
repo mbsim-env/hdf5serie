@@ -133,6 +133,7 @@ int main(int argc, char* argv[]) {
       lockFile>>pid;
       lockFile.close();
       kill(pid, SIGUSR2);
+      usleep(100000);
     }
 #endif
     H5File file(filename, H5F_ACC_RDONLY);

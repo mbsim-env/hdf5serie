@@ -30,6 +30,8 @@ namespace H5 {
   class FileSerie : public H5File {
     private:
       static std::list<FileSerie*> openedFile;
+      static bool flushOnes;
+      static void sigUSR2Handler(int);
     public:
       FileSerie(const char *name, unsigned int flags,
                 const FileCreatPropList &create_plist=FileCreatPropList::DEFAULT,
@@ -41,7 +43,8 @@ namespace H5 {
       void close();
       void openFile(const H5std_string &name, unsigned int flags, const FileAccPropList &access_plist=FileAccPropList::DEFAULT);
       void openFile(const char *name, unsigned int flags, const FileAccPropList &access_plist=FileAccPropList::DEFAULT);
-      static void sigUSR2Handler(int);
+      static void flushAllFiles();
+      static bool getFlushOnes() { return flushOnes; }
   };
 }
 

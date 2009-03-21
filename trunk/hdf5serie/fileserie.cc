@@ -32,11 +32,18 @@ using namespace H5;
 using namespace std;
 
 list<FileSerie*> FileSerie::openedFile;
+bool FileSerie::flushOnes=false;
 
 void FileSerie::sigUSR2Handler(int i) {
-  cout<<"HDF5Serie: Received USR2 signal! Flushing files!"<<endl;
+  cout<<"HDF5Serie: Received USR2 signal! Ask for flushing files!"<<endl;
+  flushOnes=true;
+}
+
+void FileSerie::flushAllFiles() {
+  cout<<"HDF5Serie: Flushing files!"<<endl;
   for(list<FileSerie*>::iterator i=openedFile.begin(); i!=openedFile.end(); ++i)
     (*i)->flush(H5F_SCOPE_GLOBAL);
+  flushOnes=false;
 }
 
 FileSerie::FileSerie(const char *name, unsigned int flags,
