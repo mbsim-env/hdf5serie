@@ -24,6 +24,7 @@
 
 #include <H5Cpp.h>
 #include <vector>
+#include <deque>
 #include <string>
 #include <assert.h>
 #include <hdf5serie/simpleattribute.h>
@@ -114,6 +115,12 @@ namespace H5 {
        * The fist dimension of the HDF5 array will be incremented by this operation.
        */
       void append(const std::vector<std::vector<T> > &matrix);
+
+      /** \brief Append a matrix
+       *
+       * Convenience/Performance function for <std::deque<std::deque<T> >
+       */
+      void append(const std::deque<std::deque<T> > &matrix);
 
       /** \brief Returns the number of matrices in the dataset */
       inline unsigned int getNumberOfMatrices();
