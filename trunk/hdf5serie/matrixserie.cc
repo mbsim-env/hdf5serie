@@ -126,6 +126,26 @@ namespace H5 {
   }
 
   template<class T>
+  void MatrixSerie<T>::append(const deque<deque<T> > &matrix) {
+    assert(matrix.size()==dims[1]);
+    dims[0]++;
+    DataSet::extend(dims);
+
+    hsize_t start[]={dims[0]-1,0,0};
+    hsize_t count[]={1, dims[1], dims[2]};
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+
+    T* data=new T[dims[1]*dims[2]];
+    for(int r=0; r<matrix.size(); r++) {
+      assert(matrix[r].size()==dims[2]);
+      memcpy(&data[r*dims[2]],&matrix[r][0],sizeof(double)*dims[2]);
+    }
+    write(data, memDataType, memDataSpace, fileDataSpace);
+    delete[]data;
+  }
+
+  template<class T>
   vector<vector<T> > MatrixSerie<T>::getMatrix(const int number) {
     hsize_t start[]={number,0,0};
     hsize_t count[]={1, dims[1],dims[2]};

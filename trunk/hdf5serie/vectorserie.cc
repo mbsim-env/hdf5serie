@@ -122,6 +122,22 @@ namespace H5 {
   void VectorSerie<std::string>::append(const std::vector<std::string> &data);
 
   template<class T>
+  void VectorSerie<T>::append(const std::deque<T> &data) {
+    assert(data.size()==dims[1]);
+    dims[0]++;
+    DataSet::extend(dims);
+
+    hsize_t start[]={dims[0]-1,0};
+    hsize_t count[]={1, dims[1]};
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+
+    write(&data[0], memDataType, memDataSpace, fileDataSpace);
+  }
+  template<>
+  void VectorSerie<std::string>::append(const std::deque<std::string> &data);
+
+  template<class T>
   std::vector<T> VectorSerie<T>::getRow(const int row) {
     hsize_t start[]={row,0};
     hsize_t count[]={1, dims[1]};
@@ -203,6 +219,27 @@ namespace H5 {
 
   template<>
   void VectorSerie<string>::append(const vector<string> &data) {
+    assert(data.size()==dims[1]);
+    dims[0]++;
+    DataSet::extend(dims);
+  
+    hsize_t start[]={dims[0]-1,0};
+    hsize_t count[]={1, dims[1]};
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+  
+    char** dummy=new char*[dims[1]];
+    for(int i=0; i<dims[1]; i++) {
+      dummy[i]=new char[data[i].size()+1];
+      strcpy(dummy[i], data[i].c_str());
+    }
+    write(dummy, memDataType, memDataSpace, fileDataSpace);
+    for(int i=0; i<dims[1]; i++) delete[]dummy[i];
+    delete[]dummy;
+  }
+  
+  template<>
+  void VectorSerie<string>::append(const deque<string> &data) {
     assert(data.size()==dims[1]);
     dims[0]++;
     DataSet::extend(dims);
