@@ -24,7 +24,6 @@
 
 #include <H5Cpp.h>
 #include <vector>
-#include <deque>
 #include <string>
 #include <assert.h>
 #include <hdf5serie/simpleattribute.h>
@@ -118,12 +117,6 @@ namespace H5 {
        * The number of rows of the HDF5 array will be incremented by this operation.
        */
       void append(const std::vector<T> &data);
-
-      /** \brief Append a data vector
-       *
-       * Convenience/Performance function for std::deque<T>.
-       */
-      void append(const std::deque<T> &data);
 
       /** \brief Returns the number of rows in the dataset */
       inline int getRows();
