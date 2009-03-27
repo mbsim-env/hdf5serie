@@ -57,14 +57,19 @@ datarootdir=@datarootdir@
 # create XML dump (without data) of all *.h5 files in the
 # directory of file FILE (save as .*.h5.xml)
 DIR=$(dirname $FILE)
-for SUBFILE in $DIR/*.h5; do
-  @h5dump@ -xA $SUBFILE > $DIR/.$(basename $SUBFILE).xml
+cd $DIR
+for SUBFILE in *.h5; do
+  @h5dump@ -xA $SUBFILE > .$SUBFILE.xml
 done
 
 # call xslt
-@xsltproc@ --path $DIR --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F @datarootdir@/hdf5serie/xsl/h5lsserie.xsl $DIR/.$(basename $FILE).xml
+if [ @xsltproc@ != "no" ]; then
+  @xsltproc@ --path . --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F @datarootdir@/hdf5serie/xsl/h5lsserie.xsl .$(basename $FILE).xml
+elif [ @msxsl@ != "no" ]; then
+  @msxsl@ .$(basename $FILE).xml @datarootdir@/hdf5serie/xsl/h5lsserie.xsl FILENAME="$FILE" LABEL=$L DESCRIPTION=$D FOLLOW=$F
+fi
 
 # delete all previous created .*.h5.xml files
-for SUBFILE in $DIR/*.h5; do
-  rm -f $DIR/.$(basename $SUBFILE).xml
+for SUBFILE in *.h5; do
+  rm -f .$SUBFILE.xml
 done

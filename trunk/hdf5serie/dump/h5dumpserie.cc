@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
     i=para.find(".h5/");
     string filename=para.substr(0, i+3);
 #ifdef HAVE_ANSICSIGNAL
-    ifstream lockFile(("."+filename).c_str());
+    ifstream lockFile(("."+filename+".pid").c_str());
     if(lockFile.good() && ! lockFile.eof()) {
       pid_t pid;
       lockFile>>pid;
