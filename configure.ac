@@ -8,9 +8,11 @@ AC_LANG([C++])
 AC_PROG_LIBTOOL
 AC_PROG_CXX
 
+# By autoscan
 AC_C_CONST
 AC_C_INLINE
 AC_HEADER_STDBOOL
+AC_TYPE_PID_T
 
 dnl Check for doxygen
 AC_ARG_WITH([doxygenpath],
@@ -31,20 +33,24 @@ if test $enable_xslt = "yes"; then
   AC_ARG_WITH([xsltprocpath],
     [  --with-xsltproc-path=PATHTOXSLTPROC  The path to the 'xsltproc' program.],
     [xsltprocpath="$withval"],[xsltprocpath=""])
+  AC_ARG_WITH([msxslpath],
+    [  --with-msxsl-path=PATHTOMSXSL  The path to the 'msxsl' program.],
+    [msxslpath="$withval"],[msxslpath=""])
   AC_PATH_PROG([xsltproc],[xsltproc],[no],[$xsltprocpath:$prefix/bin:$PATH])
-  if test $xsltproc = "no"; then
+  AC_PATH_PROG([msxsl],[msxsl],[no],[$msxslpath:$prefix/bin:$PATH])
+  if test "$xsltproc" = "no" -a "$msxsl" = "no"; then
     AC_MSG_ERROR([
-  xsltproc program not found!
+  No xslt processor found!
   Disable with --disable-xslt (h5lsserie will not work),
-  or specify --with-xsltproc-path!])
+  or specify --with-xsltproc-path or --with-msxsl-path!])
   fi
 fi
 
 dnl Check for ANSI C Signal Handling
-AC_MSG_CHECKING([for ANSI c signal SIGTERM]); AC_COMPILE_IFELSE([
+AC_MSG_CHECKING([for ANSI c signal SIGUSR2]); AC_COMPILE_IFELSE([
 #include <signal.h>
 int main() {
-  signal(SIGTERM, 0);
+  signal(SIGUSR2, 0);
   return 0;
 }
 ], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_ANSICSIGNAL],[],[Use ANSI C Signal Handling])],

@@ -45,6 +45,7 @@ namespace H5 {
       void openFile(const char *name, unsigned int flags, const FileAccPropList &access_plist=FileAccPropList::DEFAULT);
       static void flushAllFiles();
       static bool getFlushOnes() { return flushOnes; }
+      static void deletePIDFiles();
   };
 }
 
