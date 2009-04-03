@@ -518,6 +518,8 @@ int main() {
 
   CommonFG *grp3;
   grp3=new Group(grp2->createGroup("mygrp3"));
+  delete grp3;
+  delete grp2;
   ///////////////////
   VectorSerie<double> ts2;
   ts2.create(grp1, "timeserie", colhead);

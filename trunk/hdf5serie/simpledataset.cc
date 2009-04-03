@@ -335,6 +335,7 @@ namespace H5 {
       memcpy(&buf[r*dims[1]], &data[r][0], sizeof(dummy)*dims[1]);
     }
     DataSet::write(buf, memDataType, dataSpace, dataSpace);
+    delete[]buf;
   }
   template<>
   void SimpleDataSet<vector<vector<string> > >::write(const vector<vector<string> >& data);
