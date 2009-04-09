@@ -65,6 +65,7 @@ AC_ARG_WITH(hdf5_prefix,
   [CPPFLAGS="$CPPFLAGS -I$prefix/include"
     LDFLAGS="$LDFLAGS -L$prefix/lib"
     LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$prefix])
+AC_SUBST([hdf5_prefix])
 AC_PATH_PROG([h5dump],[h5dump],[no],[$hdf5_prefix/bin:$PATH])
 AC_CHECK_HEADERS([H5Cpp.h], [],
   [AC_MSG_ERROR([Can not find hdf5 c++ header H5Cpp.h])])
