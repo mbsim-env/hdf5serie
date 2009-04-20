@@ -60,7 +60,7 @@ using namespace std;
 string comment="#";
 string quote="\"";
 string delim=" ";
-string nan="nan";
+string mynan="nan";
 
 int string2int(string str) {
   stringstream sstr(str);
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 
   i=find(arg.begin(), arg.end(), "-n");
   if(i!=arg.end()) {
-    nan=*(i+1);
+    mynan=*(i+1);
     arg.erase(i, i+2);
   }
 
@@ -219,14 +219,14 @@ int main(int argc, char* argv[]) {
   cout<<setprecision(17);
   for(int row=0; row<maxrows; row++) {
     for(int k=0; k<arg.size(); k++) {
-      // Output nan for to short datasets
+      // Output mynan for to short datasets
       DataSpace space=dataSet[k].getSpace();
       int N=space.getSimpleExtentNdims();
       hsize_t* dims=new hsize_t[N];
       space.getSimpleExtentDims(dims);
       if(row>=dims[0]) {
         for(int i=0; i<column[k].size(); i++)
-          cout<<(k==0&&i==0?"":delim)<<nan;
+          cout<<(k==0&&i==0?"":delim)<<mynan;
         continue;
       }
       delete[]dims;
