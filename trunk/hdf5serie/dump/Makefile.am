@@ -9,7 +9,7 @@ h5dumpserie_LDADD = -lhdf5serie
 
 
 if COND_XSLT
-  MAYBE_H5LSSERIE = h5lsserie
+  MAYBE_H5LSSERIE = h5lsserie h5lsserie.bat
 endif
 
 bin_SCRIPTS = $(MAYBE_H5LSSERIE)

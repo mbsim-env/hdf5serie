@@ -53,7 +53,7 @@ int main() {
 
     s=ts1d.getRow(r-1);
     cout<<"1D "<<s.d<<" "<<s.i<<endl;
-    sleep(1);
+    //sleep(1);
     file.reread();
   }
   //ts.closePermanent();

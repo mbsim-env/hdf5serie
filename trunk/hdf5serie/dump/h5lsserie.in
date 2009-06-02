@@ -1,5 +1,8 @@
 #! /bin/sh
 #
+# Unix sh variant of h5lsserie (h5lsserie.in)
+# If editing this file, also edit the file h5lsserie.bat.in
+#
 # Copyright (C) 2009 Markus Friedrich
 #
 # This library is free software; you can redistribute it and/or 
