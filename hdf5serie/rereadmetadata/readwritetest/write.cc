@@ -56,7 +56,7 @@ int main() {
     ts1d.append(s);
     file.flush(H5F_SCOPE_GLOBAL);
     cout<<i<<endl;
-    sleep(1);
+    //sleep(1);
     i++;
   }
 
