@@ -52,7 +52,7 @@ if [ $H -eq 1 ]; then
 fi
 
 prefix=@prefix@
-datarootdir=@datarootdir@
+datadir=@datadir@
 
 # create XML dump (without data) of all *.h5 files in the
 # directory of file FILE (save as .*.h5.xml)
@@ -64,9 +64,9 @@ done
 
 # call xslt
 if [ @xsltproc@ != "no" ]; then
-  @xsltproc@ --path . --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F @datarootdir@/hdf5serie/xsl/h5lsserie.xsl .$(basename $FILE).xml
+  @xsltproc@ --path . --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F $datadir/hdf5serie/xsl/h5lsserie.xsl .$(basename $FILE).xml
 elif [ @msxsl@ != "no" ]; then
-  @msxsl@ .$(basename $FILE).xml @datarootdir@/hdf5serie/xsl/h5lsserie.xsl FILENAME="$FILE" LABEL=$L DESCRIPTION=$D FOLLOW=$F
+  @msxsl@ .$(basename $FILE).xml $datadir/hdf5serie/xsl/h5lsserie.xsl FILENAME="$FILE" LABEL=$L DESCRIPTION=$D FOLLOW=$F
 fi
 
 # delete all previous created .*.h5.xml files
