@@ -14,7 +14,7 @@ endif
 
 bin_SCRIPTS = $(MAYBE_H5LSSERIE)
 
-xsldir = @datarootdir@/hdf5serie/xsl
+xsldir = @datadir@/hdf5serie/xsl
 dist_xsl_DATA = h5lsserie.xsl
 
 

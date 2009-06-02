@@ -3,7 +3,7 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 bindir=@bindir@
 includedir=@includedir@
-datarootdir=@datarootdir@
+datadir=@datadir@
 PACKAGE_TARNAME=@PACKAGE_TARNAME@
 docdir=@docdir@
 
