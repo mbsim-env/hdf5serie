@@ -22,6 +22,7 @@
 "      -s: suppress header\n"
 "      -q <quote>: use <quote> to quote strings in output (Default '\"')\n"
 "      -n <nan>: use <nan> for 'not a number' in output (Default 'nan')\n"
+"      -p <int>: use <int> precision for output (Default 17)\n"
 "\n"
 "Example:\n"
 "  h5dumpserie dir/test1.h5/grp1/grp2/mydata:1,3,5-,2 dir/test1.h5/data:-4\n"

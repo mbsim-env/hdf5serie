@@ -61,6 +61,7 @@ string comment="#";
 string quote="\"";
 string delim=" ";
 string mynan="nan";
+int precision=17;
 
 int string2int(string str) {
   stringstream sstr(str);
@@ -113,6 +114,12 @@ int main(int argc, char* argv[]) {
   i=find(arg.begin(), arg.end(), "-n");
   if(i!=arg.end()) {
     mynan=*(i+1);
+    arg.erase(i, i+2);
+  }
+
+  i=find(arg.begin(), arg.end(), "-p");
+  if(i!=arg.end()) {
+    precision=string2int(*(i+1));
     arg.erase(i, i+2);
   }
 
@@ -216,7 +223,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  cout<<setprecision(17);
+  cout<<setprecision(precision)<<scientific;
   for(int row=0; row<maxrows; row++) {
     for(int k=0; k<arg.size(); k++) {
       // Output mynan for to short datasets
