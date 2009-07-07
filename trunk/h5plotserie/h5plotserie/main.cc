@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   vector<string>::iterator i1, i2, i3;
   i1=find(arg.begin(), arg.end(), "-h");
   i2=find(arg.begin(), arg.end(), "--help");
-  if(i1!=arg.end() || i2!=arg.end()) {
+  if(i1!=arg.end() || i2!=arg.end() || arg.size()==0) {
     cout<<"h5plotserie - plot the data of a hdf5 file"<<endl
     <<""<<endl
     <<"Copyright (C) 2009 Martin Förg <mfoerg@users.berlios.de>"<<endl
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     <<"Usage:" << endl
     <<"  h5plotserie <file.h5>"<<endl
     <<"    -h, --help: Show this help"<<endl;
-    if(i1!=arg.end()) arg.erase(i1); if(i2!=arg.end()) arg.erase(i2);
+    if(i1!=arg.end()) arg.erase(i1); else if(i2!=arg.end()) arg.erase(i2);
     return 0;
   }
 
