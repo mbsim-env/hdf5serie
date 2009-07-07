@@ -122,7 +122,7 @@ void MainWindow::plot(QListWidgetItem* item) {
   vs.open(*file,s);
   vector<double> t = vs.getColumn(0);
   vector<double> q = vs.getColumn(col);
-  curve->setData(t.data(),q.data(),t.size());
+  curve->setData(&t[0],&q[0],t.size());
   myPlot->setTitle(s.c_str());
   myPlot->setAxisTitle(QwtPlot::xBottom,vs.getColumnLabel()[0].c_str());
   myPlot->setAxisTitle(QwtPlot::yLeft,vs.getColumnLabel()[col].c_str());
