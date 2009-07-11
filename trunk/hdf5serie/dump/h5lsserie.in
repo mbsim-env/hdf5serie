@@ -41,7 +41,13 @@ while test $# -ne 0; do
 done
 
 if [ $H -eq 1 ]; then
+  echo "h5lsserie"
+  echo ""
   echo "Lists the groups and datasets in a hdf5 file."
+  echo ""
+  echo "Copyright (C) 2009 Markus Friedrich <mafriedrich@users.berlios.de>"
+  echo "This is free software; see the source for copying conditions. There is NO"
+  echo "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
   echo ""
   echo "Licensed under the GNU Lesser General Public License (LGPL)"
   echo ""
