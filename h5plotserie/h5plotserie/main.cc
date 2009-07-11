@@ -20,6 +20,7 @@
 #include <QApplication>
 #include "mainwindow.h"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -37,9 +38,11 @@ int main(int argc, char *argv[]) {
   if(i1!=arg.end() || i2!=arg.end() || arg.size()==0) {
     cout<<"h5plotserie - plot the data of a hdf5 file"<<endl
     <<""<<endl
-    <<"Copyright (C) 2009 Martin Förg <mfoerg@users.berlios.de>"<<endl
+    <<"Copyright (C) 2009 Martin Foerg <mfoerg@users.berlios.de>"<<endl
     <<"This is free software; see the source for copying conditions. There is NO"<<endl
     <<"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."<<endl
+    <<""<<endl
+    <<"Licensed under the GNU General Public License (GPL)"<<endl
     <<""<<endl
     <<"Usage:" << endl
     <<"  h5plotserie <file.h5>"<<endl
