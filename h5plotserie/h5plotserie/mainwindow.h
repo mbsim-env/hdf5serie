@@ -21,6 +21,7 @@
 #define _MAINWINDOW_H_
 
 #include <QMainWindow>
+#include <qwt_plot_curve.h>
 
 namespace H5 {
   class H5File;
@@ -30,13 +31,35 @@ namespace sdt {
   class stringstream;
 }
 class QwtPlot;
-class QwtPlotCurve;
+//class QwtPlotCurve;
 class QTreeWidget;
 class QListWidget;
+class QTableWidget;
 class QTreeWidgetItem;
 class QListWidgetItem;
 class QwtPlotZoomer;
 class QCheckBox;
+
+class MyCurve : public QwtPlotCurve {
+  private:
+    std::string xLabel;
+    std::string yLabel;
+    std::string xPath;
+    std::string yPath;
+  public:
+    void setxLabel(std::string &string) {xLabel = string;}
+    void setyLabel(std::string &string) {yLabel = string;}
+    void setxPath(std::string &string) {xPath = string;}
+    void setyPath(std::string &string) {yPath = string;}
+    std::string& getxPath() {return xPath;}
+    std::string& getyPath() {return yPath;}
+    std::string& getxLabel() {return xLabel;}
+    std::string& getyLabel() {return yLabel;}
+    const std::string& getxPath() const {return xPath;}
+    const std::string& getyPath() const {return yPath;}
+    const std::string& getxLabel() const {return xLabel;}
+    const std::string& getyLabel() const {return yLabel;}
+};
 
 class MainWindow : public QMainWindow {
 
@@ -46,10 +69,12 @@ class MainWindow : public QMainWindow {
     QWidget *centralWidget;
     H5::H5File * file;
     QwtPlot *myPlot;
-    QwtPlotCurve *curve;
+    std::vector<MyCurve*> curve;
+    std::vector<QPen> pen;
     QwtPlotZoomer *zoom;
     QTreeWidget *treeWidget;
     QListWidget *listWidget;
+    QTreeWidget *tableWidget;
 
     void insertChildInTree(H5::Group &grp, QTreeWidgetItem *item);
     void getPath(QTreeWidgetItem* item, std::stringstream &s, int col);
@@ -57,8 +82,11 @@ class MainWindow : public QMainWindow {
     MainWindow(std::vector<std::string>& arg);
 
   public slots:
+    void help();
+    void about();
     void plot(QListWidgetItem *item);
-    void check(QTreeWidgetItem*, int);
+    void updateData(QTreeWidgetItem*, int);
+    void detachCurve(QTreeWidgetItem*, int);
 
 };
 
