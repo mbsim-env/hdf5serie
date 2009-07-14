@@ -70,6 +70,7 @@ AC_PATH_PROG([h5dump],[h5dump],[no],[$hdf5_prefix/bin:$PATH])
 AC_CHECK_HEADERS([H5Cpp.h], [],
   [AC_MSG_ERROR([Can not find hdf5 c++ header H5Cpp.h])])
 AC_MSG_CHECKING([for hdf5 c++ library])
+LDFLAGS="$LDFLAGS -lz" # for deflate compression
 AC_TRY_LINK([#include <H5Cpp.h>],[H5::H5File file],[AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no]); AC_MSG_ERROR([Can not link with hdf5 c++ library])])
 
