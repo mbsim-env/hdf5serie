@@ -111,7 +111,7 @@ MainWindow::MainWindow(vector<string>& arg) {
   pen.push_back(QPen(Qt::magenta));
 
   QMenu *fileMenu=new QMenu("File", menuBar());
-  QAction *addFileAct=fileMenu->addAction("Add File...", this, SLOT(addPlotWindow()));
+  QAction *addFileAct=fileMenu->addAction("Add Plot...", this, SLOT(addPlotWindow()));
   fileMenu->addSeparator();
   menuBar()->addMenu(fileMenu);
 
