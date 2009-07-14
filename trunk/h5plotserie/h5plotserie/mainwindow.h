@@ -22,6 +22,7 @@
 
 #include <QMainWindow>
 #include <qwt_plot_curve.h>
+#include <qwt_plot.h>
 
 namespace H5 {
   class H5File;
@@ -39,6 +40,18 @@ class QTreeWidgetItem;
 class QListWidgetItem;
 class QwtPlotZoomer;
 class QCheckBox;
+class QMdiArea;
+class QMdiSubWindow;
+
+class MyPlot : public QwtPlot {
+  private:
+    QwtPlotZoomer *zoom;
+  public:
+    MyPlot(QWidget *p);
+    ~MyPlot();
+    void setZoomer(QwtPlotZoomer* zoom_) {zoom = zoom_;}
+    QwtPlotZoomer* getZoom() {return zoom;}
+};
 
 class MyCurve : public QwtPlotCurve {
   private:
@@ -75,19 +88,24 @@ class MainWindow : public QMainWindow {
     QTreeWidget *treeWidget;
     QListWidget *listWidget;
     QTreeWidget *tableWidget;
+    QMdiArea *mdiArea;
 
     void insertChildInTree(H5::Group &grp, QTreeWidgetItem *item);
     void getPath(QTreeWidgetItem* item, std::stringstream &s, int col);
+
+    void updateTableWidget();
+
   public:
     MainWindow(std::vector<std::string>& arg);
 
-  public slots:
-    void help();
+    public slots:
+      void help();
     void about();
     void plot(QListWidgetItem *item);
     void updateData(QTreeWidgetItem*, int);
     void detachCurve(QTreeWidgetItem*, int);
-
+    void addPlotWindow();
+    void windowChanged(QMdiSubWindow*);
 };
 
 #endif
