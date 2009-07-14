@@ -57,14 +57,14 @@ namespace H5 {
   }
 
   template<class T>
-  MatrixSerie<T>::MatrixSerie(const CommonFG& parent, const string& name, const int rows, const int cols) {
+  MatrixSerie<T>::MatrixSerie(const CommonFG& parent, const string& name, const int rows, const int cols, int compression) {
     T dummy;
     memDataType=toH5Type(dummy);
-    create(parent, name, rows, cols);
+    create(parent, name, rows, cols, compression);
   }
 
   template<class T>
-  void MatrixSerie<T>::create(const CommonFG& parent, const string& name, const int rows, const int cols) {
+  void MatrixSerie<T>::create(const CommonFG& parent, const string& name, const int rows, const int cols, int compression) {
     dims[0]=0;
     dims[1]=rows;
     dims[2]=cols;
@@ -73,6 +73,7 @@ namespace H5 {
     DSetCreatPropList prop;
     hsize_t chunkDims[]={hdf5SerieChunkSize, dims[1], dims[2]};
     prop.setChunk(3, chunkDims);
+    if(compression>0) prop.setDeflate(compression);
     DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);
     p_setId(dataset.getId());
     incRefCount();

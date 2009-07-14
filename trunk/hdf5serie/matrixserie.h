@@ -88,13 +88,15 @@ namespace H5 {
        *
        * see create()
       */
-      MatrixSerie(const CommonFG& parent, const std::string& name, const int rows, const int cols);
+      MatrixSerie(const CommonFG& parent, const std::string& name, const int rows, const int cols, int compression=1);
 
       /** \brief Creating a dataset
        *
        * Creates a dataset named \a name as a child of position \a parent.
+       * By default the dataset is compressed using deflate (gzip) with compression level
+       * 1. Use \a compression to adjuste the compression level [1-9] or 0 to disable compression.
       */
-      void create(const CommonFG& parent, const std::string& name, const int rows, const int cols);
+      void create(const CommonFG& parent, const std::string& name, const int rows, const int cols, int compression=1);
 
       /** \brief Open a dataset
        *
