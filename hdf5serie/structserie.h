@@ -120,11 +120,13 @@ serie.create(parent, "mystructserie");
       /** \brief Creating a dataset
        *
        * Creates a dataset named \a name as a child of position \a parent.
+       * By default the dataset is compressed using deflate (gzip) with compression level
+       * 1. Use \a compression to adjuste the compression level [1-9] or 0 to disable compression.
        * NOTE that the object can not be created before the members of the struct
        * are registered using registerMember(const S& s, const CTYPE& e, const std::string name) or
        * registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name)
       */
-      void create(const CommonFG& parent, const std::string& name);
+      void create(const CommonFG& parent, const std::string& name, int compression=1);
 
       /** \brief Open a dataset
        *
@@ -221,7 +223,7 @@ serie.create(parent, "mystructserie");
 # undef FOREACHKNOWNTYPE
 
   template<class S>
-  void StructSerie<S>::create(const CommonFG& parent, const std::string& name) {
+  void StructSerie<S>::create(const CommonFG& parent, const std::string& name, int compression) {
     assert(!firstCall);
     dims[0]=0;
     hsize_t maxDims[]={H5S_UNLIMITED};
@@ -229,7 +231,7 @@ serie.create(parent, "mystructserie");
     DSetCreatPropList prop;
     hsize_t chunkDims[]={hdf5SerieChunkSize};
     prop.setChunk(1, chunkDims);
-  
+    if(compression>0) prop.setDeflate(compression);
     DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop);
     p_setId(dataSet.getId());
     incRefCount();

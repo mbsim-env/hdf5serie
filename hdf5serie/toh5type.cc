@@ -26,7 +26,7 @@ using namespace std;
 
 namespace H5 {
 
-  int hdf5SerieChunkSize=10000;
+  int hdf5SerieChunkSize=1000;
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   DataType toH5Type(const CTYPE& dummy) { \
