@@ -27,15 +27,15 @@ class TreeWidgetItem : public QTreeWidgetItem {
   //Q_OBJECT
 
   private:
-    std::string path;
+    QString path;
     QStringList list;
   public:
     TreeWidgetItem ( const QStringList & strings) : QTreeWidgetItem(strings) {}
-    void setPath(std::string p) {path = p;}
+    void setPath(QString p) {path = p;}
     void setStringList(QStringList &list_) {list = list_;}
     QStringList& getStringList() {return list;}
-    const std::string& getPath() const {return path;}
-    std::string& getPath() {return path;}
+    const QString& getPath() const {return path;}
+    QString& getPath() {return path;}
 };
 
 

@@ -26,6 +26,8 @@
 #include <QListWidget>
 #include <QTableWidget>
 #include <QMenuBar>
+#include <QFileDialog>
+#include <QSplitter>
 #include <QMessageBox>
 #include <QMdiArea>
 #include <QMdiSubWindow>
@@ -53,47 +55,32 @@ MainWindow::MainWindow(vector<string>& arg) {
   centralWidget->setLayout(mainlayout);
 
   QDockWidget *objectListDW=new QDockWidget("Data",this);
-  //objectListDW->setObjectName("Objects");
   addDockWidget(Qt::LeftDockWidgetArea,objectListDW);
-  treeWidget = new QTreeWidget(objectListDW);
-  QWidget *objectListWG = new QWidget;
-  objectListDW->setWidget(objectListWG);
-  QHBoxLayout *objectListLO = new QHBoxLayout;
-  objectListWG->setLayout(objectListLO);
-  objectListLO->addWidget(treeWidget);
-  //objectListDW->setWidget(treeWidget);
+  QSplitter *splitter = new QSplitter;
+  objectListDW->setWidget(splitter);
+  treeWidget = new QTreeWidget;
+  splitter->addWidget(treeWidget);
+
   treeWidget->setHeaderHidden(true);
   treeWidget->setColumnCount(1);
 
+
+  addFile(arg[0].c_str());
+
   listWidget = new QListWidget;
-  //dataListDW->setWidget(listWidget);
-  objectListLO->addWidget(listWidget);
+  splitter->addWidget(listWidget);
 
-  file = new H5::H5File(arg[0], H5F_ACC_RDONLY);
-  QList<QTreeWidgetItem *> items;
-  for(unsigned int i=0; i<file->getNumObjs(); i++)  {
-    QTreeWidgetItem *item = new TreeWidgetItem(QStringList(file->getObjnameByIdx(i).c_str()));
-    H5::Group grp = file->openGroup(file->getObjnameByIdx(i));
-    insertChildInTree(grp, item);
-
-    treeWidget->insertTopLevelItem(i,item);
-  }
 
   QDockWidget *curveDW=new QDockWidget("Curves",this);
-  //curveDW->setObjectName("Curves");
   addDockWidget(Qt::LeftDockWidgetArea,curveDW);
   tableWidget = new QTreeWidget;
-  //tableWidget = new QTableWidget;
   curveDW->setWidget(tableWidget);
   tableWidget->setColumnCount(5);
   QStringList sl;
   sl << "Number" << "x-label" << "y-label" << "x-path" << "y-path";
   tableWidget->setHeaderLabels(sl);
 
-  //myPlot = new QwtPlot(QwtText(""), centralWidget);
   myPlot = new MyPlot(centralWidget);
-  //myPlot->setAutoDelete(false);
-  //myPlot->setAutoLegend( true );
   mdiArea = new QMdiArea;
   mainlayout->addWidget(mdiArea, 0, 0);
   mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -105,15 +92,19 @@ MainWindow::MainWindow(vector<string>& arg) {
   QwtLegend *legend = new QwtLegend;
   myPlot->insertLegend(legend);
 
-  pen.push_back(QPen(Qt::blue));
-  pen.push_back(QPen(Qt::red));
-  pen.push_back(QPen(Qt::green));
-  pen.push_back(QPen(Qt::magenta));
+  pen.append(QPen(Qt::blue));
+  pen.append(QPen(Qt::red));
+  pen.append(QPen(Qt::green));
+  pen.append(QPen(Qt::magenta));
 
   QMenu *fileMenu=new QMenu("File", menuBar());
-  QAction *addFileAct=fileMenu->addAction("Add Plot...", this, SLOT(addPlotWindow()));
-  fileMenu->addSeparator();
+  QAction *addFileAct=fileMenu->addAction("Open File(s)...", this, SLOT(openFileDialog()));
   menuBar()->addMenu(fileMenu);
+  addFileAct=fileMenu->addAction("Close File...", this, SLOT(closeFile()));
+  menuBar()->addMenu(fileMenu);
+  QMenu *plotMenu=new QMenu("Plot", menuBar());
+  QAction *addPlotAct=plotMenu->addAction("Add Plot...", this, SLOT(addPlotWindow()));
+  menuBar()->addMenu(plotMenu);
 
   // help menu
   menuBar()->addSeparator();
@@ -128,6 +119,27 @@ MainWindow::MainWindow(vector<string>& arg) {
   QObject::connect(mdiArea,SIGNAL(subWindowActivated ( QMdiSubWindow *)), this, SLOT(windowChanged(QMdiSubWindow*)));
 }
 
+void MainWindow::addFile(const QString &name) {
+
+  file.append(new H5::H5File(name.toStdString(), H5F_ACC_RDONLY));
+
+  int j = file.size()-1;
+
+  int iofl = name.lastIndexOf("/");
+  fileName.append(name.right(name.size()-iofl-1));
+
+  TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileName[j]));
+  treeWidget->addTopLevelItem(topitem);
+  QList<QTreeWidgetItem *> items;
+  for(unsigned int i=0; i<file[j]->getNumObjs(); i++)  {
+    QTreeWidgetItem *item = new TreeWidgetItem(QStringList(file[j]->getObjnameByIdx(i).c_str()));
+    H5::Group grp = file[j]->openGroup(file[j]->getObjnameByIdx(i));
+    insertChildInTree(grp, item);
+
+    topitem->addChild(item);
+  }
+}
+
 void MainWindow::insertChildInTree(H5::Group &grp, QTreeWidgetItem *item) {
   for(unsigned int j=0; j<grp.getNumObjs(); j++) {
     QTreeWidgetItem *child = new TreeWidgetItem(QStringList(grp.getObjnameByIdx(j).c_str()));
@@ -139,33 +151,44 @@ void MainWindow::insertChildInTree(H5::Group &grp, QTreeWidgetItem *item) {
     else {
       if(grp.getObjnameByIdx(j) == "data") {
 	VectorSerie<double> vs;
-	stringstream path; 
+	QString path; 
 	getPath(item,path,0);
-	path << "/data";
-	static_cast<TreeWidgetItem*>(child)->setPath(path.str());
+	path += "/data";
+	static_cast<TreeWidgetItem*>(child)->setPath(path);
       }
     }
   }
 }
 
-void MainWindow::getPath(QTreeWidgetItem* item, stringstream &s, int col) {
+void MainWindow::getPath(QTreeWidgetItem* item, QString &s, int col) {
   QTreeWidgetItem* parent = item->parent();
   if(parent)
     getPath(parent,s,col);
-  s  << "/" << item->text(col).toStdString();
+  s  += "/" + item->text(col);
+}
+
+int MainWindow::getTopLevelIndex(QTreeWidgetItem* item) {
+  QTreeWidgetItem* parent = item->parent();
+  if(parent)
+    return getTopLevelIndex(parent);
+  else // item is TopLevelItem
+    return treeWidget->indexOfTopLevelItem(item); 
 }
 
 void MainWindow::plot(QListWidgetItem* item) {
   if(myPlot) {
-    string path = static_cast<TreeWidgetItem*>(treeWidget->currentItem())->getPath();
+    QString path = static_cast<TreeWidgetItem*>(treeWidget->currentItem())->getPath();
     int col = listWidget->row(item);
     VectorSerie<double> vs;
-    vs.open(*file,path);
+    int j = getTopLevelIndex(treeWidget->currentItem());
+    vs.open(*file[j],path.toStdString());
+    QString fullName = fileName[j]+path;
+
     vector<double> t = vs.getColumn(0);
     vector<double> q = vs.getColumn(col);
 
-    string xlabel = vs.getColumnLabel()[0];
-    string ylabel = vs.getColumnLabel()[col];
+    QString xlabel = QString::fromStdString(vs.getColumnLabel()[0]);
+    QString ylabel = QString::fromStdString(vs.getColumnLabel()[col]);
 
     int k=0;
     if(QApplication::keyboardModifiers() & Qt::ControlModifier) {
@@ -177,7 +200,7 @@ void MainWindow::plot(QListWidgetItem* item) {
 	QwtData* data = curve->data().copy();
 	QwtArrayData* adata = dynamic_cast<QwtArrayData*>(data);
 	curve->setData(&q[0],&adata->yData()[0],q.size());
-	curve->setxPath(path);
+	curve->setxPath(fullName);
 	curve->setyPath(curve->getyPath());
 	curve->setxLabel(ylabel);
 	curve->setyLabel(curve->getyLabel());
@@ -191,8 +214,8 @@ void MainWindow::plot(QListWidgetItem* item) {
 	newcurve->attach(myPlot);
 	newcurve->setPen(pen[k]);
 	newcurve->setData(&t[0],&q[0],t.size());
-	newcurve->setxPath(path);
-	newcurve->setyPath(path);
+	newcurve->setxPath(fullName);
+	newcurve->setyPath(fullName);
 	newcurve->setxLabel(xlabel);
 	newcurve->setyLabel(ylabel);
 	static_cast<QwtLegendItem*>(myPlot->legend()->find(newcurve))->setText(QwtText(QString::number(k+1)));
@@ -210,8 +233,8 @@ void MainWindow::plot(QListWidgetItem* item) {
       newcurve->attach(myPlot);
       newcurve->setPen(pen[0]);
       newcurve->setData(&t[0],&q[0],t.size());
-      newcurve->setxPath(path);
-      newcurve->setyPath(path);
+      newcurve->setxPath(fullName);
+      newcurve->setyPath(fullName);
       newcurve->setxLabel(xlabel);
       newcurve->setyLabel(ylabel);
       //myPlot->setAxisTitle(QwtPlot::xBottom,xlabel.c_str());
@@ -240,7 +263,7 @@ void MainWindow::updateTableWidget() {
     for(int i=0; i<il.size(); i++) {
       sl.clear();
       MyCurve *item = static_cast<MyCurve*>(il[i]);
-      sl << QString::number(i+1) << item->getxLabel().c_str() << item->getyLabel().c_str() << item->getxPath().c_str() << item->getyPath().c_str();
+      sl << QString::number(i+1) << item->getxLabel() << item->getyLabel() << item->getxPath() << item->getyPath();
       QTreeWidgetItem *newItem = new QTreeWidgetItem(sl);
       tableWidget->addTopLevelItem(newItem);
     }
@@ -250,9 +273,10 @@ void MainWindow::updateTableWidget() {
 void MainWindow::updateData(QTreeWidgetItem* item, int col) {
   listWidget->clear();
   if( item->text(col) == "data") {
-    string path = static_cast<TreeWidgetItem*>(item)->getPath();
+    QString path = static_cast<TreeWidgetItem*>(item)->getPath();
     VectorSerie<double> vs;
-    vs.open(*file,path.c_str());
+    int j = getTopLevelIndex(item);
+    vs.open(*file[j],path.toStdString());
     QStringList sl;
     for(unsigned int i=0; i<vs.getColumns(); i++) {
       sl << vs.getColumnLabel()[i].c_str();
@@ -346,4 +370,23 @@ MyPlot::MyPlot(QWidget *p) : QwtPlot(p) {
 MyPlot::~MyPlot() {
   delete zoom;
   zoom = 0;
+}
+
+void MainWindow::openFileDialog() {
+  QStringList files=QFileDialog::getOpenFileNames(0, "OpenMBV Files", ".",
+      "hdf5 Files (*.mbsim.h5)");
+  for(int i=0; i<files.size(); i++)
+    addFile(files[i]);
+}
+
+void MainWindow::closeFile() {
+  QTreeWidgetItem* item = treeWidget->currentItem();
+  if(item && item->parent()==0) {
+    int index = treeWidget->indexOfTopLevelItem(item);
+    treeWidget->takeTopLevelItem(index);
+    updateTableWidget();
+    file[index]->close();
+    file.removeAt(index);
+    fileName.removeAt(index);
+  }
 }
