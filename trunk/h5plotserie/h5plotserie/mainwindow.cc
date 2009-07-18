@@ -65,7 +65,8 @@ MainWindow::MainWindow(vector<string>& arg) {
   treeWidget->setColumnCount(1);
 
 
-  addFile(arg[0].c_str());
+  for(unsigned int i=0; i<arg.size(); i++)
+    addFile(arg[i].c_str());
 
   listWidget = new QListWidget;
   splitter->addWidget(listWidget);
