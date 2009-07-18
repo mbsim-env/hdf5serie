@@ -55,23 +55,23 @@ class MyPlot : public QwtPlot {
 
 class MyCurve : public QwtPlotCurve {
   private:
-    std::string xLabel;
-    std::string yLabel;
-    std::string xPath;
-    std::string yPath;
+    QString xLabel;
+    QString yLabel;
+    QString xPath;
+    QString yPath;
   public:
-    void setxLabel(std::string &string) {xLabel = string;}
-    void setyLabel(std::string &string) {yLabel = string;}
-    void setxPath(std::string &string) {xPath = string;}
-    void setyPath(std::string &string) {yPath = string;}
-    std::string& getxPath() {return xPath;}
-    std::string& getyPath() {return yPath;}
-    std::string& getxLabel() {return xLabel;}
-    std::string& getyLabel() {return yLabel;}
-    const std::string& getxPath() const {return xPath;}
-    const std::string& getyPath() const {return yPath;}
-    const std::string& getxLabel() const {return xLabel;}
-    const std::string& getyLabel() const {return yLabel;}
+    void setxLabel(QString &string) {xLabel = string;}
+    void setyLabel(QString &string) {yLabel = string;}
+    void setxPath(QString &string) {xPath = string;}
+    void setyPath(QString &string) {yPath = string;}
+    QString& getxPath() {return xPath;}
+    QString& getyPath() {return yPath;}
+    QString& getxLabel() {return xLabel;}
+    QString& getyLabel() {return yLabel;}
+    const QString& getxPath() const {return xPath;}
+    const QString& getyPath() const {return yPath;}
+    const QString& getxLabel() const {return xLabel;}
+    const QString& getyLabel() const {return yLabel;}
 };
 
 class MainWindow : public QMainWindow {
@@ -80,10 +80,11 @@ class MainWindow : public QMainWindow {
 
   private:
     QWidget *centralWidget;
-    H5::H5File * file;
+    QList<H5::H5File*> file;
+    QList<QString> fileName;
     QwtPlot *myPlot;
-    std::vector<MyCurve*> curve;
-    std::vector<QPen> pen;
+    QVector<MyCurve*> curve;
+    QVector<QPen> pen;
     QwtPlotZoomer *zoom;
     QTreeWidget *treeWidget;
     QListWidget *listWidget;
@@ -91,21 +92,25 @@ class MainWindow : public QMainWindow {
     QMdiArea *mdiArea;
 
     void insertChildInTree(H5::Group &grp, QTreeWidgetItem *item);
-    void getPath(QTreeWidgetItem* item, std::stringstream &s, int col);
+    void getPath(QTreeWidgetItem* item, QString &s, int col);
+    int getTopLevelIndex(QTreeWidgetItem* item);
 
     void updateTableWidget();
+    void addFile(const QString &name);
 
   public:
     MainWindow(std::vector<std::string>& arg);
 
-    public slots:
-      void help();
+  public slots:
+    void help();
     void about();
     void plot(QListWidgetItem *item);
     void updateData(QTreeWidgetItem*, int);
     void detachCurve(QTreeWidgetItem*, int);
     void addPlotWindow();
+    void openFileDialog();
     void windowChanged(QMdiSubWindow*);
+    void closeFile();
 };
 
 #endif
