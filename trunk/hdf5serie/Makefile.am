@@ -1,19 +1,21 @@
-SUBDIRS = . dump check rereadmetadata
+SUBDIRS = hdf5serie
 
-lib_LTLIBRARIES = libhdf5serie.la
-libhdf5serie_la_SOURCES = toh5type.cc \
-  simpleattribute.cc \
-  simpledataset.cc \
-  vectorserie.cc \
-  fileserie.cc \
-  matrixserie.cc
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = hdf5serie.pc
 
-hdf5serieincludedir = $(includedir)/hdf5serie
-hdf5serieinclude_HEADERS = toh5type.h \
-  simpleattribute.h \
-  simpledataset.h\
-  structserie.h \
-  vectorserie.h \
-  matrixserie.h \
-  fileserie.h \
-  knowntypes.def
+
+
+# doxygen
+.PHONY: doc doc_install doc_uninstall
+doc:
+	cd doc; \
+	rm -rf html; \
+	$(doxygen)
+doc_install:
+	cd doc; \
+	$(MKDIR_P) $(docdir); \
+	cp -r html $(docdir); \
+	cp $(PACKAGE).tag $(docdir)
+doc_uninstall:
+	rm -rf $(docdir)/html
+	rm -rf $(docdir)/$(PACKAGE).tag
