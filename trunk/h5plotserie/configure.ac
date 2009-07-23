@@ -15,9 +15,9 @@ AC_HEADER_STDBOOL
 dnl Qt
 PKG_CHECK_MODULES(QT, [QtCore >= 4.4 QtGui >= 4.4])
 dnl get moc, uic and rcc
-MOC=$(pkg-config --variable moc_location QtCore)
-UIC=$(pkg-config --variable uic_location QtCore)
-RCC=${MOC%*/*}/rcc
+test -x "$MOC" || MOC=$(pkg-config --variable moc_location QtCore)
+test -x "$UIC" || UIC=$(pkg-config --variable uic_location QtCore)
+test -x "$RCC" || RCC=${MOC%*/*}/rcc
 AC_SUBST([MOC])
 AC_SUBST([UIC])
 AC_SUBST([RCC])
