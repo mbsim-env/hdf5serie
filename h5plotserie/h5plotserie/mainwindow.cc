@@ -76,7 +76,7 @@ MainWindow::MainWindow(vector<string>& arg) {
   addDockWidget(Qt::LeftDockWidgetArea,curveDW);
   tableWidget = new QTreeWidget;
   curveDW->setWidget(tableWidget);
-  tableWidget->setColumnCount(5);
+  tableWidget->setColumnCount(33);
   QStringList sl;
   sl << "Number" << "x-label" << "y-label" << "x-path" << "y-path";
   tableWidget->setHeaderLabels(sl);
@@ -93,10 +93,42 @@ MainWindow::MainWindow(vector<string>& arg) {
   QwtLegend *legend = new QwtLegend;
   myPlot->insertLegend(legend);
 
-  pen.append(QPen(Qt::blue));
-  pen.append(QPen(Qt::red));
-  pen.append(QPen(Qt::green));
-  pen.append(QPen(Qt::magenta));
+  uint linewidth=1;
+  int c0=0;
+  int c1=255;
+  int c2=128;
+  pen.append(QPen(QColor(c0, c0, c1), linewidth)); /*  1 */
+  pen.append(QPen(QColor(c1, c0, c0), linewidth)); /*  2 */
+  pen.append(QPen(QColor(c0, c1, c0), linewidth)); /*  3 */
+  pen.append(QPen(QColor(c0, c0, c0), linewidth)); /*  4 */
+  pen.append(QPen(QColor(c0, c0, c2), linewidth)); /*  5 */
+  pen.append(QPen(QColor(c2, c0, c0), linewidth)); /*  6 */
+  pen.append(QPen(QColor(c0, c2, c0), linewidth)); /*  7 */
+  pen.append(QPen(QColor(c2, c0, c1), linewidth)); /*  8 */
+  pen.append(QPen(QColor(c0, c2, c1), linewidth)); /*  9 */
+  pen.append(QPen(QColor(c1, c2, c0), linewidth)); /* 10 */
+  pen.append(QPen(QColor(c1, c0, c2), linewidth)); /* 11 */
+  pen.append(QPen(QColor(c0, c2, c2), linewidth)); /* 12 */
+  pen.append(QPen(QColor(c2, c2, c0), linewidth)); /* 13 */
+  pen.append(QPen(QColor(c2, c2, c1), linewidth)); /* 14 */
+  pen.append(QPen(QColor(c1, c2, c2), linewidth)); /* 15 */
+  pen.append(QPen(QColor(c2, c2, c2), linewidth)); /* 16 */
+  pen.append(QPen(QColor(c0, c0, c1), linewidth, Qt::DotLine)); /* 17 */
+  pen.append(QPen(QColor(c1, c0, c0), linewidth, Qt::DotLine)); /* 18 */
+  pen.append(QPen(QColor(c0, c1, c0), linewidth, Qt::DotLine)); /* 19 */
+  pen.append(QPen(QColor(c0, c0, c0), linewidth, Qt::DotLine)); /* 20 */
+  pen.append(QPen(QColor(c0, c0, c2), linewidth, Qt::DotLine)); /* 21 */
+  pen.append(QPen(QColor(c2, c0, c0), linewidth, Qt::DotLine)); /* 22 */
+  pen.append(QPen(QColor(c0, c2, c0), linewidth, Qt::DotLine)); /* 23 */
+  pen.append(QPen(QColor(c2, c0, c1), linewidth, Qt::DotLine)); /* 24 */
+  pen.append(QPen(QColor(c0, c2, c1), linewidth, Qt::DotLine)); /* 25 */
+  pen.append(QPen(QColor(c1, c2, c0), linewidth, Qt::DotLine)); /* 26 */
+  pen.append(QPen(QColor(c1, c0, c2), linewidth, Qt::DotLine)); /* 27 */
+  pen.append(QPen(QColor(c0, c2, c2), linewidth, Qt::DotLine)); /* 28 */
+  pen.append(QPen(QColor(c2, c2, c0), linewidth, Qt::DotLine)); /* 29 */
+  pen.append(QPen(QColor(c2, c2, c1), linewidth, Qt::DotLine)); /* 30 */
+  pen.append(QPen(QColor(c1, c2, c2), linewidth, Qt::DotLine)); /* 31 */
+  pen.append(QPen(QColor(c2, c2, c2), linewidth, Qt::DotLine)); /* 32 */
 
   QMenu *fileMenu=new QMenu("File", menuBar());
   QAction *addFileAct=fileMenu->addAction("Open File(s)...", this, SLOT(openFileDialog()));
@@ -366,6 +398,7 @@ void MainWindow::about() {
 
 MyPlot::MyPlot(QWidget *p) : QwtPlot(p) {
   zoom = new QwtPlotZoomer(this->canvas());
+  setCanvasBackground(QColor(255, 255, 255)); // background color of plotting area
 }
 
 MyPlot::~MyPlot() {
