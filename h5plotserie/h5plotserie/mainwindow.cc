@@ -148,8 +148,8 @@ MainWindow::MainWindow(vector<string>& arg) {
 
   QObject::connect(treeWidget, SIGNAL(itemClicked(QTreeWidgetItem*, int)), this, SLOT(updateData(QTreeWidgetItem*,int)));
   QObject::connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(plot(QListWidgetItem*)));
-  QObject::connect(tableWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), this, SLOT(detachCurve(QTreeWidgetItem*,int)));
   QObject::connect(mdiArea,SIGNAL(subWindowActivated ( QMdiSubWindow *)), this, SLOT(windowChanged(QMdiSubWindow*)));
+  QObject::connect(tableWidget,SIGNAL(pressed(QModelIndex)), this, SLOT(openContextMenu()));
 }
 
 void MainWindow::addFile(const QString &name) {
@@ -190,6 +190,34 @@ void MainWindow::insertChildInTree(H5::Group &grp, QTreeWidgetItem *item) {
 	static_cast<TreeWidgetItem*>(child)->setPath(path);
       }
     }
+  }
+}
+
+void MainWindow::detachCurve() {
+  if(myPlot) {
+    int row = tableWidget->indexOfTopLevelItem(tableWidget->currentItem());
+    QwtPlotItemList il = myPlot->itemList();
+    il[row]->detach();
+    delete tableWidget->takeTopLevelItem(row);
+    il = myPlot->itemList();
+    for(int i=0; i<il.size(); i++) {
+      MyCurve *curve = static_cast<MyCurve*>(il[i]);
+      curve->setPen(pen[i]);
+      static_cast<QwtLegendItem*>(myPlot->legend()->find(curve))->setText(QwtText(QString::number(i+1)));
+      tableWidget->topLevelItem(i)->setText(0,QString::number(i+1));
+    }
+    myPlot->replot();
+  }
+}
+
+void MainWindow::openContextMenu() {
+  if(QApplication::mouseButtons() & Qt::RightButton) {
+    QMenu *menu=new QMenu("Curve Menu");
+    QAction *action = new QAction("Detach",this);
+    menu->addAction(action);
+    connect(action,SIGNAL(triggered(bool)),this,SLOT(detachCurve()));
+    menu->exec(QCursor::pos());
+    delete menu;
   }
 }
 
@@ -318,23 +346,6 @@ void MainWindow::updateData(QTreeWidgetItem* item, int col) {
   }
 }
 
-void MainWindow::detachCurve(QTreeWidgetItem* item, int col) {
-  if(myPlot) {
-    int row = tableWidget->indexOfTopLevelItem(item);
-    QwtPlotItemList il = myPlot->itemList();
-    il[row]->detach();
-    delete tableWidget->takeTopLevelItem(row);
-    il = myPlot->itemList();
-    for(int i=0; i<il.size(); i++) {
-      MyCurve *curve = static_cast<MyCurve*>(il[i]);
-      curve->setPen(pen[i]);
-      static_cast<QwtLegendItem*>(myPlot->legend()->find(curve))->setText(QwtText(QString::number(i+1)));
-      tableWidget->topLevelItem(i)->setText(0,QString::number(i+1));
-    }
-    myPlot->replot();
-  }
-}
-
 void MainWindow::addPlotWindow() {
   QwtPlot *newplot = new MyPlot(centralWidget);
   mdiArea->addSubWindow(newplot);
@@ -369,7 +380,7 @@ void MainWindow::help() {
       "</ul>"
       "<h2>Actions in curve list</h2>"
       "  <dt>Left-Click</dt><dd> Choose current curve </dd>"
-      "  <dt>Left-DoubleClick</dt><dd> Remove curve </dd>"
+      "  <dt>Right-Click</dt><dd> Remove curve </dd>"
       );
 }
 
@@ -423,4 +434,53 @@ void MainWindow::closeFile() {
     file.removeAt(index);
     fileName.removeAt(index);
   }
+}
+
+void MyCurve::draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const {
+
+  if (to < 0)
+    to = dataSize() - 1;
+
+  size_t first, last = from;
+  while (last <= to) {
+    first = last;
+    while (first <= to && isNaN(data().y(first)))
+      ++first;
+    last = first;
+    while (last <= to && !isNaN(data().y(last)))
+      ++last;
+    if (first <= to)
+      QwtPlotCurve::draw(p, xMap, yMap, first, last - 1);
+  }
+}
+
+QwtDoubleRect MyCurve::boundingRect() const {
+
+  if (dataSize() <= 0)
+    return QwtDoubleRect(1.0, 1.0, -2.0, -2.0); // Empty data.
+
+  size_t first = 0;//, last = dataSize() - 1;
+  while (first < dataSize() && isNaN(data().y(first)))
+    ++first;
+
+  if (first == dataSize())
+    return QwtDoubleRect(1.0, 1.0, -2.0, -2.0); // Empty data.
+
+  double minX, maxX, minY, maxY;
+  minX = maxX = x(first);
+  minY = maxY = y(first);
+  for (size_t i = first + 1; i < dataSize(); ++i)
+  {
+    const double xv = x(i);
+    if (xv < minX)
+      minX = xv;
+    if (xv > maxX)
+      maxX = xv;
+    const double yv = y(i);
+    if (yv < minY)
+      minY = yv;
+    if (yv > maxY)
+      maxY = yv;
+  }
+  return QwtDoubleRect(minX, minY, maxX - minX, maxY - minY);
 }

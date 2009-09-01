@@ -59,7 +59,10 @@ class MyCurve : public QwtPlotCurve {
     QString yLabel;
     QString xPath;
     QString yPath;
+
+    static bool isNaN(double v) { return v != v; }
   public:
+
     void setxLabel(QString &string) {xLabel = string;}
     void setyLabel(QString &string) {yLabel = string;}
     void setxPath(QString &string) {xPath = string;}
@@ -72,6 +75,9 @@ class MyCurve : public QwtPlotCurve {
     const QString& getyPath() const {return yPath;}
     const QString& getxLabel() const {return xLabel;}
     const QString& getyLabel() const {return yLabel;}
+
+    void draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const;
+    QwtDoubleRect boundingRect() const;
 };
 
 class MainWindow : public QMainWindow {
@@ -106,11 +112,12 @@ class MainWindow : public QMainWindow {
     void about();
     void plot(QListWidgetItem *item);
     void updateData(QTreeWidgetItem*, int);
-    void detachCurve(QTreeWidgetItem*, int);
+    void openContextMenu();
     void addPlotWindow();
     void openFileDialog();
     void windowChanged(QMdiSubWindow*);
     void closeFile();
+    void detachCurve();
 };
 
 #endif
