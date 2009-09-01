@@ -136,8 +136,7 @@ MainWindow::MainWindow(vector<string>& arg) {
   QMenu *fileMenu=new QMenu("File", menuBar());
   QAction *addFileAct=fileMenu->addAction("Open File(s)...", this, SLOT(openFileDialog()));
   menuBar()->addMenu(fileMenu);
-  addFileAct=fileMenu->addAction("Close File...", this, SLOT(closeFile()));
-  menuBar()->addMenu(fileMenu);
+  //addFileAct=fileMenu->addAction("Close File...", this, SLOT(closeFile()));
   QMenu *plotMenu=new QMenu("Plot", menuBar());
   QAction *addPlotAct=plotMenu->addAction("Add Plot...", this, SLOT(addPlotWindow()));
   menuBar()->addMenu(plotMenu);
@@ -154,7 +153,8 @@ MainWindow::MainWindow(vector<string>& arg) {
   QObject::connect(treeWidget, SIGNAL(itemClicked(QTreeWidgetItem*, int)), this, SLOT(updateData(QTreeWidgetItem*,int)));
   QObject::connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(plot(QListWidgetItem*)));
   QObject::connect(mdiArea,SIGNAL(subWindowActivated ( QMdiSubWindow *)), this, SLOT(windowChanged(QMdiSubWindow*)));
-  QObject::connect(tableWidget,SIGNAL(pressed(QModelIndex)), this, SLOT(openContextMenu()));
+  QObject::connect(tableWidget,SIGNAL(pressed(QModelIndex)), this, SLOT(openContextMenuTable()));
+  QObject::connect(treeWidget,SIGNAL(pressed(QModelIndex)), this, SLOT(openContextMenuTree()));
 }
 
 void MainWindow::addFile(const QString &name) {
@@ -215,7 +215,7 @@ void MainWindow::detachCurve() {
   }
 }
 
-void MainWindow::openContextMenu() {
+void MainWindow::openContextMenuTable() {
   if(QApplication::mouseButtons() & Qt::RightButton) {
     QMenu *menu=new QMenu("Curve Menu");
     QAction *action = new QAction("Detach",this);
@@ -223,6 +223,21 @@ void MainWindow::openContextMenu() {
     connect(action,SIGNAL(triggered(bool)),this,SLOT(detachCurve()));
     menu->exec(QCursor::pos());
     delete menu;
+  }
+}
+
+void MainWindow::openContextMenuTree() {
+  QTreeWidgetItem* item = treeWidget->currentItem();
+  updateData(treeWidget->currentItem(),0);
+  if(item && item->parent()==0) {
+    if(QApplication::mouseButtons() & Qt::RightButton) {
+      QMenu *menu=new QMenu("Object Menu");
+      QAction *action = new QAction("Unload",this);
+      menu->addAction(action);
+      connect(action,SIGNAL(triggered(bool)),this,SLOT(closeFile()));
+      menu->exec(QCursor::pos());
+      delete menu;
+    }
   }
 }
 

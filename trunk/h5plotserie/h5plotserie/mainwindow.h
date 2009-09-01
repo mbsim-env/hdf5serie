@@ -112,7 +112,8 @@ class MainWindow : public QMainWindow {
     void about();
     void plot(QListWidgetItem *item);
     void updateData(QTreeWidgetItem*, int);
-    void openContextMenu();
+    void openContextMenuTable();
+    void openContextMenuTree();
     void addPlotWindow();
     void printPlotWindow();
     //void exportPlot2SVG();
