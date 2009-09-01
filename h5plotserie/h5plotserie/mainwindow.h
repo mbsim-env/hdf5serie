@@ -114,6 +114,8 @@ class MainWindow : public QMainWindow {
     void updateData(QTreeWidgetItem*, int);
     void openContextMenu();
     void addPlotWindow();
+    void printPlotWindow();
+    //void exportPlot2SVG();
     void openFileDialog();
     void windowChanged(QMdiSubWindow*);
     void closeFile();

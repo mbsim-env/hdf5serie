@@ -27,10 +27,13 @@
 #include <QTableWidget>
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QPrintDialog>
 #include <QSplitter>
 #include <QMessageBox>
 #include <QMdiArea>
 #include <QMdiSubWindow>
+#include <QPrinter>
+//#include <QSvgGenerator>
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_zoomer.h>
@@ -138,6 +141,8 @@ MainWindow::MainWindow(vector<string>& arg) {
   QMenu *plotMenu=new QMenu("Plot", menuBar());
   QAction *addPlotAct=plotMenu->addAction("Add Plot...", this, SLOT(addPlotWindow()));
   menuBar()->addMenu(plotMenu);
+  QAction *printPlotAct=plotMenu->addAction("Print Plot...", this, SLOT(printPlotWindow()));
+  //QAction *exportPlotAct=plotMenu->addAction("Export Plot...", this, SLOT(exportPlot2SVG()));
 
   // help menu
   menuBar()->addSeparator();
@@ -424,6 +429,51 @@ void MainWindow::openFileDialog() {
     addFile(files[i]);
 }
 
+void MainWindow::printPlotWindow() {
+    QPrinter printer;
+    //printer.setOutputFileName("./plot.ps");
+
+    QString docName = myPlot->title().text();
+    cout << docName.toStdString() << endl;
+    if ( !docName.isEmpty() ) {
+        docName.replace (QRegExp (QString::fromLatin1 ("\n")), tr (" -- "));
+        printer.setDocName (docName);
+    }
+
+    printer.setCreator("Print Plot");
+    printer.setOrientation(QPrinter::Landscape);
+
+    QPrintDialog dialog(&printer);
+    if ( dialog.exec() ) {
+        QwtPlotPrintFilter filter;
+        if ( printer.colorMode() == QPrinter::GrayScale ) {
+            filter.setOptions(QwtPlotPrintFilter::PrintAll 
+                & ~QwtPlotPrintFilter::PrintCanvasBackground);
+        }
+        myPlot->print(printer, filter);
+    }
+}
+
+//void MainWindow::exportPlot2SVG() {
+//    QString fileName = "bode.svg";
+//
+//#ifdef QT_SVG_LIB
+//#ifndef QT_NO_FILEDIALOG
+//    fileName = QFileDialog::getSaveFileName(
+//        this, "Export File Name", QString(),
+//        "SVG Documents (*.svg)");
+//#endif
+//    if ( !fileName.isEmpty() )
+//    {
+//        QSvgGenerator generator;
+//        generator.setFileName(fileName);
+//        generator.setSize(QSize(800, 600));
+//
+//        myPlot->print(generator);
+//    }
+//#endif
+//}
+
 void MainWindow::closeFile() {
   QTreeWidgetItem* item = treeWidget->currentItem();
   if(item && item->parent()==0) {
@@ -484,3 +534,5 @@ QwtDoubleRect MyCurve::boundingRect() const {
   }
   return QwtDoubleRect(minX, minY, maxX - minX, maxY - minY);
 }
+
+
