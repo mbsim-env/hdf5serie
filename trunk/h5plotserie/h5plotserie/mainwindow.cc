@@ -463,7 +463,7 @@ void MainWindow::printPlotWindow() {
         QwtPlotPrintFilter filter;
         if ( printer.colorMode() == QPrinter::GrayScale ) {
             filter.setOptions(QwtPlotPrintFilter::PrintAll 
-                & ~QwtPlotPrintFilter::PrintCanvasBackground);
+                & ~QwtPlotPrintFilter::CanvasBackground);
         }
         myPlot->print(printer, filter);
     }
