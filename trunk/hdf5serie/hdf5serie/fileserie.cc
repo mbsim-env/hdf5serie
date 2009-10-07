@@ -23,6 +23,7 @@
 #include <hdf5serie/fileserie.h>
 #include <fstream>
 #include <unistd.h>
+#include <libgen.h>
 #include <iostream>
 #ifdef HAVE_ANSICSIGNAL
 #  include <signal.h>
@@ -49,7 +50,7 @@ void FileSerie::flushAllFiles() {
 FileSerie::FileSerie(const char *name, unsigned int flags,
                      const FileCreatPropList &create_plist,
                      const FileAccPropList &access_plist) : H5File(name, flags, create_plist, access_plist) {
-  ofstream lockFile((string(".")+name+".pid").c_str());
+  ofstream lockFile((string(dirname((char*)name))+"/."+basename((char*)name)+".pid").c_str());
   lockFile<<getpid()<<endl;
   lockFile.close();
   openedFile.push_back(this);
@@ -61,7 +62,7 @@ FileSerie::FileSerie(const char *name, unsigned int flags,
 FileSerie::FileSerie(const H5std_string &name, unsigned int flags,
                      const FileCreatPropList &create_plist,
                      const FileAccPropList &access_plist) : H5File(name, flags, create_plist, access_plist) {
-  ofstream lockFile((string(".")+name+".pid").c_str());
+  ofstream lockFile((string(dirname((char*)name.c_str()))+"/."+basename((char*)name.c_str())+".pid").c_str());
   lockFile<<getpid()<<endl;
   lockFile.close();
   openedFile.push_back(this);
@@ -71,19 +72,19 @@ FileSerie::FileSerie(const H5std_string &name, unsigned int flags,
 }
 
 FileSerie::~FileSerie() {
-  ::unlink((string(".")+getFileName()+".pid").c_str());
+  ::unlink((string(dirname((char*)getFileName().c_str()))+"/."+basename((char*)getFileName().c_str())+".pid").c_str());
   openedFile.remove(this);
 }
 
 void FileSerie::close() {
-  ::unlink((string(".")+getFileName()+".pid").c_str());
+  ::unlink((string(dirname((char*)getFileName().c_str()))+"/."+basename((char*)getFileName().c_str())+".pid").c_str());
   H5File::close();
   openedFile.remove(this);
 }
 
 void FileSerie::openFile(const H5std_string &name, unsigned int flags, const FileAccPropList &access_plist) {
   H5File::openFile(name, flags, access_plist);
-  ofstream lockFile((string(".")+name+".pid").c_str());
+  ofstream lockFile((string(dirname((char*)name.c_str()))+"/."+basename((char*)name.c_str())+".pid").c_str());
   lockFile<<getpid()<<endl;
   lockFile.close();
   openedFile.push_back(this);
@@ -91,7 +92,7 @@ void FileSerie::openFile(const H5std_string &name, unsigned int flags, const Fil
 
 void FileSerie::openFile(const char *name, unsigned int flags, const FileAccPropList &access_plist) {
   H5File::openFile(name, flags, access_plist);
-  ofstream lockFile((string(".")+name+".pid").c_str());
+  ofstream lockFile((string(dirname((char*)name))+"/."+basename((char*)name)+".pid").c_str());
   lockFile<<getpid()<<endl;
   lockFile.close();
   openedFile.push_back(this);
@@ -99,5 +100,5 @@ void FileSerie::openFile(const char *name, unsigned int flags, const FileAccProp
 
 void FileSerie::deletePIDFiles() {
   for(list<FileSerie*>::iterator i=openedFile.begin(); i!=openedFile.end(); ++i)
-    ::unlink((string(".")+(*i)->getFileName()+".pid").c_str());
+    ::unlink((string(dirname((char*)(*i)->getFileName().c_str()))+"/."+basename((char*)(*i)->getFileName().c_str())+".pid").c_str());
 }
