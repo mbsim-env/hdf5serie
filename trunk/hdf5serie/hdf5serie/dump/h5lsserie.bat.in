@@ -87,7 +87,7 @@ set datadir=@win_prefix@/share
 rem create XML dump (without data) of all *.h5 files in the
 rem directory of file FILE (save as .*.h5.xml)
 cd %FILEDIRNAME%
-for %%S in (*.h5) do (
+for %%S in (*.h5 %FILE%) do (
   @win_h5dump@ -xA %%S > .%%S.xml
 )
 
@@ -101,7 +101,7 @@ if not "@win_xsltproc@" == "no" (
 )
 
 rem delete all previous created .*.h5.xml files
-for %%S in (*.h5) do (
+for %%S in (*.h5 %FILE%) do (
   del .%%S.xml
 )
 

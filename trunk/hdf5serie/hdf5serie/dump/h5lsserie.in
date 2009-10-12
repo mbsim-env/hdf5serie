@@ -67,7 +67,7 @@ datadir=@datadir@
 # directory of file FILE (save as .*.h5.xml)
 DIR=$(dirname $FILE)
 cd $DIR
-for SUBFILE in *.h5; do
+for SUBFILE in *.h5 $FILE; do
   @h5dump@ -xA $SUBFILE > .$SUBFILE.xml
 done
 
@@ -79,6 +79,6 @@ elif [ @msxsl@ != "no" ]; then
 fi
 
 # delete all previous created .*.h5.xml files
-for SUBFILE in *.h5; do
+for SUBFILE in *.h5 $FILE; do
   rm -f .$SUBFILE.xml
 done
