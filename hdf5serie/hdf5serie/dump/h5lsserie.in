@@ -63,6 +63,17 @@ fi
 prefix=@prefix@
 datadir=@datadir@
 
+
+# check for pid file and send SIGUSR2 if found
+DIR=$(dirname $FILE)
+cd $DIR
+SIGNALSEND=false
+for SUBFILE in *.h5 $FILE; do
+  kill -USR2 $(cat .$SUBFILE.pid 2> /dev/null) >& /dev/null && SIGNALSEND=true
+done
+test $SIGNALSEND = "true" && sleep 1
+
+
 # create XML dump (without data) of all *.h5 files in the
 # directory of file FILE (save as .*.h5.xml)
 DIR=$(dirname $FILE)

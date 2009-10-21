@@ -139,8 +139,8 @@ int main(int argc, char* argv[]) {
       pid_t pid;
       lockFile>>pid;
       lockFile.close();
-      kill(pid, SIGUSR2);
-      usleep(100000);
+      if(kill(pid, SIGUSR2)==0)
+        usleep(1000000);
     }
 #endif
     H5File file(filename, H5F_ACC_RDONLY);
