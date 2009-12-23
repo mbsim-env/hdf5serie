@@ -21,6 +21,7 @@
 #define _MAINWINDOW_H_
 
 #include <QMainWindow>
+#include <QFileInfo>
 #include <qwt_plot_curve.h>
 #include <qwt_plot.h>
 
@@ -59,6 +60,12 @@ class MyCurve : public QwtPlotCurve {
     QString yLabel;
     QString xPath;
     QString yPath;
+    QString xBasicPath;
+    QString yBasicPath;
+    int xIndex;
+    int yIndex;
+    int xFileIndex;
+    int yFileIndex;
 
     static bool isNaN(double v) { return v != v; }
   public:
@@ -67,14 +74,26 @@ class MyCurve : public QwtPlotCurve {
     void setyLabel(QString &string) {yLabel = string;}
     void setxPath(QString &string) {xPath = string;}
     void setyPath(QString &string) {yPath = string;}
+    void setxBasicPath(QString &string) {xBasicPath = string;}
+    void setyBasicPath(QString &string) {yBasicPath = string;}
+    void setxIndex(int index) {xIndex = index;}
+    void setyIndex(int index) {yIndex = index;}
+    void setxFileIndex(int index) {xFileIndex = index;}
+    void setyFileIndex(int index) {yFileIndex = index;}
     QString& getxPath() {return xPath;}
     QString& getyPath() {return yPath;}
     QString& getxLabel() {return xLabel;}
     QString& getyLabel() {return yLabel;}
     const QString& getxPath() const {return xPath;}
     const QString& getyPath() const {return yPath;}
+    const QString& getxBasicPath() const {return xBasicPath;}
+    const QString& getyBasicPath() const {return yBasicPath;}
     const QString& getxLabel() const {return xLabel;}
     const QString& getyLabel() const {return yLabel;}
+    int getxIndex() const {return xIndex;}
+    int getyIndex() const {return yIndex;}
+    int getxFileIndex() const {return xFileIndex;}
+    int getyFileIndex() const {return yFileIndex;}
 
     void draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap, int from, int to) const;
     QwtDoubleRect boundingRect() const;
@@ -87,7 +106,7 @@ class MainWindow : public QMainWindow {
   private:
     QWidget *centralWidget;
     QList<H5::H5File*> file;
-    QList<QString> fileName;
+    QList<QFileInfo> fileInfo;
     QwtPlot *myPlot;
     QVector<MyCurve*> curve;
     QVector<QPen> pen;
@@ -103,6 +122,10 @@ class MainWindow : public QMainWindow {
 
     void updateTableWidget();
     void addFile(const QString &name);
+    void keyPressEvent(QKeyEvent *event);
+    void checkForFileModification();
+    void updatePlotWindow();
+ 
 
   public:
     MainWindow(std::vector<std::string>& arg);

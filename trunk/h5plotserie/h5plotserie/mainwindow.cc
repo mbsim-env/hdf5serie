@@ -26,7 +26,10 @@
 #include <QListWidget>
 #include <QTableWidget>
 #include <QMenuBar>
+#include <QDateTime>
+#include <QKeyEvent>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QPrintDialog>
 #include <QSplitter>
 #include <QMessageBox>
@@ -163,10 +166,9 @@ void MainWindow::addFile(const QString &name) {
 
   int j = file.size()-1;
 
-  int iofl = name.lastIndexOf("/");
-  fileName.append(name.right(name.size()-iofl-1));
+  fileInfo.append(name);
 
-  TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileName[j]));
+  TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileInfo[j].fileName()));
   treeWidget->addTopLevelItem(topitem);
   QList<QTreeWidgetItem *> items;
   for(unsigned int i=0; i<file[j]->getNumObjs(); i++)  {
@@ -231,8 +233,12 @@ void MainWindow::openContextMenuTree() {
   updateData(treeWidget->currentItem(),0);
   if(item && item->parent()==0) {
     if(QApplication::mouseButtons() & Qt::RightButton) {
+      QAction* action;
       QMenu *menu=new QMenu("Object Menu");
-      QAction *action = new QAction("Unload",this);
+    //  action = new QAction("Reload",this);
+    //  menu->addAction(action);
+    //  connect(action,SIGNAL(triggered(bool)),this,SLOT(reloadFile()));
+      action = new QAction("Unload",this);
       menu->addAction(action);
       connect(action,SIGNAL(triggered(bool)),this,SLOT(closeFile()));
       menu->exec(QCursor::pos());
@@ -257,13 +263,18 @@ int MainWindow::getTopLevelIndex(QTreeWidgetItem* item) {
 }
 
 void MainWindow::plot(QListWidgetItem* item) {
+  
   if(myPlot) {
+    // check, whether file has changed
+    checkForFileModification();
+
     QString path = static_cast<TreeWidgetItem*>(treeWidget->currentItem())->getPath();
     int col = listWidget->row(item);
     VectorSerie<double> vs;
     int j = getTopLevelIndex(treeWidget->currentItem());
+
     vs.open(*file[j],path.toStdString());
-    QString fullName = fileName[j]+path;
+    QString fullName = fileInfo[j].fileName()+path;
 
     vector<double> t = vs.getColumn(0);
     vector<double> q = vs.getColumn(col);
@@ -285,6 +296,9 @@ void MainWindow::plot(QListWidgetItem* item) {
 	curve->setyPath(curve->getyPath());
 	curve->setxLabel(ylabel);
 	curve->setyLabel(curve->getyLabel());
+	curve->setxIndex(col);
+	curve->setxFileIndex(j);
+	curve->setxBasicPath(path);
 	static_cast<QwtLegendItem*>(myPlot->legend()->find(curve))->setText(QwtText(QString::number(row+1)));
       }
     }
@@ -297,8 +311,14 @@ void MainWindow::plot(QListWidgetItem* item) {
 	newcurve->setData(&t[0],&q[0],t.size());
 	newcurve->setxPath(fullName);
 	newcurve->setyPath(fullName);
+	newcurve->setxBasicPath(path);
+	newcurve->setyBasicPath(path);
 	newcurve->setxLabel(xlabel);
 	newcurve->setyLabel(ylabel);
+	newcurve->setxIndex(0);
+	newcurve->setyIndex(col);
+	newcurve->setxFileIndex(j);
+	newcurve->setyFileIndex(j);
 	static_cast<QwtLegendItem*>(myPlot->legend()->find(newcurve))->setText(QwtText(QString::number(k+1)));
       }
       else {
@@ -316,8 +336,14 @@ void MainWindow::plot(QListWidgetItem* item) {
       newcurve->setData(&t[0],&q[0],t.size());
       newcurve->setxPath(fullName);
       newcurve->setyPath(fullName);
+      newcurve->setxBasicPath(path);
+      newcurve->setyBasicPath(path);
       newcurve->setxLabel(xlabel);
       newcurve->setyLabel(ylabel);
+      newcurve->setxIndex(0);
+      newcurve->setyIndex(col);
+      newcurve->setxFileIndex(j);
+      newcurve->setyFileIndex(j);
       //myPlot->setAxisTitle(QwtPlot::xBottom,xlabel.c_str());
       //myPlot->setAxisTitle(QwtPlot::yLeft,ylabel.c_str());
       static_cast<QwtLegendItem*>(myPlot->legend()->find(newcurve))->setText(QwtText(QString::number(1)));
@@ -401,6 +427,8 @@ void MainWindow::help() {
       "<h2>Actions in curve list</h2>"
       "  <dt>Left-Click</dt><dd> Choose current curve </dd>"
       "  <dt>Right-Click</dt><dd> Remove curve </dd>"
+      "<h2>Keyboard actions</h2>"
+      "  <dt>F5</dt><dd> Update current plot window </dd>"
       );
 }
 
@@ -489,6 +517,56 @@ void MainWindow::printPlotWindow() {
 //#endif
 //}
 
+void MainWindow::checkForFileModification() {
+    // check, whether a file has changed
+    for(int j=0; j< fileInfo.size(); j++) {
+      QFileInfo info(fileInfo[j].absoluteFilePath());
+      if(info.lastModified().toTime_t() != fileInfo[j].lastModified().toTime_t()) {
+	file[j]->close();
+	file[j]->openFile(fileInfo[j].absoluteFilePath().toStdString(), H5F_ACC_RDONLY);
+      }
+    }
+}
+
+void MainWindow::updatePlotWindow() {
+
+  if(myPlot) {
+
+    checkForFileModification();
+
+    QList<QMdiSubWindow *> list = mdiArea->subWindowList();
+
+    QwtPlotItemList il = myPlot->itemList();
+    for(int i=0; i<il.size(); i++) {
+
+      MyCurve *curve = static_cast<MyCurve*>(il[i]);
+      int jx = curve->getxFileIndex();
+      int jy = curve->getyFileIndex();
+      VectorSerie<double> vsx;
+      VectorSerie<double> vsy;
+      vsx.open(*file[jx],curve->getxBasicPath().toStdString());
+      vsy.open(*file[jy],curve->getyBasicPath().toStdString());
+      vector<double> x = vsx.getColumn(curve->getxIndex());
+      vector<double> y = vsy.getColumn(curve->getyIndex());
+      curve->setData(&x[0],&y[0],x.size());
+      vsx.close();
+      vsy.close();
+    }
+    myPlot->replot();
+    static_cast<MyPlot*>(myPlot)->getZoom()->setZoomBase();
+  }
+} 
+
+void MainWindow::keyPressEvent(QKeyEvent *event) {
+  switch (event->key()) {
+    case Qt::Key_F5:
+      updatePlotWindow();
+      break;
+    default:
+      QMainWindow::keyPressEvent(event);
+  }
+}
+
 void MainWindow::closeFile() {
   QTreeWidgetItem* item = treeWidget->currentItem();
   if(item && item->parent()==0) {
@@ -497,7 +575,7 @@ void MainWindow::closeFile() {
     updateTableWidget();
     file[index]->close();
     file.removeAt(index);
-    fileName.removeAt(index);
+    fileInfo.removeAt(index);
   }
 }
 
