@@ -48,6 +48,7 @@
 #include <QColor>
 #include <sstream>
 #include <iostream>
+#include <hdf5serie/fileserie.h>
 
 using namespace H5;
 using namespace std;
@@ -518,14 +519,22 @@ void MainWindow::printPlotWindow() {
 //}
 
 void MainWindow::checkForFileModification() {
-    // check, whether a file has changed
-    for(int j=0; j< fileInfo.size(); j++) {
-      QFileInfo info(fileInfo[j].absoluteFilePath());
-      if(info.lastModified().toTime_t() != fileInfo[j].lastModified().toTime_t()) {
-	file[j]->close();
-	file[j]->openFile(fileInfo[j].absoluteFilePath().toStdString(), H5F_ACC_RDONLY);
+
+  // check, whether a file has changed
+  for(int j=0; j< fileInfo.size(); j++) {
+    QFileInfo info(fileInfo[j].absoluteFilePath());
+    if(info.lastModified().toTime_t() != fileInfo[j].lastModified().toTime_t()) {
+      file[j]->close();
+      while(info.lastModified().toTime_t() != fileInfo[j].lastModified().toTime_t()) {
+	fileInfo[j]=info;
       }
+      //QString str = QString("kill -USR2 $(cat ") + fileInfo[j].absolutePath() + QString("/.") + fileInfo[j].fileName() + QString(".pid 2> /dev/null) >& /dev/null");
+      //system(str.toStdString().c_str()); 
+    //  system("sleep 1");
+
+      file[j]->openFile(fileInfo[j].absoluteFilePath().toStdString(), H5F_ACC_RDONLY);
     }
+  }
 }
 
 void MainWindow::updatePlotWindow() {
