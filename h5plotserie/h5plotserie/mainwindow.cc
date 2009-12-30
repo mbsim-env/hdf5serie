@@ -429,7 +429,8 @@ void MainWindow::help() {
       "  <dt>Left-Click</dt><dd> Choose current curve </dd>"
       "  <dt>Right-Click</dt><dd> Remove curve </dd>"
       "<h2>Keyboard actions</h2>"
-      "  <dt>F5</dt><dd> Update current plot window </dd>"
+      "  <dt>a</dt><dd> Update current plot window and rescale </dd>"
+      "  <dt>e</dt><dd> Update current plot window </dd>"
       );
 }
 
@@ -539,37 +540,45 @@ void MainWindow::checkForFileModification() {
 
 void MainWindow::updatePlotWindow() {
 
-  if(myPlot) {
+  checkForFileModification();
 
-    checkForFileModification();
+  QList<QMdiSubWindow *> list = mdiArea->subWindowList();
 
-    QList<QMdiSubWindow *> list = mdiArea->subWindowList();
+  QwtPlotItemList il = myPlot->itemList();
+  for(int i=0; i<il.size(); i++) {
 
-    QwtPlotItemList il = myPlot->itemList();
-    for(int i=0; i<il.size(); i++) {
-
-      MyCurve *curve = static_cast<MyCurve*>(il[i]);
-      int jx = curve->getxFileIndex();
-      int jy = curve->getyFileIndex();
-      VectorSerie<double> vsx;
-      VectorSerie<double> vsy;
-      vsx.open(*file[jx],curve->getxBasicPath().toStdString());
-      vsy.open(*file[jy],curve->getyBasicPath().toStdString());
-      vector<double> x = vsx.getColumn(curve->getxIndex());
-      vector<double> y = vsy.getColumn(curve->getyIndex());
-      curve->setData(&x[0],&y[0],x.size());
-      vsx.close();
-      vsy.close();
-    }
-    myPlot->replot();
-    static_cast<MyPlot*>(myPlot)->getZoom()->setZoomBase();
+    MyCurve *curve = static_cast<MyCurve*>(il[i]);
+    int jx = curve->getxFileIndex();
+    int jy = curve->getyFileIndex();
+    VectorSerie<double> vsx;
+    VectorSerie<double> vsy;
+    vsx.open(*file[jx],curve->getxBasicPath().toStdString());
+    vsy.open(*file[jy],curve->getyBasicPath().toStdString());
+    vector<double> x = vsx.getColumn(curve->getxIndex());
+    vector<double> y = vsy.getColumn(curve->getyIndex());
+    curve->setData(&x[0],&y[0],x.size());
+    vsx.close();
+    vsy.close();
   }
 } 
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
   switch (event->key()) {
-    case Qt::Key_F5:
-      updatePlotWindow();
+    case Qt::Key_A:
+      if(myPlot) {
+	updatePlotWindow();
+	myPlot->setAxisAutoScale(QwtPlot::xBottom);
+	myPlot->setAxisAutoScale(QwtPlot::yLeft);
+	myPlot->replot();
+	static_cast<MyPlot*>(myPlot)->getZoom()->setZoomBase();
+      }
+      break;
+    case Qt::Key_E:
+      if(myPlot) {
+	updatePlotWindow();
+	myPlot->replot();
+	static_cast<MyPlot*>(myPlot)->getZoom()->setZoomBase();
+      }
       break;
     default:
       QMainWindow::keyPressEvent(event);
