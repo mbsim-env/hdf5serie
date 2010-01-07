@@ -154,6 +154,9 @@ MainWindow::MainWindow(vector<string>& arg) {
   helpMenu->addAction("About OpenMBV...", this, SLOT(about()));
   menuBar()->addMenu(helpMenu);
 
+  // title
+  setWindowTitle("h5plotserie");
+
   QObject::connect(treeWidget, SIGNAL(itemClicked(QTreeWidgetItem*, int)), this, SLOT(updateData(QTreeWidgetItem*,int)));
   QObject::connect(listWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(plot(QListWidgetItem*)));
   QObject::connect(mdiArea,SIGNAL(subWindowActivated ( QMdiSubWindow *)), this, SLOT(windowChanged(QMdiSubWindow*)));
