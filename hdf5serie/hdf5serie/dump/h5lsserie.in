@@ -60,6 +60,8 @@ if [ $H -eq 1 ]; then
   exit 0
 fi
 
+prefix=@prefix@
+exec_prefix=@exec_prefix@
 datadir=@datadir@
 h5dump=@h5dump@
 xsltproc=@xsltproc@
