@@ -83,17 +83,24 @@ if not "%H%"=="1" goto afterhelp
 :afterhelp
 
 set datadir=@win_prefix@/share
+set win_h5dump=@win_h5dump@
+set win_xsltproc=@win_xsltproc@
+
+rem get environment variables (for none default intallation)
+if defined HDF5SERIEDATADIR set datadir=%HDF5SERIEDATADIR%
+if defined HDF5SERIEH5DUMP set win_h5dump=%HDF5SERIEH5DUMP%
+if defined HDF5SERIEXSLTPROC set win_xsltproc=%HDF5SERIEXSLTPROC%
 
 rem create XML dump (without data) of all *.h5 files in the
 rem directory of file FILE (save as .*.h5.xml)
 cd %FILEDIRNAME%
 for %%S in (*.h5 %FILE%) do (
-  @win_h5dump@ -xA %%S > .%%S.xml
+  %win_h5dump% -xA %%S > .%%S.xml
 )
 
 rem call xslt
-if not "@win_xsltproc@" == "no" (
-  @win_xsltproc@ --path . --param FILENAME "'%FILE%'" --param LABEL %L% --param DESCRIPTION %D% --param FOLLOW %F% %datadir%/hdf5serie/xsl/h5lsserie.xsl .%FILEBASENAME%.h5.xml
+if not "%win_xsltproc%" == "no" (
+  %win_xsltproc% --path . --param FILENAME "'%FILE%'" --param LABEL %L% --param DESCRIPTION %D% --param FOLLOW %F% %datadir%/hdf5serie/xsl/h5lsserie.xsl .%FILEBASENAME%.h5.xml
 ) else (
   if not "@win_msxsl@" == "no" (
     @win_msxsl@ .%FILEBASENAME%.h5.xml %datadir%/hdf5serie/xsl/h5lsserie.xsl FILENAME="%FILE%" LABEL=%L% DESCRIPTION=%D% FOLLOW=%F%

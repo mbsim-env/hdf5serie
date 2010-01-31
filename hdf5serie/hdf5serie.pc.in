@@ -7,7 +7,6 @@ datadir=@datadir@
 PACKAGE_TARNAME=@PACKAGE_TARNAME@
 docdir=@docdir@
 
-#DOXYGENTAGFILES=${docdir}/@PACKAGE@.tag @DOXYGENDEPTAGFILES@
 DOXYGENTAGFILES=${docdir}/@PACKAGE@.tag
 
 hdf5_prefix=@hdf5_prefix@

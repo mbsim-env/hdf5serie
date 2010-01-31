@@ -60,9 +60,14 @@ if [ $H -eq 1 ]; then
   exit 0
 fi
 
-prefix=@prefix@
 datadir=@datadir@
+h5dump=@h5dump@
+xsltproc=@xsltproc@
 
+# get environment variables (for none default intallation)
+test $HDF5SERIEDATADIR && datadir=$HDF5SERIEDATADIR
+test $HDF5SERIEH5DUMP && h5dump=$HDF5SERIEH5DUMP
+test $HDF5SERIEXSLTPROC && xsltproc=$HDF5SERIEXSLTPROC
 
 # check for pid file and send SIGUSR2 if found
 DIR=$(dirname $FILE)
@@ -79,12 +84,12 @@ test $SIGNALSEND = "true" && sleep 1
 DIR=$(dirname $FILE)
 cd $DIR
 for SUBFILE in *.h5 $FILE; do
-  @h5dump@ -xA $SUBFILE > .$SUBFILE.xml
+  $h5dump -xA $SUBFILE > .$SUBFILE.xml
 done
 
 # call xslt
-if [ @xsltproc@ != "no" ]; then
-  @xsltproc@ --path . --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F $datadir/hdf5serie/xsl/h5lsserie.xsl .$(basename $FILE).xml
+if [ $xsltproc != "no" ]; then
+  $xsltproc --path . --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F $datadir/hdf5serie/xsl/h5lsserie.xsl .$(basename $FILE).xml
 elif [ @msxsl@ != "no" ]; then
   @msxsl@ .$(basename $FILE).xml $datadir/hdf5serie/xsl/h5lsserie.xsl FILENAME="$FILE" LABEL=$L DESCRIPTION=$D FOLLOW=$F
 fi
