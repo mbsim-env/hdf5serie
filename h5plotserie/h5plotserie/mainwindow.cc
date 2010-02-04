@@ -46,6 +46,8 @@
 #include <hdf5serie/vectorserie.h>
 #include <QPen>
 #include <QColor>
+#include <QLabel>
+#include <QLineEdit>
 #include <sstream>
 #include <iostream>
 #include <hdf5serie/fileserie.h>
@@ -65,11 +67,30 @@ MainWindow::MainWindow(vector<string>& arg) {
   addDockWidget(Qt::LeftDockWidgetArea,objectListDW);
   QSplitter *splitter = new QSplitter;
   objectListDW->setWidget(splitter);
+
+  QWidget* dummy=new QWidget(this);
+  splitter->addWidget(dummy);
+  QGridLayout* treeWidgetLO=new QGridLayout(this);
+  dummy->setLayout(treeWidgetLO);
+
+  QLabel *filterL=new QLabel("Filter: ");
+  treeWidgetLO->addWidget(filterL,0,0);
+  filterL->setToolTip("Enter a regular expression to filter the list.");
+  filter=new QLineEdit(this);
+  filter->setToolTip("Enter a regular expression to filter the list.");
+  connect(filter,SIGNAL(returnPressed()),this,SLOT(filterObjectList()));
+  treeWidgetLO->addWidget(filter,0,1);
+
   treeWidget = new QTreeWidget;
-  splitter->addWidget(treeWidget);
+  treeWidgetLO->addWidget(treeWidget,1,0,1,2);
 
   treeWidget->setHeaderHidden(true);
   treeWidget->setColumnCount(1);
+
+  treeWidgetLO->addWidget(new QLabel("Path: "),2,0);
+  path=new QLineEdit(this);
+  treeWidgetLO->addWidget(path,2,1);
+  path->setReadOnly(true);
 
 
   for(unsigned int i=0; i<arg.size(); i++)
@@ -162,6 +183,7 @@ MainWindow::MainWindow(vector<string>& arg) {
   QObject::connect(mdiArea,SIGNAL(subWindowActivated ( QMdiSubWindow *)), this, SLOT(windowChanged(QMdiSubWindow*)));
   QObject::connect(tableWidget,SIGNAL(pressed(QModelIndex)), this, SLOT(openContextMenuTable()));
   QObject::connect(treeWidget,SIGNAL(pressed(QModelIndex)), this, SLOT(openContextMenuTree()));
+  QObject::connect(treeWidget,SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)), this, SLOT(updatePath(QTreeWidgetItem *)));
 }
 
 void MainWindow::addFile(const QString &name) {
@@ -597,6 +619,48 @@ void MainWindow::closeFile() {
     file[index]->close();
     file.removeAt(index);
     fileInfo.removeAt(index);
+  }
+}
+
+void MainWindow::updatePath(QTreeWidgetItem *cur) {
+  QString str=cur->text(0);
+  for(QTreeWidgetItem *item=cur->parent(); item!=0; item=item->parent())
+    str=item->text(0)+"/"+str;
+  path->setText(str);
+};
+
+// MainWindow::filterObjectList(...) and MainWindow::searchObjectList(...) are taken from OpenMBV.
+// If changes are made here, please do the same changes in OpenMBV
+void MainWindow::filterObjectList() {
+  QRegExp filterRegExp(filter->text());
+  searchObjectList(treeWidget->invisibleRootItem(), filterRegExp);
+}
+void MainWindow::searchObjectList(QTreeWidgetItem *item, const QRegExp& filterRegExp) {
+  for(int i=0; i<item->childCount(); i++) {
+    // search recursive
+    searchObjectList(item->child(i), filterRegExp);
+    // set color
+    QColor c=item->child(i)->foreground(0).color();
+    c.setRed(filterRegExp.indexIn(item->child(i)->text(0))<0?255:0);
+    item->child(i)->setForeground(0, QBrush(c));
+    // if all children and children children are red, collapse
+    int count=0;
+    for(int j=0; j<item->child(i)->childCount(); j++)
+      if((item->child(i)->child(j)->childCount()!=0 && item->child(i)->child(j)->foreground(0).color().red()==255 && 
+          item->child(i)->child(j)->isExpanded()==false) ||
+         (item->child(i)->child(j)->childCount()==0 && item->child(i)->child(j)->foreground(0).color().red()==255))
+        count++;
+    item->child(i)->setExpanded(count!=item->child(i)->childCount());
+    // hide
+    item->child(i)->setHidden(false);
+    if((item->child(i)->childCount()!=0 && item->child(i)->foreground(0).color().red()==255 && 
+        item->child(i)->isExpanded()==false) ||
+       (item->child(i)->childCount()==0 && item->child(i)->foreground(0).color().red()==255)) {
+      bool hide=true;
+      for(QTreeWidgetItem *it=item; it!=0; it=it->parent())
+        if(filterRegExp.indexIn(it->text(0))>=0) { hide=false; break; }
+      item->child(i)->setHidden(hide);
+    }
   }
 }
 
