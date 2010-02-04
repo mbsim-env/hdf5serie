@@ -43,6 +43,7 @@ class QwtPlotZoomer;
 class QCheckBox;
 class QMdiArea;
 class QMdiSubWindow;
+class QLineEdit;
 
 class MyPlot : public QwtPlot {
   private:
@@ -115,6 +116,7 @@ class MainWindow : public QMainWindow {
     QListWidget *listWidget;
     QTreeWidget *tableWidget;
     QMdiArea *mdiArea;
+    QLineEdit *path, *filter;
 
     void insertChildInTree(H5::Group &grp, QTreeWidgetItem *item);
     void getPath(QTreeWidgetItem* item, QString &s, int col);
@@ -144,6 +146,13 @@ class MainWindow : public QMainWindow {
     void windowChanged(QMdiSubWindow*);
     void closeFile();
     void detachCurve();
+
+
+  protected slots:
+    void updatePath(QTreeWidgetItem *);
+    void filterObjectList();
+  protected:
+    void searchObjectList(QTreeWidgetItem *item, const QRegExp& filterRegExp);
 };
 
 #endif
