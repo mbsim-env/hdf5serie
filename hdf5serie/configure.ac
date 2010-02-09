@@ -33,16 +33,12 @@ if test $enable_xslt = "yes"; then
   AC_ARG_WITH([xsltprocpath],
     [  --with-xsltproc-path=PATHTOXSLTPROC  The path to the 'xsltproc' program.],
     [xsltprocpath="$withval"],[xsltprocpath=""])
-  AC_ARG_WITH([msxslpath],
-    [  --with-msxsl-path=PATHTOMSXSL  The path to the 'msxsl' program.],
-    [msxslpath="$withval"],[msxslpath=""])
   AC_PATH_PROG([xsltproc],[xsltproc],[no],[$xsltprocpath:$prefix/bin:$PATH])
-  AC_PATH_PROG([msxsl],[msxsl],[no],[$msxslpath:$prefix/bin:$PATH])
-  if test "$xsltproc" = "no" -a "$msxsl" = "no"; then
+  if test "$xsltproc" = "no"; then
     AC_MSG_ERROR([
   No xslt processor found!
   Disable with --disable-xslt (h5lsserie will not work),
-  or specify --with-xsltproc-path or --with-msxsl-path!])
+  or specify --with-xsltproc-path!])
   fi
 fi
 
@@ -88,8 +84,6 @@ win_h5dump=$(filetowin $h5dump)
 AC_SUBST([win_h5dump])
 win_xsltproc=$(filetowin $xsltproc)
 AC_SUBST([win_xsltproc])
-win_msxsl=$(filetowin $msxsl)
-AC_SUBST([win_msxsl])
 
 
 AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
