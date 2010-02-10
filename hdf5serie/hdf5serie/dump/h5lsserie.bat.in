@@ -91,25 +91,32 @@ if defined HDF5SERIEDATADIR set datadir=%HDF5SERIEDATADIR%
 if defined HDF5SERIEH5DUMP set win_h5dump=%HDF5SERIEH5DUMP%
 if defined HDF5SERIEXSLTPROC set win_xsltproc=%HDF5SERIEXSLTPROC%
 
-rem create XML dump (without data) of all *.h5 files in the
-rem directory of file FILE (save as .*.h5.xml)
+rem create XML dump (without data) of FILE and all linked files (recursive)
+set ALLGENERATEDFILES=
 cd %FILEDIRNAME%
-for %%S in (*.h5 %FILE%) do (
-  %win_h5dump% -xA %%S > .%%S.xml
-)
+call:xmldump %FILE%
 
 rem call xslt
-if not "%win_xsltproc%" == "no" (
-  %win_xsltproc% --path . --param FILENAME "'%FILE%'" --param LABEL %L% --param DESCRIPTION %D% --param FOLLOW %F% %datadir%/hdf5serie/xsl/h5lsserie.xsl .%FILEBASENAME%.h5.xml
-) else (
-  if not "@win_msxsl@" == "no" (
-    @win_msxsl@ .%FILEBASENAME%.h5.xml %datadir%/hdf5serie/xsl/h5lsserie.xsl FILENAME="%FILE%" LABEL=%L% DESCRIPTION=%D% FOLLOW=%F%
-  )
-)
+%win_xsltproc% --path . --param FILENAME "'%FILE%'" --param LABEL %L% --param DESCRIPTION %D% --param FOLLOW %F% %datadir%/hdf5serie/xsl/h5lsserie.xsl .%FILEBASENAME%.h5.xml
 
 rem delete all previous created .*.h5.xml files
-for %%S in (*.h5 %FILE%) do (
-  del .%%S.xml
+for %%S in (%ALLGENERATEDFILES%) do (
+  del %%S
 )
 
 :end
+goto:eof
+
+
+:: Start Functions
+:xmldump
+set ALLGENERATEDFILES=%ALLGENERATEDFILES% .%~1.xml
+%win_h5dump% -xA %~1 > .%~1.xml
+if not "%F%" == "1" goto endxmldump
+  set MYVAR=
+  for /f "tokens=*" %%A in ('%win_xsltproc% --path . %datadir%/hdf5serie/xsl/h5lsserie-listlinks.xsl .%~1.xml') do set MYVAR=%%A
+  for %%S in (%MYVAR%) do (
+    call:xmldump %%S
+  )
+:endxmldump
+goto:eof
