@@ -14,8 +14,7 @@
 
   <!-- output H5:ExternalLink -->
   <xsl:template match="hdf5:ExternalLink">
-    <xsl:value-of select="translate(concat(@TargetFilename,@TargetPath),'/','')"/><xsl:text>
-</xsl:text>
+    <xsl:value-of select="translate(concat(@TargetFilename,@TargetPath),'/','')"/><xsl:text> </xsl:text>
   </xsl:template>
 
 </xsl:stylesheet>
