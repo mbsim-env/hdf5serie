@@ -94,7 +94,6 @@ namespace H5 {
     hsize_t maxDims[2];
     fileDataSpace.getSimpleExtentDims(dims, maxDims);
     assert(maxDims[0]==H5S_UNLIMITED);
-    T dummy;
     assert(getDataType().getClass()==memDataType.getClass());
 
     hsize_t memDims[]={1, dims[1]};
@@ -214,12 +213,12 @@ namespace H5 {
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
   
     char** dummy=new char*[dims[1]];
-    for(int i=0; i<dims[1]; i++) {
+    for(unsigned int i=0; i<dims[1]; i++) {
       dummy[i]=new char[data[i].size()+1];
       strcpy(dummy[i], data[i].c_str());
     }
     write(dummy, memDataType, memDataSpace, fileDataSpace);
-    for(int i=0; i<dims[1]; i++) delete[]dummy[i];
+    for(unsigned int i=0; i<dims[1]; i++) delete[]dummy[i];
     delete[]dummy;
   }
   
@@ -233,7 +232,7 @@ namespace H5 {
     char** dummy=new char*[dims[1]];
     read(dummy, memDataType, memDataSpace, fileDataSpace);
     vector<string> data(dims[1]);
-    for(int i=0; i<dims[1]; i++) {
+    for(unsigned int i=0; i<dims[1]; i++) {
       data[i]=dummy[i];
       free(dummy[i]);
     }
@@ -254,7 +253,7 @@ namespace H5 {
     char** dummy=new char*[rows];
     read(dummy, memDataType, coldataspace, fileDataSpace);
     vector<string> data(rows);
-    for(int i=0; i<rows; i++) {
+    for(unsigned int i=0; i<rows; i++) {
       data[i]=dummy[i];
       free(dummy[i]);
     }

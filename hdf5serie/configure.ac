@@ -85,6 +85,7 @@ AC_SUBST([win_h5dump])
 win_xsltproc=$(filetowin $xsltproc)
 AC_SUBST([win_xsltproc])
 
+CPPFLAGS="$CPPFLAGS -Wall -Werror"
 
 AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc hdf5serie/rereadmetadata/Makefile

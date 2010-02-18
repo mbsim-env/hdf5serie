@@ -76,7 +76,6 @@ namespace H5 {
     incRefCount();
     // Check if dataSpace and memDataType complies with the class
     assert(dataSpace.getSimpleExtentNdims()==0);
-    T dummy;
     assert(getDataType().getClass()==memDataType.getClass());
   }
 
@@ -194,7 +193,6 @@ namespace H5 {
     hsize_t dims[1], maxDims[1];
     dataSpace.getSimpleExtentDims(dims, maxDims);
     assert(maxDims[0]==H5S_UNLIMITED);
-    T dummy;
     assert(getDataType().getClass()==memDataType.getClass());
   }
 
@@ -319,7 +317,6 @@ namespace H5 {
     dataSpace.getSimpleExtentDims(dims, maxDims);
     assert(maxDims[0]==H5S_UNLIMITED);
     assert(maxDims[1]==H5S_UNLIMITED);
-    T dummy;
     assert(getDataType().getClass()==memDataType.getClass());
   }
 
@@ -330,7 +327,7 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     T* buf=new T[dims[0]*dims[1]];
     T dummy;
-    for(int r=0; r<dims[0]; r++) {
+    for(unsigned int r=0; r<dims[0]; r++) {
       assert(data[r].size()==dims[1]);
       memcpy(&buf[r*dims[1]], &data[r][0], sizeof(dummy)*dims[1]);
     }
@@ -348,7 +345,7 @@ namespace H5 {
     vector<vector<T> > data(dims[0]);
     T* buf=new T[dims[0]*dims[1]];
     DataSet::read(buf, memDataType, dataSpace, dataSpace);
-    for(int r=0; r<dims[0]; r++) {
+    for(unsigned int r=0; r<dims[0]; r++) {
       data[r].resize(dims[1]);
       memcpy(&data[r][0], &buf[r*dims[1]], sizeof(T)*dims[1]);
     }
@@ -429,12 +426,12 @@ namespace H5 {
     extend(dims);
     DataSpace dataSpace=getSpace();
     char** buf=new char*[dims[0]];
-    for(int i=0; i<dims[0]; i++) {
+    for(unsigned int i=0; i<dims[0]; i++) {
       buf[i]=new char[data[i].size()+1];
       strcpy(buf[i], data[i].c_str());
     }
     DataSet::write(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
-    for(int i=0; i<dims[0]; i++) delete[]buf[i];
+    for(unsigned int i=0; i<dims[0]; i++) delete[]buf[i];
     delete[]buf;
   }
 
@@ -446,7 +443,7 @@ namespace H5 {
     char** buf=new char*[dims[0]];
     DataSet::read(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
     vector<string> data;
-    for(int i=0; i<dims[0]; i++) {
+    for(unsigned int i=0; i<dims[0]; i++) {
       data.push_back(buf[i]);
       free(buf[i]);
     }
@@ -462,15 +459,15 @@ namespace H5 {
     extend(dims);
     DataSpace dataSpace=getSpace();
     char** buf=new char*[dims[0]*dims[1]];
-    for(int r=0; r<dims[0]; r++)
-      for(int c=0; c<dims[1]; c++) {
+    for(unsigned int r=0; r<dims[0]; r++)
+      for(unsigned int c=0; c<dims[1]; c++) {
 	assert(data[r].size()==dims[1]);
 	buf[r*dims[1]+c]=new char[data[r][c].size()+1];
 	strcpy(buf[r*dims[1]+c],data[r][c].c_str());
       }
     DataSet::write(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
-    for(int r=0; r<dims[0]; r++)
-      for(int c=0; c<dims[1]; c++)
+    for(unsigned int r=0; r<dims[0]; r++)
+      for(unsigned int c=0; c<dims[1]; c++)
         delete[]buf[r*dims[1]+c];
     delete[]buf;
   }
@@ -483,8 +480,8 @@ namespace H5 {
     char** buf=new char*[dims[0]*dims[1]];
     DataSet::read(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
     vector<vector<string> > data(dims[0]);
-    for(int r=0; r<dims[0]; r++)
-      for(int c=0; c<dims[1]; c++) {
+    for(unsigned int r=0; r<dims[0]; r++)
+      for(unsigned int c=0; c<dims[1]; c++) {
         data[r].push_back(buf[r*dims[1]+c]);
         free(buf[r*dims[1]+c]);
       }

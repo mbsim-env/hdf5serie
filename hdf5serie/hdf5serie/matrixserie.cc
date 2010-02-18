@@ -94,7 +94,6 @@ namespace H5 {
     hsize_t maxDims[3];
     fileDataSpace.getSimpleExtentDims(dims, maxDims);
     assert(maxDims[0]==H5S_UNLIMITED);
-    T dummy;
     assert(getDataType().getClass()==memDataType.getClass());
 
     hsize_t memDims[]={1, dims[1], dims[2]};
@@ -118,7 +117,7 @@ namespace H5 {
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
 
     T* data=new T[dims[1]*dims[2]];
-    for(int r=0; r<matrix.size(); r++) {
+    for(unsigned int r=0; r<matrix.size(); r++) {
       assert(matrix[r].size()==dims[2]);
       memcpy(&data[r*dims[2]],&matrix[r][0],sizeof(double)*dims[2]);
     }
@@ -137,7 +136,7 @@ namespace H5 {
     read(data, memDataType, memDataSpace, fileDataSpace);
     vector<vector<T> > matrix;
     matrix.resize(dims[1]);
-    for(int r=0; r<matrix.size(); r++) {
+    for(unsigned int r=0; r<matrix.size(); r++) {
       matrix[r].resize(dims[2]);
       memcpy(&matrix[r][0],&data[r*dims[2]],sizeof(double)*dims[2]);
     }

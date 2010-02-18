@@ -47,6 +47,6 @@ void H5FileRO::reread() {
   close();
   openFile(filename, H5F_ACC_RDONLY);
 
-  for(int i=0; i<object.size(); i++)
+  for(unsigned int i=0; i<object.size(); i++)
     object[i]->reread();
 }
