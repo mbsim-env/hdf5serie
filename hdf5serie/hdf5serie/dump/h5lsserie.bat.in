@@ -97,7 +97,8 @@ cd %FILEDIRNAME%
 call:xmldump %FILE%
 
 rem call xslt
-%win_xsltproc% --path . --param FILENAME "'%FILE%'" --param LABEL %L% --param DESCRIPTION %D% --param FOLLOW %F% %datadir%/hdf5serie/xsl/h5lsserie.xsl .%FILEBASENAME%.h5.xml
+set DIR=%FILEDIRNAME%
+%win_xsltproc% --path %DIR% --param DIR "'%DIR%'" --param FILENAME "'%FILE%'" --param LABEL %L% --param DESCRIPTION %D% --param FOLLOW %F% %datadir%/hdf5serie/xsl/h5lsserie.xsl .%FILEBASENAME%.h5.xml
 
 rem delete all previous created .*.h5.xml files
 for %%S in (%ALLGENERATEDFILES%) do (
@@ -111,12 +112,13 @@ goto:eof
 :: Start Functions
 :xmldump
 set ALLGENERATEDFILES=%ALLGENERATEDFILES% .%~1.xml
-%win_h5dump% -xA %~1 > .%~1.xml
+set OUT=%~dp1/.%~n1.xml
+%win_h5dump% -xA %~1 > %OUT%
 if not "%F%" == "1" goto endxmldump
   set MYVAR=
-  for /f "tokens=*" %%A in ('%win_xsltproc% --path . %datadir%/hdf5serie/xsl/h5lsserie-listlinks.xsl .%~1.xml') do set MYVAR=%%A
+  for /f "tokens=*" %%A in ('%win_xsltproc% --path . %datadir%/hdf5serie/xsl/h5lsserie-listlinks.xsl %OUT%') do set MYVAR=%%A
   for %%S in (%MYVAR%) do (
-    call:xmldump %%S
+    call:xmldump %~dp1/%%S
   )
 :endxmldump
 goto:eof
