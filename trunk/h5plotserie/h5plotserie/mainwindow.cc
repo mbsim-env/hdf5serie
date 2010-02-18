@@ -159,13 +159,12 @@ MainWindow::MainWindow(vector<string>& arg) {
   pen.append(QPen(QColor(c2, c2, c2), linewidth, Qt::DotLine)); /* 32 */
 
   QMenu *fileMenu=new QMenu("File", menuBar());
-  QAction *addFileAct=fileMenu->addAction("Open File(s)...", this, SLOT(openFileDialog()));
+  fileMenu->addAction("Open File(s)...", this, SLOT(openFileDialog()));
   menuBar()->addMenu(fileMenu);
-  //addFileAct=fileMenu->addAction("Close File...", this, SLOT(closeFile()));
   QMenu *plotMenu=new QMenu("Plot", menuBar());
-  QAction *addPlotAct=plotMenu->addAction("Add Plot...", this, SLOT(addPlotWindow()));
+  plotMenu->addAction("Add Plot...", this, SLOT(addPlotWindow()));
   menuBar()->addMenu(plotMenu);
-  QAction *printPlotAct=plotMenu->addAction("Print Plot...", this, SLOT(printPlotWindow()));
+  plotMenu->addAction("Print Plot...", this, SLOT(printPlotWindow()));
   //QAction *exportPlotAct=plotMenu->addAction("Export Plot...", this, SLOT(exportPlot2SVG()));
 
   // help menu
@@ -670,14 +669,14 @@ void MyCurve::draw(QPainter *p, const QwtScaleMap &xMap, const QwtScaleMap &yMap
     to = dataSize() - 1;
 
   size_t first, last = from;
-  while (last <= to) {
+  while ((int)last <= to) {
     first = last;
-    while (first <= to && isNaN(data().y(first)))
+    while ((int)first <= to && isNaN(data().y(first)))
       ++first;
     last = first;
-    while (last <= to && !isNaN(data().y(last)))
+    while ((int)last <= to && !isNaN(data().y(last)))
       ++last;
-    if (first <= to)
+    if ((int)first <= to)
       QwtPlotCurve::draw(p, xMap, yMap, first, last - 1);
   }
 }
@@ -688,16 +687,16 @@ QwtDoubleRect MyCurve::boundingRect() const {
     return QwtDoubleRect(1.0, 1.0, -2.0, -2.0); // Empty data.
 
   size_t first = 0;//, last = dataSize() - 1;
-  while (first < dataSize() && isNaN(data().y(first)))
+  while ((int)first < dataSize() && isNaN(data().y(first)))
     ++first;
 
-  if (first == dataSize())
+  if ((int)first == dataSize())
     return QwtDoubleRect(1.0, 1.0, -2.0, -2.0); // Empty data.
 
   double minX, maxX, minY, maxY;
   minX = maxX = x(first);
   minY = maxY = y(first);
-  for (size_t i = first + 1; i < dataSize(); ++i)
+  for (size_t i = first + 1; i < (unsigned int)dataSize(); ++i)
   {
     const double xv = x(i);
     if (xv < minX)
