@@ -16,4 +16,4 @@ Description: A c++ wrapper for HDF5 to write data series
 Requires: 
 Version: @VERSION@
 Libs: -L${libdir} -lhdf5serie @LDFLAGS@ @LIBS@ -lz
-Cflags: -I${includedir} @CPPFLAGS@
+Cflags: -I${includedir} @HDF5CPPFLAGS@
