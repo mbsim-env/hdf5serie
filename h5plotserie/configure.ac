@@ -41,6 +41,8 @@ CPPFLAGS=$OLD
 AC_SUBST([QWT_CFLAGS])
 AC_SUBST([QWT_LIBS])
 
+CPPFLAGS="$CPPFLAGS -Wall -Werror"
+
 AC_CONFIG_FILES([Makefile h5plotserie/Makefile doc/Makefile])
 
 AC_OUTPUT
