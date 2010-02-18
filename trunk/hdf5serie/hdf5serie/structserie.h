@@ -252,8 +252,8 @@ serie.create(parent, "mystructserie");
     assert(maxDims[0]==H5S_UNLIMITED);
   
     assert(dataSet.getDataType().getClass()==H5T_COMPOUND);
-    assert(structOffset.size()==getCompType().getNmembers());
-    for(int i=0; i<structOffset.size(); i++) {
+    assert((int)structOffset.size()==getCompType().getNmembers());
+    for(unsigned int i=0; i<structOffset.size(); i++) {
       assert(getCompType().getMemberName(i)==memDataType.getMemberName(i));
       assert(getCompType().getMemberOffset(i)==memDataType.getMemberOffset(i));
       assert(getCompType().getMemberDataType(i).getClass()==memDataType.getMemberDataType(i).getClass());
@@ -321,7 +321,7 @@ serie.create(parent, "mystructserie");
 #       include "knownpodtypes.def"
 #       undef FOREACHKNOWNTYPE
         if(memDataType.getMemberDataType(i)==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
-          for(int j=0; j<dims[0]; j++) {
+          for(unsigned int j=0; j<dims[0]; j++) {
             std::vector<std::string>* vec=(std::vector<std::string>*)((char*)&data+structOffset[i]);
             assert(vec->size()==dims[0]);
             char* str=new char[(*vec)[j].size()+1];
@@ -332,7 +332,7 @@ serie.create(parent, "mystructserie");
       }
     }
     write(buf, memDataType, memDataSpace, fileDataSpace);
-    for(int i=0; i<charptr.size(); i++)
+    for(unsigned int i=0; i<charptr.size(); i++)
       delete[]charptr[i];
     delete[]buf;
   }
@@ -388,7 +388,7 @@ serie.create(parent, "mystructserie");
         if(memDataType.getMemberDataType(i)==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims)) {
           std::vector<std::string>* vec=(std::vector<std::string>*)((char*)&data+structOffset[i]);
           vec->resize(dims[0]);
-          for(int j=0; j<dims[0]; j++) {
+          for(unsigned int j=0; j<dims[0]; j++) {
             char* str=*(char**)(buf+memDataType.getMemberOffset(i)+j*sizeof(char*));
             (*vec)[j]=str;
             free(str);

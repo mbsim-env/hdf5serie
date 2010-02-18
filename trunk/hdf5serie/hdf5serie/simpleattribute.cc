@@ -76,7 +76,6 @@ namespace H5 {
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==0);
-    T dummy;
     assert(getDataType().getClass()==memDataType.getClass());
   }
 
@@ -168,7 +167,6 @@ namespace H5 {
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==1);
-    T dummy;
     assert(getDataType().getClass()==memDataType.getClass());
   }
 
@@ -267,7 +265,6 @@ namespace H5 {
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==2);
-    T dummy;
     assert(getDataType().getClass()==memDataType.getClass());
   }
 
@@ -279,7 +276,7 @@ namespace H5 {
     T* buf=new T[dims[0]*dims[1]];
     assert(data.size()==dims[0]);
     T dummy;
-    for(int r=0; r<dims[0]; r++) {
+    for(unsigned int r=0; r<dims[0]; r++) {
       assert(data[r].size()==dims[1]);
       memcpy(&buf[r*dims[1]], &data[r][0], sizeof(dummy)*dims[1]);
     }
@@ -297,7 +294,7 @@ namespace H5 {
     vector<vector<T> > data(dims[0]);
     T* buf=new T[dims[0]*dims[1]];
     Attribute::read(memDataType, buf);
-    for(int r=0; r<dims[0]; r++) {
+    for(unsigned int r=0; r<dims[0]; r++) {
       data[r].resize(dims[1]);
       memcpy(&data[r][0], &buf[r*dims[1]], sizeof(T)*dims[1]);
     }
@@ -360,12 +357,12 @@ namespace H5 {
     dataSpace.getSimpleExtentDims(dims);
     assert(data.size()==dims[0]);
     char** buf=new char*[dims[0]];
-    for(int i=0; i<dims[0]; i++) {
+    for(unsigned int i=0; i<dims[0]; i++) {
       buf[i]=new char[data[i].size()+1];
       strcpy(buf[i], data[i].c_str());
     }
     Attribute::write(StrType(PredType::C_S1, H5T_VARIABLE), buf);
-    for(int i=0; i<dims[0]; i++) delete[]buf[i];
+    for(unsigned int i=0; i<dims[0]; i++) delete[]buf[i];
     delete[]buf;
   }
 
@@ -377,7 +374,7 @@ namespace H5 {
     char** buf=new char*[dims[0]];
     Attribute::read(StrType(PredType::C_S1, H5T_VARIABLE), buf);
     vector<string> data;
-    for(int i=0; i<dims[0]; i++) {
+    for(unsigned int i=0; i<dims[0]; i++) {
       data.push_back(buf[i]);
       free(buf[i]);
     }
@@ -394,15 +391,15 @@ namespace H5 {
     dataSpace.getSimpleExtentDims(dims);
     assert(data.size()==dims[0]);
     char** buf=new char*[dims[0]*dims[1]];
-    for(int r=0; r<dims[0]; r++)
-      for(int c=0; c<dims[1]; c++) {
+    for(unsigned int r=0; r<dims[0]; r++)
+      for(unsigned int c=0; c<dims[1]; c++) {
 	assert(data[r].size()==dims[1]);
 	buf[r*dims[1]+c]=new char[data[r][c].size()+1];
 	strcpy(buf[r*dims[1]+c],data[r][c].c_str());
       }
     Attribute::write(StrType(PredType::C_S1, H5T_VARIABLE), buf);
-    for(int r=0; r<dims[0]; r++)
-      for(int c=0; c<dims[1]; c++)
+    for(unsigned int r=0; r<dims[0]; r++)
+      for(unsigned int c=0; c<dims[1]; c++)
         delete[]buf[r*dims[1]+c];
     delete[]buf;
   }
@@ -415,8 +412,8 @@ namespace H5 {
     char** buf=new char*[dims[0]*dims[1]];
     Attribute::read(StrType(PredType::C_S1, H5T_VARIABLE), buf);
     vector<vector<string> > data(dims[0]);
-    for(int r=0; r<dims[0]; r++)
-      for(int c=0; c<dims[1]; c++) {
+    for(unsigned int r=0; r<dims[0]; r++)
+      for(unsigned int c=0; c<dims[1]; c++) {
         data[r].push_back(buf[r*dims[1]+c]);
         free(buf[r*dims[1]+c]);
       }
