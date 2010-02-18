@@ -71,33 +71,24 @@ test $HDF5SERIEDATADIR && datadir=$HDF5SERIEDATADIR
 test $HDF5SERIEH5DUMP && h5dump=$HDF5SERIEH5DUMP
 test $HDF5SERIEXSLTPROC && xsltproc=$HDF5SERIEXSLTPROC
 
-# check for pid file and send SIGUSR2 if found
-DIR=$(dirname $FILE)
-cd $DIR
-SIGNALSEND=false
-for SUBFILE in *.h5 $FILE; do
-  kill -USR2 $(cat .$SUBFILE.pid 2> /dev/null) >& /dev/null && SIGNALSEND=true
-done
-test $SIGNALSEND = "true" && sleep 1
-
 
 # create XML dump (without data) of FILE and all linked files (recursive)
 ALLGENERATEDFILES=""
 function xmldump {
-  $h5dump -xA $1 > .$1.xml
-  ALLGENERATEDFILES="$ALLGENERATEDFILES .$1.xml"
+  OUT=$(dirname $1)/.$(basename $1).xml
+  $h5dump -xA $1 > $OUT
+  ALLGENERATEDFILES="$ALLGENERATEDFILES $OUT"
   if [ $F -eq 1 ]; then
-    for SUBFILE in $($xsltproc --path . $datadir/hdf5serie/xsl/h5lsserie-listlinks.xsl .$(basename $1).xml); do
-      xmldump $SUBFILE
+    for SUBFILE in $($xsltproc --path . $datadir/hdf5serie/xsl/h5lsserie-listlinks.xsl $OUT); do
+      xmldump $(dirname $1)/$SUBFILE
     done
   fi
 }
 xmldump $FILE
 
 # call xslt
-if [ $xsltproc != "no" ]; then
-  $xsltproc --path . --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F $datadir/hdf5serie/xsl/h5lsserie.xsl .$(basename $FILE).xml
-fi
+DIR=$(dirname $FILE)/
+$xsltproc --path $DIR --param DIR "'$DIR'" --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F $datadir/hdf5serie/xsl/h5lsserie.xsl $(dirname $FILE)/.$(basename $FILE).xml
 
 # delete all previous created .*.h5.xml files
 for SUBFILE in $ALLGENERATEDFILES; do
