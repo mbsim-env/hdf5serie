@@ -35,7 +35,7 @@ while test $# -ne 0; do
     -f)        F=1;;
     -*)        echo "Invalid option: $1; see output of h5lsserie"
                exit 1;;
-    *)         FILE=$1;;
+    *)         FILE="$1";;
   esac
   shift
 done
@@ -60,35 +60,38 @@ if [ $H -eq 1 ]; then
   exit 0
 fi
 
-prefix=@prefix@
-exec_prefix=@exec_prefix@
-datadir=@datadir@
-h5dump=@h5dump@
-xsltproc=@xsltproc@
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+datadir="@datadir@"
+h5dump="@h5dump@"
+xsltproc="@xsltproc@"
 
 # get environment variables (for none default intallation)
-test $HDF5SERIEDATADIR && datadir=$HDF5SERIEDATADIR
-test $HDF5SERIEH5DUMP && h5dump=$HDF5SERIEH5DUMP
-test $HDF5SERIEXSLTPROC && xsltproc=$HDF5SERIEXSLTPROC
+test $HDF5SERIEDATADIR && datadir="$HDF5SERIEDATADIR"
+test $HDF5SERIEH5DUMP && h5dump="$HDF5SERIEH5DUMP"
+test $HDF5SERIEXSLTPROC && xsltproc="$HDF5SERIEXSLTPROC"
 
+# change to dir
+DIR="$(dirname "$FILE")"
+FILE=$(basename "$FILE")
+cd "$DIR"
 
 # create XML dump (without data) of FILE and all linked files (recursive)
 ALLGENERATEDFILES=""
 function xmldump {
-  OUT=$(dirname $1)/.$(basename $1).xml
-  $h5dump -xA $1 > $OUT
+  OUT=.$1.xml
+  "$h5dump" -xA $1 > $OUT
   ALLGENERATEDFILES="$ALLGENERATEDFILES $OUT"
   if [ $F -eq 1 ]; then
-    for SUBFILE in $($xsltproc --path . $datadir/hdf5serie/xsl/h5lsserie-listlinks.xsl $OUT); do
-      xmldump $(dirname $1)/$SUBFILE
+    for SUBFILE in $("$xsltproc" --path . "$datadir/hdf5serie/xsl/h5lsserie-listlinks.xsl" $OUT); do
+      xmldump $SUBFILE
     done
   fi
 }
 xmldump $FILE
 
 # call xslt
-DIR=$(dirname $FILE)/
-$xsltproc --path $DIR --param DIR "'$DIR'" --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F $datadir/hdf5serie/xsl/h5lsserie.xsl $(dirname $FILE)/.$(basename $FILE).xml
+"$xsltproc" --path . --param DIR "'$DIR'" --param FILENAME "'$FILE'" --param LABEL $L --param DESCRIPTION $D --param FOLLOW $F "$datadir/hdf5serie/xsl/h5lsserie.xsl" .$FILE.xml
 
 # delete all previous created .*.h5.xml files
 for SUBFILE in $ALLGENERATEDFILES; do
