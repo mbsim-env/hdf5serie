@@ -35,6 +35,7 @@ namespace H5 {
       std::string name;
       H5FileRO* file;
     public:
+      virtual ~Base() {}
       void reg(const GroupRO* parent, const std::string& name, H5FileRO* file);
       virtual void close()=0;
       virtual void reread()=0;
