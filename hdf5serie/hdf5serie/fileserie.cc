@@ -34,6 +34,8 @@ using namespace std;
 
 list<FileSerie*> FileSerie::openedFile;
 bool FileSerie::flushOnes=false;
+int FileSerie::defaultCompression=1;
+int FileSerie::defaultChunkSize=100;
 
 void FileSerie::sigUSR2Handler(int i) {
   cout<<"HDF5Serie: Received USR2 signal! Ask for flushing files!"<<endl;

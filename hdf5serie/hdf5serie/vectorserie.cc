@@ -56,20 +56,20 @@ namespace H5 {
   }
 
   template<class T>
-  VectorSerie<T>::VectorSerie(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression) {
+  VectorSerie<T>::VectorSerie(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression, int chunkSize) {
     T dummy;
     memDataType=toH5Type(dummy);
-    create(parent, name, columnLabel, compression);
+    create(parent, name, columnLabel, compression, chunkSize);
   }
 
   template<class T>
-  void VectorSerie<T>::create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression) {
+  void VectorSerie<T>::create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression, int chunkSize) {
     dims[0]=0;
     dims[1]=columnLabel.size();
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
     DataSpace fileDataSpace(2, dims, maxDims);
     DSetCreatPropList prop;
-    hsize_t chunkDims[]={hdf5SerieChunkSize, dims[1]};
+    hsize_t chunkDims[]={chunkSize, dims[1]};
     prop.setChunk(2, chunkDims);
     if(compression>0) prop.setDeflate(compression);
     DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);

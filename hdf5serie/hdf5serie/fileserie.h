@@ -32,6 +32,8 @@ namespace H5 {
       static std::list<FileSerie*> openedFile;
       static bool flushOnes;
       static void sigUSR2Handler(int);
+      static int defaultCompression;
+      static int defaultChunkSize;
     public:
       FileSerie(const char *name, unsigned int flags,
                 const FileCreatPropList &create_plist=FileCreatPropList::DEFAULT,
@@ -46,6 +48,11 @@ namespace H5 {
       static void flushAllFiles();
       static bool getFlushOnes() { return flushOnes; }
       static void deletePIDFiles();
+
+      static int getDefaultCompression() { return defaultCompression; }
+      static void setDefaultCompression(int comp) { defaultCompression=comp; }
+      static int getDefaultChunkSize() { return defaultChunkSize; }
+      static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
   };
 }
 

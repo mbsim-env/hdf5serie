@@ -27,6 +27,7 @@
 #include <string>
 #include <assert.h>
 #include <hdf5serie/simpleattribute.h>
+#include <hdf5serie/fileserie.h>
 
 namespace H5 {
 
@@ -88,18 +89,18 @@ namespace H5 {
        *
        * see create()
       */
-      VectorSerie(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression=1);
+      VectorSerie(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression=FileSerie::getDefaultCompression(), int chunkSize=FileSerie::getDefaultChunkSize());
 
       /** \brief Creating a dataset
        *
        * Creates a dataset named \a name as a child of position \a parent.
        * By default the dataset is compressed using deflate (gzip) with compression level
-       * 1. Use \a compression to adjuste the compression level [1-9] or 0 to disable compression.
+       * FileSerie::defaultCompression. Use \a compression to adjuste the compression level [1-9] or 0 to disable compression.
        * Each element of the data vector (columns in the HDF5 file) must be given 
        * a description label using the parameter \a columnLabel. The column labels are
        * stored as a string vector attribute named \p Column \p Label in the dataset.
       */
-      void create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression=1);
+      void create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression=FileSerie::getDefaultCompression(), int chunkSize=FileSerie::getDefaultChunkSize());
 
       /** \brief Open a dataset
        *
