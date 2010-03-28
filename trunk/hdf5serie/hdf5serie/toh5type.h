@@ -88,8 +88,6 @@ int main() {
 
 namespace H5 {
 
-  extern int hdf5SerieChunkSize;
-
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   DataType toH5Type(const CTYPE& dummy);
 # include "hdf5serie/knowntypes.def"

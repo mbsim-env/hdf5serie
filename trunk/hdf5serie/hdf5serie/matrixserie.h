@@ -27,6 +27,7 @@
 #include <string>
 #include <assert.h>
 #include <hdf5serie/simpleattribute.h>
+#include <hdf5serie/fileserie.h>
 
 namespace H5 {
 
@@ -88,15 +89,15 @@ namespace H5 {
        *
        * see create()
       */
-      MatrixSerie(const CommonFG& parent, const std::string& name, const int rows, const int cols, int compression=1);
+      MatrixSerie(const CommonFG& parent, const std::string& name, const int rows, const int cols, int compression=FileSerie::getDefaultCompression(), int chunkSize=FileSerie::getDefaultChunkSize());
 
       /** \brief Creating a dataset
        *
        * Creates a dataset named \a name as a child of position \a parent.
        * By default the dataset is compressed using deflate (gzip) with compression level
-       * 1. Use \a compression to adjuste the compression level [1-9] or 0 to disable compression.
+       * FileSerie::defaultCompression. Use \a compression to adjuste the compression level [1-9] or 0 to disable compression.
       */
-      void create(const CommonFG& parent, const std::string& name, const int rows, const int cols, int compression=1);
+      void create(const CommonFG& parent, const std::string& name, const int rows, const int cols, int compression=FileSerie::getDefaultCompression(), int chunksize=FileSerie::getDefaultChunkSize());
 
       /** \brief Open a dataset
        *
