@@ -171,7 +171,7 @@ MainWindow::MainWindow(vector<string>& arg) {
   menuBar()->addSeparator();
   QMenu *helpMenu=new QMenu("Help", menuBar());
   helpMenu->addAction("GUI Help...", this, SLOT(help()));
-  helpMenu->addAction("About OpenMBV...", this, SLOT(about()));
+  helpMenu->addAction("About h5plotserie...", this, SLOT(about()));
   menuBar()->addMenu(helpMenu);
 
   // title
