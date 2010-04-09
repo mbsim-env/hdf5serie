@@ -153,20 +153,20 @@ int main() {
   dsd.setDescription("testdesc");
   vector<double> dout;
   dout=dsd.read();
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
 
   SimpleDataSet<vector<double> > dsd2;
   vector<double> d2; d2.push_back(5.671); d2.push_back(7.341);
   dsd2.write(file, "dsd2", d2);
   vector<double> dout2;
   dout2=dsd2.read();
-  for(int i=0; i<dout2.size(); i++) cout<<dout2[i]<<endl;
+  for(unsigned int i=0; i<dout2.size(); i++) cout<<dout2[i]<<endl;
 
   vector<double> d3; d3.push_back(5.671); d3.push_back(7.341);
   SimpleDataSet<vector<double> > dsd3(file, "dsd3", d3);
   vector<double> dout3;
   dout3=dsd3.read();
-  for(int i=0; i<dout3.size(); i++) cout<<dout3[i]<<endl;
+  for(unsigned int i=0; i<dout3.size(); i++) cout<<dout3[i]<<endl;
 
   file.close();
   }
@@ -176,7 +176,7 @@ int main() {
   dsd.open(file, "dsd");
   vector<double> dout;
   dout=dsd.read();
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   cout<<dsd.getDescription()<<endl;
   file.close();
   }
@@ -185,14 +185,14 @@ int main() {
   SimpleDataSet<vector<double> > dsd;
   vector<double> dout;
   dout=dsd.read(file, "dsd");
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
   {
   H5File file("test.h5", H5F_ACC_RDONLY);
   vector<double> dout;
   dout=SimpleDataSet<vector<double> >::getData(file, "dsd");
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
   
@@ -209,20 +209,20 @@ int main() {
   dsd.setDescription("testdesc");
   vector<string> dout;
   dout=dsd.read();
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
 
   SimpleDataSet<vector<string> > dsd2;
   vector<string> d2; d2.push_back("xc.vmvcn"); d2.push_back("slkdfj");
   dsd2.write(file, "dsd2", d2);
   vector<string> dout2;
   dout2=dsd2.read();
-  for(int i=0; i<dout2.size(); i++) cout<<dout2[i]<<endl;
+  for(unsigned int i=0; i<dout2.size(); i++) cout<<dout2[i]<<endl;
 
   vector<string> d3; d3.push_back("eowriu"); d3.push_back("sjoinxdfd");
   SimpleDataSet<vector<string> > dsd3(file, "dsd3", d3);
   vector<string> dout3;
   dout3=dsd3.read();
-  for(int i=0; i<dout3.size(); i++) cout<<dout3[i]<<endl;
+  for(unsigned int i=0; i<dout3.size(); i++) cout<<dout3[i]<<endl;
 
   file.close();
   }
@@ -232,7 +232,7 @@ int main() {
   dsd.open(file, "dsd");
   vector<string> dout;
   dout=dsd.read();
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   cout<<dsd.getDescription()<<endl;
   file.close();
   }
@@ -241,14 +241,14 @@ int main() {
   SimpleDataSet<vector<string> > dsd;
   vector<string> dout;
   dout=dsd.read(file, "dsd");
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
   {
   H5File file("test.h5", H5F_ACC_RDONLY);
   vector<string> dout;
   dout=SimpleDataSet<vector<string> >::getData(file, "dsd");
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
 
@@ -379,20 +379,20 @@ int main() {
   dsd.write(d);
   vector<double> dout;
   dout=dsd.read();
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
 
   SimpleAttribute<vector<double> > dsd2;
   vector<double> d2; d2.push_back(5.671); d2.push_back(7.341);
   dsd2.write(data, "dsd2", d2);
   vector<double> dout2;
   dout2=dsd2.read();
-  for(int i=0; i<dout2.size(); i++) cout<<dout2[i]<<endl;
+  for(unsigned int i=0; i<dout2.size(); i++) cout<<dout2[i]<<endl;
 
   vector<double> d3; d3.push_back(5.671); d3.push_back(7.341);
   SimpleAttribute<vector<double> > dsd3(data, "dsd3", d3);
   vector<double> dout3;
   dout3=dsd3.read();
-  for(int i=0; i<dout3.size(); i++) cout<<dout3[i]<<endl;
+  for(unsigned int i=0; i<dout3.size(); i++) cout<<dout3[i]<<endl;
 
   file.close();
   }
@@ -403,7 +403,7 @@ int main() {
   dsd.open(data, "dsd");
   vector<double> dout;
   dout=dsd.read();
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
   {
@@ -412,7 +412,7 @@ int main() {
   SimpleAttribute<vector<double> > dsd;
   vector<double> dout;
   dout=dsd.read(data, "dsd");
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
   {
@@ -420,7 +420,7 @@ int main() {
   DataSet data=file.openDataSet("data");
   vector<double> dout;
   dout=SimpleAttribute<vector<double> >::getData(data, "dsd");
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
   
@@ -437,20 +437,20 @@ int main() {
   dsd.write(d);
   vector<string> dout;
   dout=dsd.read();
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
 
   SimpleAttribute<vector<string> > dsd2;
   vector<string> d2; d2.push_back("xc.vmvcn"); d2.push_back("slkdfj");
   dsd2.write(data, "dsd2", d2);
   vector<string> dout2;
   dout2=dsd2.read();
-  for(int i=0; i<dout2.size(); i++) cout<<dout2[i]<<endl;
+  for(unsigned int i=0; i<dout2.size(); i++) cout<<dout2[i]<<endl;
 
   vector<string> d3; d3.push_back("eowriu"); d3.push_back("sjoinxdfd");
   SimpleAttribute<vector<string> > dsd3(data, "dsd3", d3);
   vector<string> dout3;
   dout3=dsd3.read();
-  for(int i=0; i<dout3.size(); i++) cout<<dout3[i]<<endl;
+  for(unsigned int i=0; i<dout3.size(); i++) cout<<dout3[i]<<endl;
 
   file.close();
   }
@@ -461,7 +461,7 @@ int main() {
   dsd.open(data, "dsd");
   vector<string> dout;
   dout=dsd.read();
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
   {
@@ -470,7 +470,7 @@ int main() {
   SimpleAttribute<vector<string> > dsd;
   vector<string> dout;
   dout=dsd.read(data, "dsd");
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
   {
@@ -478,7 +478,7 @@ int main() {
   DataSet data=file.openDataSet("data");
   vector<string> dout;
   dout=SimpleAttribute<vector<string> >::getData(data, "dsd");
-  for(int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   file.close();
   }
 
@@ -503,13 +503,13 @@ int main() {
   ts.append(data);
   vector<double> out;
   out=ts.getRow(1);
-  for(int i=0; i<out.size(); i++) cout<<out[i]<<endl;
+  for(unsigned int i=0; i<out.size(); i++) cout<<out[i]<<endl;
   out=ts.getColumn(1);
-  for(int i=0; i<out.size(); i++) cout<<out[i]<<endl;
+  for(unsigned int i=0; i<out.size(); i++) cout<<out[i]<<endl;
   cout<<ts.getDescription()<<endl;
   vector<string> outhead;
   outhead=ts.getColumnLabel();
-  for(int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
+  for(unsigned int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
 
   Group grp1=file.createGroup("mygrp1");
   ///////////////////
@@ -538,10 +538,10 @@ int main() {
   ts.append(data);
   vector<double> out;
   out=ts.getColumn(1);
-  for(int i=0; i<out.size(); i++) cout<<out[i]<<endl;
+  for(unsigned int i=0; i<out.size(); i++) cout<<out[i]<<endl;
   vector<string> outhead;
   outhead=ts.getColumnLabel();
-  for(int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
+  for(unsigned int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
   file.close();
   }
 
@@ -570,9 +570,9 @@ int main() {
   ts.append(mat);
   vector<vector<double> > out;
   out=ts.getMatrix(0);
-  for(int r=0; r<out.size(); r++) { for(int c=0; c<out[r].size(); c++) cout<<out[r][c]<<" "; cout<<endl; }
+  for(unsigned int r=0; r<out.size(); r++) { for(unsigned int c=0; c<out[r].size(); c++) cout<<out[r][c]<<" "; cout<<endl; }
   out=ts.getMatrix(1);
-  for(int r=0; r<out.size(); r++) { for(int c=0; c<out[r].size(); c++) cout<<out[r][c]<<" "; cout<<endl; }
+  for(unsigned int r=0; r<out.size(); r++) { for(unsigned int c=0; c<out[r].size(); c++) cout<<out[r][c]<<" "; cout<<endl; }
   cout<<ts.getDescription()<<endl;
   }
   {
@@ -623,8 +623,8 @@ int main() {
   ar.open(d,"a");
   vector<vector<double> > out;
   out=ar.read();
-  for(int r=0; r<out.size(); r++)
-    for(int c=0; c<out[r].size(); c++)
+  for(unsigned int r=0; r<out.size(); r++)
+    for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
   file.close();
   }
@@ -643,8 +643,8 @@ int main() {
   ar.open(d,"a");
   vector<vector<string> > out;
   out=ar.read();
-  for(int r=0; r<out.size(); r++)
-    for(int c=0; c<out[r].size(); c++)
+  for(unsigned int r=0; r<out.size(); r++)
+    for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
   file.close();
   }
@@ -662,8 +662,8 @@ int main() {
   dr.open(file,"d");
   vector<vector<double> > out;
   out=dr.read();
-  for(int r=0; r<out.size(); r++)
-    for(int c=0; c<out[r].size(); c++)
+  for(unsigned int r=0; r<out.size(); r++)
+    for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
   file.close();
   }
@@ -681,8 +681,8 @@ int main() {
   dr.open(file,"d");
   vector<vector<string> > out;
   out=dr.read();
-  for(int r=0; r<out.size(); r++)
-    for(int c=0; c<out[r].size(); c++)
+  for(unsigned int r=0; r<out.size(); r++)
+    for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
   file.close();
   }
@@ -721,7 +721,7 @@ int main() {
   cout<<s1.getMembers()<<endl;
   vector<string> lab;
   lab=s1.getMemberLabel();
-  for(int i=0; i<lab.size(); i++)
+  for(unsigned int i=0; i<lab.size(); i++)
     cout<<lab[i]<<endl;
   vector<int> vv; vv.push_back(1111); vv.push_back(2222); vv.push_back(3333);
   vector<string> vvstr; vvstr.push_back("str1"); vvstr.push_back("str2"); vvstr.push_back("str3");
@@ -745,9 +745,9 @@ int main() {
   MyStruct out;
   out=s1.getRow(0);
   cout<<out.d<<endl;
-  for(int i=0; i<out.v.size(); i++) 
+  for(unsigned int i=0; i<out.v.size(); i++) 
     cout<<out.v[i]<<endl;
-  for(int i=0; i<out.vs.size(); i++) 
+  for(unsigned int i=0; i<out.vs.size(); i++) 
     cout<<out.vs[i]<<endl;
   cout<<out.f<<endl;
   cout<<out.s<<endl;
