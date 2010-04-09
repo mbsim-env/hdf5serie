@@ -103,7 +103,7 @@ serie.create(parent, "mystructserie");
        * and set the corrospondending member label to \a name.
        * Also see registerMember(const S& s, const CTYPE& e, const std::string name);
       */
-      void registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name);
+      void registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name);
 #else
 // Use this code section else
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
@@ -112,7 +112,7 @@ serie.create(parent, "mystructserie");
 #     undef FOREACHKNOWNTYPE
 
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-      void registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name);
+      void registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
 #endif
@@ -124,7 +124,7 @@ serie.create(parent, "mystructserie");
        * FileSerie::defaultCompression. Use \a compression to adjuste the compression level [1-9] or 0 to disable compression.
        * NOTE that the object can not be created before the members of the struct
        * are registered using registerMember(const S& s, const CTYPE& e, const std::string name) or
-       * registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name)
+       * registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name)
       */
       void create(const CommonFG& parent, const std::string& name, int compression=FileSerie::getDefaultCompression(), int chunkSize=FileSerie::getDefaultChunkSize());
 
@@ -133,7 +133,7 @@ serie.create(parent, "mystructserie");
        * Opens the dataset named \a name as a child of position \a parent.
        * NOTE that the object can not be opened before the members of the struct
        * are registered using registerMember(const S& s, const CTYPE& e, const std::string name) or
-       * registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name)
+       * registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name)
        */
       void open(const CommonFG& parent, const std::string& name);
 
@@ -205,7 +205,7 @@ serie.create(parent, "mystructserie");
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template<class S> \
-  void StructSerie<S>::registerMember(const S& s, const std::vector<CTYPE>& e, int N, const std::string name) { \
+  void StructSerie<S>::registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name) { \
     assert(e.size()==0 || e.size()==N); \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \

@@ -10,6 +10,6 @@ else
   if test -x .libs/lt-testlib; then
     valgrind --error-exitcode=1 .libs/lt-testlib
   else
-    valgrind --error-exitcode=1 testlib
+    valgrind --error-exitcode=1 ./testlib
   fi
 fi
