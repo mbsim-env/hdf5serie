@@ -199,26 +199,38 @@ int main(int argc, char* argv[]) {
         string desc=SimpleAttribute<string>::getData(dataSet[k], "Description");
         if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
         Exception::setAutoPrint(func, client_data);
-      } catch(...) {}
+      }
+      catch(...) {
+      }
       if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
-        cout<<comment<<"   Member Label:"<<endl;
-        CompType dataType=dataSet[k].getCompType();
-        for(unsigned int j=0; j<column[k].size(); j++) {
-          if(dataType.getMemberDataType(column[k][j]-1).getClass()==H5T_ARRAY) {
-            hsize_t dims[1];
-            dataType.getMemberArrayType(column[k][j]-1).getArrayDims(dims);
-            for(unsigned int l=0; l<dims[0]; l++)
-              cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<"("<<l+1<<")"<<endl;
+        try {
+          CompType dataType=dataSet[k].getCompType();
+          cout<<comment<<"   Member Label:"<<endl;
+          for(unsigned int j=0; j<column[k].size(); j++) {
+            if(dataType.getMemberDataType(column[k][j]-1).getClass()==H5T_ARRAY) {
+              hsize_t dims[1];
+              dataType.getMemberArrayType(column[k][j]-1).getArrayDims(dims);
+              for(unsigned int l=0; l<dims[0]; l++)
+                cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<"("<<l+1<<")"<<endl;
+            }
+            else
+              cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<endl;
           }
-          else
-            cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<endl;
+        }
+        catch(...) {
+          cout<<comment<<"   Member labels are not avaliable."<<endl;
         }
       }
       else {
-        cout<<comment<<"   Column Label:"<<endl;
-        vector<string> cols=SimpleAttribute<vector<string> >::getData(dataSet[k], "Column Label");
-        for(unsigned int j=0; j<column[k].size(); j++)
-          cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<cols[column[k][j]-1]<<endl;
+        try {
+          vector<string> cols=SimpleAttribute<vector<string> >::getData(dataSet[k], "Column Label");
+          cout<<comment<<"   Column Label:"<<endl;
+          for(unsigned int j=0; j<column[k].size(); j++)
+            cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<cols[column[k][j]-1]<<endl;
+        }
+        catch(...) {
+          cout<<comment<<"   Column labels are not avaliable."<<endl;
+        }
       }
     }
   }
