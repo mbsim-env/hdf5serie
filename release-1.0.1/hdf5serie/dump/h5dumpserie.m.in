@@ -1,0 +1,40 @@
+function D=h5dumpserie(filedata)
+% Usage: D=h5dumpserie(filedata)
+%   filedata are the parameters of the native program h5dumpserie
+%   seperated by spaces.
+%   See h5dumpserie('-h') for a desciption of the h5dumpserie program.
+%   The generated table from the h5dumpserie program is returned by D.
+
+% output help
+if strcmp(filedata, '-h') || strcmp(filedata, '--help')
+  system('@prefix@/bin/h5dumpserie -h');
+  D=[];
+  return
+end
+
+% check for write permission
+TMP=tempname('/dev/shm');
+fid=fopen(TMP, 'w');
+if fid>0
+  fclose(fid);
+else
+  TMP=tempname('/tmp');
+  fid=fopen(TMP, 'w');
+  if fid>0
+    fclose(fid);
+  else
+    TMP=tempname('.');
+    fid=fopen(TMP, 'w');
+    if fid>0
+      fclose(fid);
+    else
+      D=[];
+      error('No write permission found!');
+    end
+  end
+end
+
+% load file
+system(['@prefix@/bin/h5dumpserie -s ' filedata ' > ' TMP]);
+D=load(TMP);
+delete(TMP);
