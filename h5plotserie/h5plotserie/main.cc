@@ -18,6 +18,7 @@
 */
 
 #include <QApplication>
+#include <QDir>
 #include "mainwindow.h"
 #include <iostream>
 #include <algorithm>
@@ -35,7 +36,7 @@ int main(int argc, char *argv[]) {
   vector<string>::iterator i1, i2, i3;
   i1=find(arg.begin(), arg.end(), "-h");
   i2=find(arg.begin(), arg.end(), "--help");
-  if(i1!=arg.end() || i2!=arg.end() || arg.size()==0) {
+  if(i1!=arg.end() || i2!=arg.end() ) {
     cout<<"h5plotserie - plot the data of a hdf5 file"<<endl
     <<""<<endl
     <<"Copyright (C) 2009 Martin Foerg <mfoerg@users.berlios.de>"<<endl
@@ -49,6 +50,17 @@ int main(int argc, char *argv[]) {
     <<"    -h, --help: Show this help"<<endl;
     if(i1!=arg.end()) arg.erase(i1); else if(i2!=arg.end()) arg.erase(i2);
     return 0;
+  }
+
+  if(arg.size() == 0) {
+    QDir dir;
+    QRegExp filterRE1(".+\\.mbsim\\.h5");
+    dir.setFilter(QDir::Files);
+    dir.setPath(".");
+    QStringList file=dir.entryList();
+    for(int j=0; j<file.size(); j++)
+      if(filterRE1.exactMatch(file[j]))
+	arg.push_back(file[j].toStdString());
   }
 
   MainWindow *mainwindow = new MainWindow(arg);
