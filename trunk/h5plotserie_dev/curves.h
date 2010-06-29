@@ -37,7 +37,8 @@ class Curves : public QTabWidget {
 
     void modifyPlotData(PlotData pd, const QString &mode);
     QString saveCurves();
-    void loadCurves(QDomDocument * doc);
+    void initLoadCurve(const QString &file);
+    void loadCurve(QDomDocument * doc);
 
   private slots:
     void plotCurrentTab();

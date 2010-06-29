@@ -31,7 +31,7 @@ class MainWindow : public QMainWindow {
   Q_OBJECT
 
   public:
-    MainWindow(std::vector<std::string>& arg);
+    MainWindow();
     ~MainWindow();
 
     Curves * getCurves() {return curves; }
