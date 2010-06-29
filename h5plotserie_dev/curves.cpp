@@ -37,8 +37,43 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
   if (QString::compare(mode, "add", Qt::CaseSensitive)==0) {
     if (currentIndex()==-1)
       modifyPlotData(pd, "new");
-    else
-      static_cast<PlotDataTable*>(currentWidget())->addDataSet(pd);
+    else {
+      QList<QTableWidgetItem*> selected = static_cast<PlotDataTable*>(currentWidget())->selectedItems();
+      if (selected.size()==1) {
+        QString columnHeader=pd.string(selected[0]->column());
+        PlotData pdSave;
+        for (int i=0; i<pdSave.numberOfItems(); i++)
+          pdSave.setValue(i, static_cast<PlotDataTable*>(currentWidget())->item(selected[0]->row(), i)->text());
+        if ((QString::compare(columnHeader, "x-Label", Qt::CaseSensitive)==0) ||
+            (QString::compare(columnHeader, "x-Index", Qt::CaseSensitive)==0) ||
+            (QString::compare(columnHeader, "x-Path", Qt::CaseSensitive)==0)) {
+          pdSave.setValue("x-Label", pd.getValue("y-Label"));
+          pdSave.setValue("x-Index", pd.getValue("y-Index"));
+          pdSave.setValue("x-Path", pd.getValue("y-Path"));
+        }
+        else if ((QString::compare(columnHeader, "y-Label", Qt::CaseSensitive)==0) ||
+            (QString::compare(columnHeader, "y-Index", Qt::CaseSensitive)==0) ||
+            (QString::compare(columnHeader, "y-Path", Qt::CaseSensitive)==0)) {
+          pdSave.setValue("y-Label", pd.getValue("y-Label"));
+          pdSave.setValue("y-Index", pd.getValue("y-Index"));
+          pdSave.setValue("y-Path", pd.getValue("y-Path"));
+          pdSave.setValue("gain", "1");
+          pdSave.setValue("offset", "0");
+        }
+        else if ((QString::compare(columnHeader, "y2-Label", Qt::CaseSensitive)==0) ||
+            (QString::compare(columnHeader, "y2-Index", Qt::CaseSensitive)==0) ||
+            (QString::compare(columnHeader, "y2-Path", Qt::CaseSensitive)==0)) {
+          pdSave.setValue("y2-Label", pd.getValue("y-Label"));
+          pdSave.setValue("y2-Index", pd.getValue("y-Index"));
+          pdSave.setValue("y2-Path", pd.getValue("y-Path"));
+          pdSave.setValue("y2gain", "1");
+          pdSave.setValue("y2offset", "0");
+        }
+        static_cast<PlotDataTable*>(currentWidget())->replaceDataSet(pdSave);
+      }
+      else
+        static_cast<PlotDataTable*>(currentWidget())->addDataSet(pd);
+    }
   }
   else if (QString::compare(mode, "new", Qt::CaseSensitive)==0) {
     QString windowTitle = QString("Plot %1").arg(++numberOfWindows);
@@ -146,6 +181,13 @@ void PlotDataTable::addDataSet(PlotData pd) {
   insertRow(rowCount());
   for (int i=0; i<pd.numberOfItems(); i++)
     setItem(rowCount()-1, i, new QTableWidgetItem(pd.getValue(pd.string(i))));
+  resizeColumnsToContents();
+  resizeRowsToContents();
+}
+
+void PlotDataTable::replaceDataSet(PlotData pd) {
+  for (int i=0; i<pd.numberOfItems(); i++)
+    setItem(currentRow(), i, new QTableWidgetItem(pd.getValue(pd.string(i))));
   resizeColumnsToContents();
   resizeRowsToContents();
 }
