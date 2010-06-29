@@ -82,6 +82,7 @@ void MainWindow::help() {
       "<ul>"
       "  <dt>Left-Click</dt><dd> Plot curve (x = first, y = selected) </dd>"
       "  <dt>Shift+Left-Click</dt><dd> Add curve (x = first, y = selected)</dd>"
+      "  <dt>Shift+Left-Click and ONE cell selected</dt><dd> replace selected cell with selected data</dd>"
       "  <dt>Ctrl+Left-Click</dt><dd> Plot curve in new window </dd>"
       "</ul>"
       "<h2>Actions in curve list</h2>"

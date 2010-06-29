@@ -56,6 +56,7 @@ class PlotDataTable : public QTableWidget {
     
     void clearTable();
     void addDataSet(PlotData pd);
+    void replaceDataSet(PlotData pd);
     void savePlot(QDomDocument * doc, QDomElement * tab);
 
   protected:

@@ -86,6 +86,11 @@ class PlotData {
       d.value = "";
       plotdata.push_back(d);
 
+      d.string = "y2-Label";
+      d.xmlString = "y2Label";
+      d.value = "";
+      plotdata.push_back(d);
+
       d.string = "y2-Index";
       d.xmlString = "y2Index";
       d.value = "";

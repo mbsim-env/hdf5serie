@@ -93,24 +93,53 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
   std::vector<double> yVal = vs.getColumn(pd.getValue("y-Index").toInt());
   vs.close();
 
+  std::vector<double> y2Val;
+  bool useY2=false;
+  if (pd.getValue("y2-Path").length()>0) {
+    vs.open(*file, pd.getValue("y2-Path").toStdString());
+    y2Val = vs.getColumn(pd.getValue("y2-Index").toInt());
+    vs.close();
+    useY2=true;
+  }
+
   if (xVal.size()==yVal.size()) {
-    const double offset=pd.getValue("offset").toDouble();
-    const double gain=pd.getValue("gain").toDouble();
-    for (unsigned int i=0; i<xVal.size(); i++) {
-      if (!isNaN(xVal[i])) {
+
+    for (unsigned int i=0; i<xVal.size(); i++)
+      if (!isNaN(xVal[i])) { // xValue
         if (xVal[i]<xMinValue)
           xMinValue=xVal[i];
         if (xVal[i]>xMaxValue)
           xMaxValue=xVal[i];
       }
-      if (!isNaN(yVal[i])) {
+
+    if (useY2)
+      if ((yVal.size()==y2Val.size())) {
+        const double y2offset=pd.getValue("y2offset").toDouble();
+        const double y2gain=pd.getValue("y2gain").toDouble();
+        for (unsigned int i=0; i<y2Val.size(); i++)
+          if (!isNaN(y2Val[i])) // y2Value
+            y2Val[i]=y2gain*(y2Val[i]+y2offset);
+      }
+      else {
+        useY2=false;
+        QMessageBox msgBox;
+        msgBox.setText("Different sizes of y- and y2-Vector. I'm going to skip y2 data.");
+        msgBox.exec();
+      }
+
+    const double offset=pd.getValue("offset").toDouble();
+    const double gain=pd.getValue("gain").toDouble();
+    for (unsigned int i=0; i<yVal.size(); i++)
+      if (!isNaN(yVal[i])) { // yValue
         yVal[i]=gain*(yVal[i]+offset);
+        if (useY2)
+          yVal[i]+=y2Val[i];
         if (yVal[i]<yMinValue)
           yMinValue=yVal[i];
         if (yVal[i]>yMaxValue)
           yMaxValue=yVal[i];
       }
-    }
+
     for (unsigned int i=0; i<xVal.size(); i++) {
       if (isNaN(xVal[i]))
         xVal[i]=.5*(xMinValue+xMaxValue);
