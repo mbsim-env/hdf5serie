@@ -26,7 +26,7 @@
 
 using namespace std;
 
-MainWindow::MainWindow(vector<string>& arg) : QMainWindow() {
+MainWindow::MainWindow() : QMainWindow() {
 
   QMenu * fileMenu = menuBar()->addMenu(tr("&File"));
   fileMenu->addAction("add h5-File", this, SLOT(addH5FileDialog()));
@@ -55,9 +55,6 @@ MainWindow::MainWindow(vector<string>& arg) : QMainWindow() {
   curvesDW->setFeatures(QDockWidget::NoDockWidgetFeatures);
 
   setWindowTitle(tr("h5Plotserie Improved"));
-
-  for(unsigned int i=0; i<arg.size(); i++)
-    dataSelection->addFile(arg[i].c_str());
 }
 
 MainWindow::~MainWindow() {
@@ -133,16 +130,6 @@ void MainWindow::saveAllPlotWindows() {
 
 void MainWindow::loadPlotWindows() {
   QStringList files=QFileDialog::getOpenFileNames(this, "Load saved plot windows", ".", "h5Layout Files (*.h5Layout.xml)");
-  for(int i=0; i<files.size(); i++) {
-    QDomDocument doc("h5PlotDataset");
-    QFile file(files[i]);
-    if (!file.open(QIODevice::ReadOnly))
-      return;
-    if (!doc.setContent(&file)) {
-      file.close();
-      return;
-    }
-    curves->loadCurves(&doc);
-    file.close();
-  }
+  for (int i=0; i<files.size(); i++)
+    curves->initLoadCurve(files[i]);
 }

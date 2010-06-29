@@ -120,7 +120,20 @@ QString Curves::saveCurves() {
   return doc.toString();
 }
 
-void Curves::loadCurves(QDomDocument * doc) {
+void Curves::initLoadCurve(const QString &fileName) {
+  QDomDocument doc("h5PlotDataset");
+  QFile file(fileName);
+  if (!file.open(QIODevice::ReadOnly))
+    return;
+  if (!doc.setContent(&file)) {
+    file.close();
+    return;
+  }
+  loadCurve(&doc);
+  file.close();
+}
+
+void Curves::loadCurve(QDomDocument * doc) {
   QDomElement docElem = doc->documentElement();
   QDomNode tabData = docElem.firstChildElement("tab");
   while(!tabData.isNull()) {
