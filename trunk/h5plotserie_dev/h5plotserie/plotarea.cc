@@ -112,7 +112,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
           xMaxValue=xVal[i];
       }
 
-    if (useY2)
+    if (useY2) {
       if ((yVal.size()==y2Val.size())) {
         const double y2offset=pd.getValue("y2offset").toDouble();
         const double y2gain=pd.getValue("y2gain").toDouble();
@@ -126,6 +126,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
         msgBox.setText("Different sizes of y- and y2-Vector. I'm going to skip y2 data.");
         msgBox.exec();
       }
+    }
 
     const double offset=pd.getValue("offset").toDouble();
     const double gain=pd.getValue("gain").toDouble();
