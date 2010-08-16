@@ -4,6 +4,7 @@ AC_INIT([h5plotserie],[0.0.1],[schneidm@users.berlios.de])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([h5plotserie/mainwindow.h])
+AC_PROG_LIBTOOL # automatically adds lib search path to executable; helps linking on other platforms
 AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_LANG([C++])
