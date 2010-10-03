@@ -29,13 +29,22 @@ class TreeWidgetItem : public QTreeWidgetItem {
   private:
     QString path;
     QStringList list;
+    bool searchMatched;
   public:
-    TreeWidgetItem ( const QStringList & strings) : QTreeWidgetItem(strings) {}
+    TreeWidgetItem ( const QStringList & strings) : QTreeWidgetItem(strings), searchMatched(true) {}
     void setPath(QString p) {path = p;}
     void setStringList(QStringList &list_) {list = list_;}
     QStringList& getStringList() {return list;}
     const QString& getPath() const {return path;}
     QString& getPath() {return path;}
+    bool getSearchMatched() { return searchMatched; }
+    void setSearchMatched(bool m) { searchMatched=m; }
+    void updateTextColor() {
+      if(searchMatched)
+        setForeground(0, QBrush(QApplication::style()->standardPalette().color(QPalette::Active, QPalette::Text)));
+      else
+        setForeground(0, QBrush(QColor(255,0,0)));
+    }
 };
 
 
