@@ -14,6 +14,12 @@ AC_C_INLINE
 AC_HEADER_STDBOOL
 AC_TYPE_PID_T
 
+dnl force strict standard conformance
+CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors"
+CFLAGS="$CFLAGS -std=iso9899:1990"
+CXXFLAGS="$CXXFLAGS -std=c++98"
+LDFLAGS="-Wl,--no-undefined"
+
 dnl Check for doxygen
 AC_ARG_WITH([doxygenpath],
   [  --with-doxygenpath=PATH  The path to the 'doxygen' program.],
@@ -87,11 +93,9 @@ AC_SUBST([win_h5dump])
 win_xsltproc=$(filetowin $xsltproc)
 AC_SUBST([win_xsltproc])
 
-CPPFLAGS="$CPPFLAGS -Wall -Werror"
 
 AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
-  hdf5serie/dump/Makefile hdf5serie.pc hdf5serie/rereadmetadata/Makefile
-  hdf5serie/rereadmetadata/readwritetest/Makefile
+  hdf5serie/dump/Makefile hdf5serie.pc
   doc/Doxyfile hdf5serie/dump/h5dumpserie.m
   hdf5serie/dump/h5lsserie.bat])
 AC_CONFIG_FILES([hdf5serie/dump/h5lsserie],[chmod +x hdf5serie/dump/h5lsserie])

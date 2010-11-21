@@ -23,6 +23,8 @@ AC_SUBST([MOC])
 AC_SUBST([UIC])
 AC_SUBST([RCC])
 
+LDFLAGS="-Wl,--no-undefined"
+
 dnl HDF5Serie
 PKG_CHECK_MODULES(HDF5SERIE, hdf5serie)
 
