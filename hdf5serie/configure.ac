@@ -62,13 +62,16 @@ dnl Check for hdf5 library
 AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
   [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$withval/include"
+    HDF5LDFLAGS="-L$withval/lib"
     LDFLAGS="$LDFLAGS -L$withval/lib"
     LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$withval],
   [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$prefix/include"
+    HDF5LDFLAGS="-L$prefix/lib"
     LDFLAGS="$LDFLAGS -L$prefix/lib"
     LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$prefix])
 CPPFLAGS="$CPPFLAGS $HDF5CPPFLAGS"
 AC_SUBST([HDF5CPPFLAGS])
+AC_SUBST([HDF5LDFLAGS])
 AC_SUBST([hdf5_prefix])
 AC_PATH_PROG([h5dump],[h5dump],[no],[$hdf5_prefix/bin:$PATH])
 AC_CHECK_HEADERS([H5Cpp.h], [],
