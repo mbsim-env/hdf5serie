@@ -15,9 +15,9 @@ AC_HEADER_STDBOOL
 AC_TYPE_PID_T
 
 dnl force strict standard conformance
-CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors"
-# CFLAGS="$CFLAGS -std=iso9899:1990" # problematic if non standard headers are included
-# CXXFLAGS="$CXXFLAGS -std=c++98" # problematic if non standard headers are included
+CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors -Wno-long-long"
+CFLAGS="$CFLAGS -std=iso9899:1990"
+CXXFLAGS="$CXXFLAGS -std=c++98"
 LDFLAGS="-Wl,--no-undefined"
 
 dnl Check for doxygen
