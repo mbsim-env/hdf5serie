@@ -7,6 +7,7 @@ AC_CONFIG_SRCDIR([h5plotserie/mainwindow.h])
 AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_LANG([C++])
+AC_PROG_LIBTOOL
 
 dnl By autoscan
 AC_C_CONST
