@@ -1,4 +1,4 @@
-bin_PROGRAMS = h5dumpserie
+bin_PROGRAMS = h5dumpserie h5lsserie
 
 h5dumpserie_SOURCES = h5dumpserie.cc
 
@@ -7,16 +7,11 @@ h5dumpserie_LDFLAGS = -L..
 h5dumpserie_LDADD = -lhdf5serie 
 
 
+h5lsserie_SOURCES = h5lsserie.cc
 
-if COND_XSLT
-  MAYBE_H5LSSERIE = h5lsserie h5lsserie.bat
-endif
-
-bin_SCRIPTS = $(MAYBE_H5LSSERIE)
-
-xsldir = @datadir@/hdf5serie/xsl
-dist_xsl_DATA = h5lsserie.xsl h5lsserie-listlinks.xsl
-
+h5lsserie_CPPFLAGS = -I..
+h5lsserie_LDFLAGS = -L..
+h5lsserie_LDADD = -lhdf5serie 
 
 
 octavedir = @datadir@/hdf5serie/octave
