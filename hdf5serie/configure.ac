@@ -31,23 +31,6 @@ fi
 #DOXYGENDEPTAGFILES=$(pkg-config deppackage --variable=DOXYGENTAGFILES)
 #AC_SUBST([DOXYGENDEPTAGFILES])
 
-dnl Check for xslt
-AC_ARG_ENABLE([xslt],[  --disable-xslt  Disable usage of xslt (h5lsserie will not work)],
-  [],[enable_xslt="yes"])
-AM_CONDITIONAL([COND_XSLT], [test "$enable_xslt" = "yes"])
-if test $enable_xslt = "yes"; then
-  AC_ARG_WITH([xsltprocpath],
-    [  --with-xsltproc-path=PATHTOXSLTPROC  The path to the 'xsltproc' program.],
-    [xsltprocpath="$withval"],[xsltprocpath=""])
-  AC_PATH_PROG([xsltproc],[xsltproc],[no],[$xsltprocpath:$prefix/bin:$PATH])
-  if test "$xsltproc" = "no"; then
-    AC_MSG_ERROR([
-  No xslt processor found!
-  Disable with --disable-xslt (h5lsserie will not work),
-  or specify --with-xsltproc-path!])
-  fi
-fi
-
 dnl Check for ANSI C Signal Handling
 AC_MSG_CHECKING([for ANSI c signal SIGUSR2]); AC_COMPILE_IFELSE([
 #include <signal.h>
@@ -93,15 +76,11 @@ win_prefix=$(dirtowin $prefix)
 AC_SUBST([win_prefix])
 win_h5dump=$(filetowin $h5dump)
 AC_SUBST([win_h5dump])
-win_xsltproc=$(filetowin $xsltproc)
-AC_SUBST([win_xsltproc])
 
 
 AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc
-  doc/Doxyfile hdf5serie/dump/h5dumpserie.m
-  hdf5serie/dump/h5lsserie.bat])
-AC_CONFIG_FILES([hdf5serie/dump/h5lsserie],[chmod +x hdf5serie/dump/h5lsserie])
+  doc/Doxyfile hdf5serie/dump/h5dumpserie.m])
 
 
 AC_OUTPUT
