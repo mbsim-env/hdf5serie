@@ -71,6 +71,7 @@ void walkH5(string indent, string path, H5Object *obj) {
     string link;
     char *buff;
     DataSet ds;
+    int ind;
     switch(((Group*)obj)->getObjTypeByIdx(i)) {
 
       case H5G_GROUP:
@@ -92,7 +93,8 @@ void walkH5(string indent, string path, H5Object *obj) {
         const char *obj_path;
         H5Lunpack_elink_val(buff, link_buff.u.val_size, NULL, &filename, &obj_path);
         link=path;
-        link.resize(link.find_last_of("/"));
+        ind=link.find_last_of('/');
+        link=ind>=0?link.substr(0,ind):".";
         // print and walk
         cout<<indent<<"* "<<name<<" (External Link: \""<<link<<obj_path<<filename<<"\")"<<endl;
         delete[]buff;
