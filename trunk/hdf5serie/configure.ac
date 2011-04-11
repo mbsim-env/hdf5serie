@@ -77,6 +77,13 @@ AC_SUBST([win_prefix])
 win_h5dump=$(filetowin $h5dump)
 AC_SUBST([win_h5dump])
 
+dnl Convert to native path
+if pwd -W &> /dev/null; then
+  native_prefix=$win_prefix
+else
+  native_prefix=$prefix
+fi
+AC_SUBST([native_prefix])
 
 AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc
