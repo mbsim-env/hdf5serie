@@ -56,9 +56,6 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   currentData=new QListWidget(this);
   addWidget(currentData);
 
-  //addFile("./MBS.mbsim.h5");
-  //addFile("./MBS2.mbsim.h5");
-
   QObject::connect(fileBrowser, SIGNAL(itemClicked(QTreeWidgetItem*, int)), this, SLOT(selectFromFileBrowser(QTreeWidgetItem*,int)));
   QObject::connect(currentData, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(selectFromCurrentData(QListWidgetItem*)));
   QObject::connect(fileBrowser,SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)), this, SLOT(updatePath(QTreeWidgetItem *)));
@@ -128,7 +125,7 @@ void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
     vs.open(*file[j], path.toStdString());
     QStringList sl;
     for(unsigned int i=0; i<vs.getColumns(); i++)
-     sl << vs.getColumnLabel()[i].c_str();
+      sl << vs.getColumnLabel()[i].c_str();
     vs.close();
     currentData->addItems(sl);
   }

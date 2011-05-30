@@ -43,7 +43,7 @@ void PlotArea::addPlotWindow(const QString &windowTitle) {
   q->show();
 }
 
-PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent) {
+PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent), plot(0), zoom(0), xMinValue(0), yMinValue(0), xMaxValue(0), yMaxValue(0), plotGrid(true) {
 
   plot = new QwtPlot();
   setWidget(plot);
@@ -167,12 +167,14 @@ void PlotWindow::replotPlot() {
   plot->setAxisAutoScale(QwtPlot::xBottom);
   plot->setAxisAutoScale(QwtPlot::yLeft);
 
-  QwtPlotGrid *grid = new QwtPlotGrid;
-  grid->enableXMin(true);
-  grid->enableYMin(true);
-  grid->setMajPen(QPen(Qt::black, 0, Qt::DotLine));
-  grid->setMinPen(QPen(Qt::gray, 0 , Qt::DotLine));
-  grid->attach(plot);
+  if (plotGrid) {
+    QwtPlotGrid *grid = new QwtPlotGrid;
+    grid->enableXMin(true);
+    grid->enableYMin(true);
+    grid->setMajPen(QPen(Qt::black, 0, Qt::DotLine));
+    grid->setMinPen(QPen(Qt::gray, 0 , Qt::DotLine));
+    grid->attach(plot);
+  }
 
   plot->replot();
   //zoom->setZoomBase(QwtDoubleRect(xMinValue, yMaxValue, xMaxValue-xMinValue, yMaxValue-yMinValue));

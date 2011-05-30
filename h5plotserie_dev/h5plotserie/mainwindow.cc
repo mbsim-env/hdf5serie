@@ -32,6 +32,7 @@ MainWindow::MainWindow() : QMainWindow() {
   fileMenu->addAction("add h5-File", this, SLOT(addH5FileDialog()));
   fileMenu->addAction("save all plot windows", this, SLOT(saveAllPlotWindows()));
   fileMenu->addAction("load plot windows", this, SLOT(loadPlotWindows()));
+  fileMenu->addAction("exit", this, SLOT(close()), QKeySequence::Quit);
   menuBar()->addSeparator();
   QMenu * helpMenu = menuBar()->addMenu(tr("&About"));
   helpMenu->addAction("GUI Help", this, SLOT(help()));
@@ -113,7 +114,7 @@ void MainWindow::about() {
 }
 
 void MainWindow::addH5FileDialog() {
-  QStringList files=QFileDialog::getOpenFileNames(this, "Open hdf5 files", ".", "hdf5 Files (*.mbsim.h5)");
+  QStringList files=QFileDialog::getOpenFileNames(this, "Open hdf5 files", ".", "hdf5 Files (*.h5)");
   for(int i=0; i<files.size(); i++)
     dataSelection->addFile(files[i]);
 }
