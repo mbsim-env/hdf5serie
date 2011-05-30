@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
   }
 
   MainWindow mainWindow;
-  mainWindow.resize(1365, 768);
+  mainWindow.resize(1024, 768);
   mainWindow.show();
 
   for(int i=0; i<arg.size(); i++)

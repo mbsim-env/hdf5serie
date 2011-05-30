@@ -57,6 +57,8 @@ class PlotWindow : public QMdiSubWindow {
     void plotDataSet(PlotData pd, int penColor);
     void replotPlot();
 
+    void setPlotGrid(bool grid_=true) {plotGrid=grid_; }
+
   protected:
     void closeEvent(QCloseEvent * event);
   
@@ -65,6 +67,7 @@ class PlotWindow : public QMdiSubWindow {
     QVector<QPen> pen;
     QwtPlotZoomer * zoom;
     double xMinValue, yMinValue, xMaxValue, yMaxValue;
+    bool plotGrid;
 
     static bool isNaN(double v) { return v != v; }
 };
