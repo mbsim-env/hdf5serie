@@ -6,9 +6,10 @@ function D=h5dumpserie(filedata)
 %   The generated table from the h5dumpserie program is returned by D.
 
 % get h5dumpserie
-H5DUMPSERIE=getevn('HDF5SERIEBINDIR');
+H5DUMPSERIE=getenv('HDF5SERIEBINDIR');
 if size(H5DUMPSERIE, 2)<=0
   H5DUMPSERIE='@native_prefix@/bin/h5dumpserie'; % installation default
+  if exist(H5DUMPSERIE)!=2, H5DUMPSERIE=[fileparts(which(mfilename)) '/../../../bin/h5dumpserie']; end
 else
   H5DUMPSERIE=[H5DUMPSERIE '/h5dumpserie']; % from environment
 end

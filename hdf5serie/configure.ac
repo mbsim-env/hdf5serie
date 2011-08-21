@@ -20,6 +20,13 @@ CFLAGS="$CFLAGS -std=iso9899:1990"
 CXXFLAGS="$CXXFLAGS -std=c++98"
 LDFLAGS="$LDFLAGS -Wl,--no-undefined"
 
+dnl Check for MinGW
+AC_CANONICAL_HOST
+if test "_$host_os" = "_mingw32" ; then
+  AC_DEFINE([MINGW], [1], [Host System is MinGW/MSys])
+  CPPFLAGS="$CPPFLAGS -Wno-uninitialized" # MinGW-g++-3.4 and -O2 => uninitialized value in stl header
+fi
+
 dnl Check for doxygen
 AC_ARG_WITH([doxygenpath],
   [  --with-doxygenpath=PATH  The path to the 'doxygen' program.],
@@ -77,6 +84,13 @@ AC_SUBST([win_prefix])
 win_h5dump=$(filetowin $h5dump)
 AC_SUBST([win_h5dump])
 
+AC_PATH_PROG([native_h5import],[h5import],[no],[$hdf5_prefix/bin:$PATH])
+dnl Convert to native path
+if test "_$host_os" = "_mingw32" ; then
+  native_h5import=$(dirtowin $native_h5import)
+fi
+AC_SUBST([native_h5import])
+
 dnl Convert to native path
 if pwd -W &> /dev/null; then
   native_prefix=$win_prefix
@@ -87,7 +101,7 @@ AC_SUBST([native_prefix])
 
 AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc
-  doc/Doxyfile hdf5serie/dump/h5dumpserie.m])
+  doc/Doxyfile hdf5serie/dump/h5dumpserie.m hdf5serie/dump/hdf5serieappenddataset.m])
 
 
 AC_OUTPUT
