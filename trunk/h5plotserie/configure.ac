@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.57])
-AC_INIT([h5plotserie],[1.0.1],[mfoerg@users.berlios.de])
+AC_INIT([h5plotserie],[1.0.1],[martin.o.foerg@googlemail.com])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([h5plotserie/mainwindow.h])

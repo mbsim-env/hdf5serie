@@ -15,7 +15,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  *
  * Contact:
- *   mafriedrich@users.berlios.de
+ *   friedrich.at.gc@googlemail.com
  *
  */
 
@@ -123,7 +123,7 @@ cout<<
 ""<<endl<<
 "Lists the groups and datasets in a hdf5 file."<<endl<<
 ""<<endl<<
-"Copyright (C) 2009 Markus Friedrich <mafriedrich@users.berlios.de>"<<endl<<
+"Copyright (C) 2009 Markus Friedrich <friedrich.at.gc@googlemail.com>"<<endl<<
 "This is free software; see the source for copying conditions. There is NO"<<endl<<
 "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."<<endl<<
 ""<<endl<<

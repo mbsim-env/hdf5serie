@@ -6,7 +6,7 @@
 "row-wise. If the number of rows in multi DATA output differs, <nan> will\n"
 "be appended to too short DATAs.\n"
 "\n"
-"Copyright (C) 2009 Markus Friedrich <mafriedrich@users.berlios.de>\n"
+"Copyright (C) 2009 Markus Friedrich <fiedrich.at.gc@googlemail.com>\n"
 "This is free software; see the source for copying conditions. There is NO\n"
 "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 "\n"

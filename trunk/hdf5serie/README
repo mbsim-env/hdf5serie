@@ -10,9 +10,7 @@ following steps.
 --------------------
 
 If not already done, checkout the SVN tree
-# svn checkout http://svn.berlios.de/svnroot/repos/hdf5serie/trunk hdf5serie
-OR
-# svn checkout svn://svn.berlios.de/hdf5serie/trunk hdf5serie
+# svn checkout svn checkout http://hdf5serie.googlecode.com/svn/trunk/ hdf5serie
 
 
 2. Run AutoTools
