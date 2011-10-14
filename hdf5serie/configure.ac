@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([hdf5serie],[1.0.1],[mafriedrich@users.berlios.de])
+AC_INIT([hdf5serie],[1.0.1],[friedrich.at.gc@googlemail.com])
 AC_CONFIG_SRCDIR([hdf5serie/toh5type.cc])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE

@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   if(i1!=arg.end() || i2!=arg.end() ) {
     cout<<"h5plotserie - plot the data of a hdf5 file"<<endl
     <<""<<endl
-    <<"Copyright (C) 2009 Martin Foerg <mfoerg@users.berlios.de>"<<endl
+    <<"Copyright (C) 2009 Martin Foerg <martin.o.foerg@googlemail.com>"<<endl
     <<"This is free software; see the source for copying conditions. There is NO"<<endl
     <<"warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."<<endl
     <<""<<endl
