@@ -99,7 +99,7 @@ void MainWindow::about() {
       "<ul>"
       "  <li>Martin Foerg <tt>&lt;martin.o.foerg@googlemail.com&gt;</tt> </li>"
       "  <li>Markus Friedrich <tt>&lt;friedrich.at.gc@googlemail.com&gt;</tt> </li>"
-      "  <li>Markus Schneider <tt>&lt;schneidm@users.berlios.de&gt;</tt> </li>"
+      "  <li>Markus Schneider <tt>&lt;markus.ms.schneider@googlemail.com&gt;</tt> </li>"
       "</ul>"
       "<h2>This program uses:</h2>"
       "<ul>"
