@@ -23,6 +23,7 @@
 #include <hdf5serie/matrixserie.h>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 using namespace std;
 
@@ -80,6 +81,8 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1], dims[2]};
     memDataSpace=DataSpace(3, memDims);
+    //cout<<"INFO from HDF5:"<<endl
+    //    <<"  Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
   }
 
   template<class T>
@@ -98,6 +101,8 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1], dims[2]};
     memDataSpace=DataSpace(3, memDims);
+    //cout<<"INFO from HDF5:"<<endl
+    //    <<"  Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
   }
 
   template<class T>
@@ -127,6 +132,13 @@ namespace H5 {
 
   template<class T>
   vector<vector<T> > MatrixSerie<T>::getMatrix(const int number) {
+    vector<vector<T> > matrix(dims[1], vector<T>(dims[2], T()));
+    if(number<0 || number>=(int)dims[0]) {
+      cout<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
+          <<"  Requested matrix number is out of range, returning a dummy matrix."<<endl;
+      return matrix;
+    }
+
     hsize_t start[]={number,0,0};
     hsize_t count[]={1, dims[1],dims[2]};
     DataSpace fileDataSpace=getSpace();
@@ -134,12 +146,8 @@ namespace H5 {
 
     T* data=new T[dims[1]*dims[2]];
     read(data, memDataType, memDataSpace, fileDataSpace);
-    vector<vector<T> > matrix;
-    matrix.resize(dims[1]);
-    for(unsigned int r=0; r<matrix.size(); r++) {
-      matrix[r].resize(dims[2]);
+    for(unsigned int r=0; r<matrix.size(); r++)
       memcpy(&matrix[r][0],&data[r*dims[2]],sizeof(double)*dims[2]);
-    }
     delete[]data;
     return matrix;
   }

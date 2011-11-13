@@ -23,6 +23,7 @@
 #include <hdf5serie/vectorserie.h>
 #include <cstdlib>
 #include <cstring>
+#include <iostream>
 
 using namespace std;
 
@@ -80,6 +81,8 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1]};
     memDataSpace=DataSpace(2, memDims);
+    //cout<<"INFO from HDF5:"<<endl
+    //    <<"  Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
   }
 
   template<class T>
@@ -98,6 +101,8 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1]};
     memDataSpace=DataSpace(2, memDims);
+    //cout<<"INFO from HDF5:"<<endl
+    //    <<"  Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
   }
 
   template<class T>
@@ -123,12 +128,18 @@ namespace H5 {
 
   template<class T>
   std::vector<T> VectorSerie<T>::getRow(const int row) {
+    std::vector<T> data(dims[1], T());
+    if(row<0 || row>=(int)dims[0]) {
+      cout<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
+          <<"  Requested vector number is out of range, returning a dummy vector."<<endl;
+      return data;
+    }
+
     hsize_t start[]={row,0};
     hsize_t count[]={1, dims[1]};
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
 
-    std::vector<T> data(dims[1]);
     read(&data[0], memDataType, memDataSpace, fileDataSpace);
     return data;
   }
@@ -224,6 +235,13 @@ namespace H5 {
   
   template<>
   vector<string> VectorSerie<string>::getRow(const int row) {
+    vector<string> data(dims[1], string());
+    if(row<0 || row>=(int)dims[0]) {
+      cout<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
+          <<"  Requested vector number is out of range, returning a dummy vector."<<endl;
+      return data;
+    }
+
     hsize_t start[]={row,0};
     hsize_t count[]={1, dims[1]};
     DataSpace fileDataSpace=getSpace();
@@ -231,7 +249,6 @@ namespace H5 {
   
     char** dummy=new char*[dims[1]];
     read(dummy, memDataType, memDataSpace, fileDataSpace);
-    vector<string> data(dims[1]);
     for(unsigned int i=0; i<dims[1]; i++) {
       data[i]=dummy[i];
       free(dummy[i]);

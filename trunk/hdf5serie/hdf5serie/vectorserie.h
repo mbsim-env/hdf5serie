@@ -161,13 +161,7 @@ namespace H5 {
 
   template<class T>
   int VectorSerie<T>::getRows() {
-    //////////
     return dims[0];
-    //////////
-    //DataSpace fileDataSpace=getSpace();
-    //fileDataSpace.getSimpleExtentDims(dims);
-    //return dims[0];
-    //////////
   }
 
   template<class T>
