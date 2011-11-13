@@ -29,6 +29,7 @@
 #include <hdf5serie/simpleattribute.h>
 #include <cstring>
 #include <cstdlib>
+#include <iostream>
 
 namespace H5 {
 
@@ -235,6 +236,8 @@ serie.create(parent, "mystructserie");
     DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop);
     p_setId(dataSet.getId());
     incRefCount();
+    //std::cout<<"INFO from HDF5:"<<std::endl
+    //         <<"  Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<std::endl;
   }
   
   template<class S>
@@ -258,6 +261,8 @@ serie.create(parent, "mystructserie");
       assert(getCompType().getMemberOffset(i)==memDataType.getMemberOffset(i));
       assert(getCompType().getMemberDataType(i).getClass()==memDataType.getMemberDataType(i).getClass());
     }
+    //std::cout<<"INFO from HDF5:"<<std::endl
+    //         <<"  Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<std::endl;
   }
   
   template<class S>
@@ -339,13 +344,7 @@ serie.create(parent, "mystructserie");
 
   template<class S>
   int StructSerie<S>::getRows() {
-    //////////
     return dims[0];
-    //////////
-    //DataSpace dataspace=getSpace();
-    //dataspace.getSimpleExtentDims(dims);
-    //return dims[0];
-    //////////
   }
   
   template<class S>
@@ -355,6 +354,13 @@ serie.create(parent, "mystructserie");
   
   template<class S>
   S StructSerie<S>::getRow(const int row) {
+    S data;
+    if(row<0 || row>=(int)dims[0]) {
+      std::cout<<"WARNING from HDF5 object with id = "<<getId()<<":"<<std::endl
+               <<"  Requested struct number is out of range, returning a dummy struct."<<std::endl;
+      return data;
+    }
+
     hsize_t start[]={row};
     hsize_t count[]={1};
     DataSpace fileDataSpace=getSpace();
@@ -362,7 +368,6 @@ serie.create(parent, "mystructserie");
     
     char* buf=new char[memDataType.getSize()];
     read(buf, memDataType, memDataSpace, fileDataSpace);
-    S data;
     for(int i=0; i<memDataType.getNmembers(); i++) {
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
       if(memDataType.getMemberDataType(i)==H5TYPE) \
