@@ -16,8 +16,8 @@ AC_HEADER_STDBOOL
 dnl Qt
 PKG_CHECK_MODULES(QT, [QtCore >= 4.4 QtGui >= 4.4 QtXml >= 4.4])
 dnl get moc, uic and rcc
-test -z $MOC && { MOC=$(pkg-config.exe --variable moc_location QtCore) || MOC=moc; }
-test -z $UIC && { UIC=$(pkg-config.exe --variable uic_location QtCore) || UIC=uic; }
+test -z $MOC && { MOC=$(pkg-config --variable moc_location QtCore) || MOC=moc; }
+test -z $UIC && { UIC=$(pkg-config --variable uic_location QtCore) || UIC=uic; }
 test -z $RCC && { RCC=$(dirname $(which $MOC))/rcc || RCC=rcc; }
 AC_SUBST([MOC])
 AC_SUBST([UIC])
