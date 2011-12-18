@@ -1,9 +1,10 @@
-function D=h5dumpserie(filedata)
-% Usage: D=h5dumpserie(filedata)
-%   filedata are the parameters of the native program h5dumpserie
-%   seperated by spaces.
+function [D,L]=h5dumpserie(filedata)
+% Usage: [D,L]=h5dumpserie(filedata)
+%   filedata is the full parameter string of the native program h5dumpserie
 %   See h5dumpserie('-h') for a desciption of the h5dumpserie program.
-%   The generated table from the h5dumpserie program is returned by D.
+%   The generated data table from the h5dumpserie program is returned by D
+%   as a matrix.
+%   The column header labels are returned by L as a cell array of strings.
 
 % get h5dumpserie
 H5DUMPSERIE=getenv('HDF5SERIEBINDIR');
@@ -44,7 +45,26 @@ else
   end
 end
 
-% load file
-system([H5DUMPSERIE ' -s ' filedata ' > ' TMP]);
+% run h5dumpserie executable
+system([H5DUMPSERIE ' ' filedata ' > ' TMP]);
+
+% load data from temp file
 D=load(TMP);
+
+% get labels
+L=[];
+f=fopen(TMP, 'r');
+while 1
+  line=fgetl(f);
+  if regexp(line, "^# +[0-9]+:")>0, break; end
+end
+for i=1:size(D,2)
+  [s,e]=regexp(line, "^# +[0-9]+:");
+  L=[L; line(e+1:end)];
+  line=fgetl(f);
+end
+fclose(f);
+L=cellstr(L);
+
+% remove temp file
 delete(TMP);
