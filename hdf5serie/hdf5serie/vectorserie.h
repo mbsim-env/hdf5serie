@@ -161,6 +161,10 @@ namespace H5 {
 
   template<class T>
   int VectorSerie<T>::getRows() {
+    // get current dims from dataspace (maybe another (single-)writer process has increased the number of rows)
+    DataSpace fileDataSpace=getSpace();
+    fileDataSpace.getSimpleExtentDims(dims);
+    // return current value
     return dims[0];
   }
 
