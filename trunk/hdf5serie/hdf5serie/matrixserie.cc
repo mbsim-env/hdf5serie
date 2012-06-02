@@ -72,7 +72,7 @@ namespace H5 {
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1], dims[2]};
     DataSpace fileDataSpace(3, dims, maxDims);
     DSetCreatPropList prop;
-    hsize_t chunkDims[]={chunkSize, dims[1], dims[2]};
+    hsize_t chunkDims[]={(hsize_t)chunkSize, dims[1], dims[2]};
     prop.setChunk(3, chunkDims);
     if(compression>0) prop.setDeflate(compression);
     DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);
@@ -139,7 +139,7 @@ namespace H5 {
       return matrix;
     }
 
-    hsize_t start[]={number,0,0};
+    hsize_t start[]={(hsize_t)number,0,0};
     hsize_t count[]={1, dims[1],dims[2]};
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);

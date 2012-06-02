@@ -70,7 +70,7 @@ namespace H5 {
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
     DataSpace fileDataSpace(2, dims, maxDims);
     DSetCreatPropList prop;
-    hsize_t chunkDims[]={chunkSize, dims[1]};
+    hsize_t chunkDims[]={(hsize_t)chunkSize, (hsize_t)(dims[1])};
     prop.setChunk(2, chunkDims);
     if(compression>0) prop.setDeflate(compression);
     DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);
@@ -135,7 +135,7 @@ namespace H5 {
       return data;
     }
 
-    hsize_t start[]={row,0};
+    hsize_t start[]={(hsize_t)row,0};
     hsize_t count[]={1, dims[1]};
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
@@ -149,7 +149,7 @@ namespace H5 {
   template<class T>
   std::vector<T> VectorSerie<T>::getColumn(const int column) {
     hsize_t rows=getRows();
-    hsize_t start[]={0, column};
+    hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
@@ -242,7 +242,7 @@ namespace H5 {
       return data;
     }
 
-    hsize_t start[]={row,0};
+    hsize_t start[]={(hsize_t)row,0};
     hsize_t count[]={1, dims[1]};
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
@@ -260,7 +260,7 @@ namespace H5 {
   template<>
   vector<string> VectorSerie<string>::getColumn(const int column) {
     hsize_t rows=getRows();
-    hsize_t start[]={0, column};
+    hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);

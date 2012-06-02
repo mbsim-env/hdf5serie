@@ -152,7 +152,7 @@ namespace H5 {
 
   template<class T>
   void SimpleAttribute<vector<T> >::create(const H5Object& parent, const string& name, const int count) {
-    hsize_t dims[]={count};
+    hsize_t dims[]={(hsize_t)count};
     DataSpace dataSpace(1, dims);
     Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
     p_setId(attribute.getId());
@@ -250,7 +250,7 @@ namespace H5 {
 
   template<class T>
   void SimpleAttribute<vector<vector<T> > >::create(const H5Object& parent, const string& name, const int rows, const int columns) {
-    hsize_t dims[]={rows, columns};
+    hsize_t dims[]={(hsize_t)rows, (hsize_t)columns};
     DataSpace dataSpace(2, dims);
     Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
     p_setId(attribute.getId());
