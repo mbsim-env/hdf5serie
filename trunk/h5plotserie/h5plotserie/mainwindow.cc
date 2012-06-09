@@ -17,8 +17,15 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <QtGui>
-#include <QtXml>
+#include "QMainWindow"
+#include "QMenu"
+#include "QMenuBar"
+#include "QDockWidget"
+#include "QStatusBar"
+#include "QMessageBox"
+#include "QFileDialog"
+#include "QFile"
+#include "QTextStream"
 #include "mainwindow.h"
 #include "dataselection.h"
 #include "curves.h"

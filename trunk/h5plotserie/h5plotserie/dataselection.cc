@@ -17,7 +17,12 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <QtGui>
+#include "QApplication"
+#include "QGridLayout"
+#include "QLabel"
+#include "QLineEdit"
+#include "QListWidget"
+#include "QFileInfo"
 #include "dataselection.h"
 
 #include <hdf5serie/vectorserie.h>

@@ -5,7 +5,7 @@ AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 AC_LANG([C++])
 
-AC_PROG_LIBTOOL
+LT_INIT([win32-dll])
 AC_PROG_CXX
 
 # By autoscan
@@ -18,7 +18,6 @@ dnl force strict standard conformance
 CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors -Wno-long-long"
 CFLAGS="$CFLAGS -std=iso9899:1990"
 CXXFLAGS="$CXXFLAGS -std=c++98"
-LDFLAGS="$LDFLAGS -Wl,--no-undefined"
 
 dnl Check for MinGW
 AC_CANONICAL_HOST
@@ -51,11 +50,11 @@ int main() {
 dnl Check for hdf5 library
 AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
-  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$withval/include"
+  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$withval/include -I$withval/include/cpp"
     HDF5LDFLAGS="-L$withval/lib"
     LDFLAGS="$LDFLAGS -L$withval/lib"
     LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$withval],
-  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$prefix/include"
+  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$prefix/include -I$prefix/include/cpp"
     HDF5LDFLAGS="-L$prefix/lib"
     LDFLAGS="$LDFLAGS -L$prefix/lib"
     LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$prefix])
@@ -84,13 +83,6 @@ AC_SUBST([win_prefix])
 win_h5dump=$(filetowin $h5dump)
 AC_SUBST([win_h5dump])
 
-AC_PATH_PROG([native_h5import],[h5import],[no],[$hdf5_prefix/bin:$PATH])
-dnl Convert to native path
-if test "_$host_os" = "_mingw32" ; then
-  native_h5import=$(dirtowin $native_h5import)
-fi
-AC_SUBST([native_h5import])
-
 dnl Convert to native path
 if pwd -W &> /dev/null; then
   native_prefix=$win_prefix
@@ -98,6 +90,9 @@ else
   native_prefix=$prefix
 fi
 AC_SUBST([native_prefix])
+
+# from now on only libtool is used for linking
+LDFLAGS="$LDFLAGS -no-undefined"
 
 AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc

@@ -4,7 +4,7 @@ AC_INIT([h5plotserie],[0.0.1],[markus.ms.schneider@googlemail.com])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([h5plotserie/mainwindow.h])
-AC_PROG_LIBTOOL # automatically adds lib search path to executable; helps linking on other platforms
+LT_INIT([win32-dll])
 AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_LANG([C++])
@@ -23,8 +23,6 @@ AC_SUBST([MOC])
 AC_SUBST([UIC])
 AC_SUBST([RCC])
 
-LDFLAGS="$LDFLAGS -Wl,--no-undefined"
-
 dnl HDF5Serie
 PKG_CHECK_MODULES(HDF5SERIE, hdf5serie)
 
@@ -33,18 +31,31 @@ AC_ARG_WITH(qwt_inc_prefix,
   [  --with-qwt-inc-prefix=PFX  Prefix where qwt headers are installed],
   [QWT_CFLAGS="-I$withval"],
   [QWT_CFLAGS="-I$prefix/include"])
+AC_ARG_WITH(qwt_lib_name,
+  [  --with-qwt-lib-name=name  Qwt library name -l<name> (defaults to qwt)],
+  [QWT_LIBNAME="$withval"],
+  [QWT_LIBNAME="qwt"])
 AC_ARG_WITH(qwt_lib_prefix,
   [  --with-qwt-lib-prefix=PFX  Prefix where qwt library is installed],
-  [QWT_LIBS="-L$withval -lqwt"],
-  [QWT_LIBS="-L$prefix/lib -lqwt"])
-OLD=$CPPFLAGS; CPPFLAGS="$CPPFLAGS $QWT_CFLAGS $QT_CFLAGS"
+  [QWT_LIBS="-L$withval -l$QWT_LIBNAME"],
+  [QWT_LIBS="-L$prefix/lib -l$QWT_LIBNAME"])
+OLDCPPFLAGS=$CPPFLAGS; CPPFLAGS="$CPPFLAGS $QWT_CFLAGS $QT_CFLAGS"
+OLDLIBS=$LIBS; LIBS="$LIBS $QWT_LIBS $QT_LIBS"
 AC_CHECK_HEADERS([qwt_wheel.h], [],
   [AC_MSG_ERROR([Can not find qwt >= 5!])])
-CPPFLAGS=$OLD
+AC_TRY_LINK(
+  [#include <qwt_plot_grid.h>],
+  [new QwtPlotGrid;],
+  [],
+  [AC_MSG_ERROR([Can not link with qwt >= 5!])])
+CPPFLAGS=$OLDCPPFLAGS
+LIBS=$OLDLIBS
 AC_SUBST([QWT_CFLAGS])
 AC_SUBST([QWT_LIBS])
 
 CPPFLAGS="$CPPFLAGS -Wall -Werror"
+
+LDFLAGS="$LDFLAGS -no-undefined"
 
 AC_CONFIG_FILES([Makefile h5plotserie/Makefile])
 

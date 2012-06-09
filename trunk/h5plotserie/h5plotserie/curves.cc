@@ -17,8 +17,10 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include <QtGui>
-#include <QtXml>
+#include "QFile"
+#include "QFileInfo"
+#include "QHeaderView"
+#include "QDomNode"
 #include "curves.h"
 #include "plotarea.h"
 #include "plotdata.h"
