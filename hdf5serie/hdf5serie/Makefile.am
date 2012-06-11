@@ -16,4 +16,5 @@ hdf5serieinclude_HEADERS = toh5type.h \
   vectorserie.h \
   matrixserie.h \
   fileserie.h \
+  knownpodtypes.def \
   knowntypes.def
