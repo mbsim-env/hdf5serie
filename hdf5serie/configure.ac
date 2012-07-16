@@ -70,27 +70,6 @@ LIBS="$LIBS -lz" # for deflate compression
 AC_TRY_LINK([#include <H5Cpp.h>],[H5::H5File file],[AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no]); AC_MSG_ERROR([Can not link with hdf5 c++ library])])
 
-dnl Helper functions to convert path to windows
-dirtowin() {
-  echo $(cd $1 && pwd -W 2> /dev/null)
-}
-filetowin() {
-  echo $(cd $(dirname $1) && pwd -W 2> /dev/null)/$(basename $1)
-}
-dnl Convert to Windows path
-win_prefix=$(dirtowin $prefix)
-AC_SUBST([win_prefix])
-win_h5dump=$(filetowin $h5dump)
-AC_SUBST([win_h5dump])
-
-dnl Convert to native path
-if pwd -W &> /dev/null; then
-  native_prefix=$win_prefix
-else
-  native_prefix=$prefix
-fi
-AC_SUBST([native_prefix])
-
 # from now on only libtool is used for linking
 LDFLAGS="$LDFLAGS -no-undefined"
 

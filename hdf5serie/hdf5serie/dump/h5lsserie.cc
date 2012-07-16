@@ -28,7 +28,7 @@
 using namespace std;
 using namespace H5;
 
-void walkH5(string indent, string path, H5Object *obj);
+void walkH5(string indent, string path, CommonFG *obj);
 void printhelp();
 void printDesc(string indent, H5Object *obj);
 void printLabel(string indent, H5Object *obj);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     if(good)
     {
       H5File *file=new H5File(filename, H5F_ACC_RDONLY);
-      walkH5("", filename, (H5Object*)file);
+      walkH5("", filename, file);
       delete file;
     }
   }
@@ -64,20 +64,21 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void walkH5(string indent, string path, H5Object *obj) {
-  for(size_t i=0; i<((Group*)obj)->getNumObjs(); i++) {
-    string name=((Group*)obj)->getObjnameByIdx(i);
+void walkH5(string indent, string path, CommonFG *obj) {
+  for(size_t i=0; i<obj->getNumObjs(); i++) {
+    string name=obj->getObjnameByIdx(i);
     Group nextobj;
     string link;
     char *buff;
     DataSet ds;
     int ind;
-    switch(((Group*)obj)->getObjTypeByIdx(i)) {
+    hid_t id;
+    switch(obj->getObjTypeByIdx(i)) {
 
       case H5G_GROUP:
         // print and walk
         cout<<indent<<"+ "<<name<<endl;
-        nextobj=((Group*)obj)->openGroup(name);
+        nextobj=obj->openGroup(name);
         printDesc(indent, &nextobj);
         walkH5(indent+"  ", path+"/"+name, &nextobj);
         break;
@@ -86,19 +87,20 @@ void walkH5(string indent, string path, H5Object *obj) {
       case H5G_UDLINK:
         // get link name
         H5L_info_t link_buff;
-        H5Lget_info(obj->getId(), name.c_str(), &link_buff, H5P_DEFAULT);
+        id=dynamic_cast<IdComponent*>(obj)->getId();
+        H5Lget_info(id, name.c_str(), &link_buff, H5P_DEFAULT);
         buff=new char[link_buff.u.val_size];
-        H5Lget_val(obj->getId(), name.c_str(), buff, link_buff.u.val_size, H5P_DEFAULT);
+        H5Lget_val(id, name.c_str(), buff, link_buff.u.val_size, H5P_DEFAULT);
         const char *filename;
         const char *obj_path;
         H5Lunpack_elink_val(buff, link_buff.u.val_size, NULL, &filename, &obj_path);
         link=path;
-        ind=link.find_last_of('/');
+        ind=link.find_last_of("/\\"); // search the last slash or backslash
         link=ind>=0?link.substr(0,ind):".";
         // print and walk
         cout<<indent<<"* "<<name<<" (External Link: \""<<link<<obj_path<<filename<<"\")"<<endl;
         delete[]buff;
-        nextobj=((Group*)obj)->openGroup(name);
+        nextobj=obj->openGroup(name);
         printDesc(indent, &nextobj);
         if(f) walkH5(indent+"  ", path+"/"+name, &nextobj);
         break;
@@ -106,7 +108,7 @@ void walkH5(string indent, string path, H5Object *obj) {
       case H5G_DATASET:
         // print
         cout<<indent<<"- "<<name<<" (Path: \""<<path<<"/data\")"<<endl;
-        ds=((Group*)obj)->openDataSet(name);
+        ds=obj->openDataSet(name);
         printLabel(indent, &ds);
         printDesc(indent, &ds);
         break;
