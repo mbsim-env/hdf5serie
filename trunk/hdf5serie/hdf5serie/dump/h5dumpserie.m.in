@@ -9,8 +9,7 @@ function [D,L]=h5dumpserie(filedata)
 % get h5dumpserie
 H5DUMPSERIE=getenv('HDF5SERIEBINDIR');
 if size(H5DUMPSERIE, 2)<=0
-  H5DUMPSERIE='@native_prefix@/bin/h5dumpserie'; % installation default
-  if exist(H5DUMPSERIE)!=2, H5DUMPSERIE=[fileparts(which(mfilename)) '/../../../bin/h5dumpserie']; end
+  H5DUMPSERIE=[fileparts(which(mfilename)) '/../../../bin/h5dumpserie']; % relative location
 else
   H5DUMPSERIE=[H5DUMPSERIE '/h5dumpserie']; % from environment
 end
