@@ -44,6 +44,7 @@ class MainWindow : public QMainWindow {
     void addH5FileDialog();
     void saveAllPlotWindows();
     void loadPlotWindows();
+    void refresh();
 
   private:
     PlotArea * plotArea;

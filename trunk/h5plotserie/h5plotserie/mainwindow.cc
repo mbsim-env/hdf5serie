@@ -40,6 +40,10 @@ MainWindow::MainWindow() : QMainWindow() {
   fileMenu->addAction("save all plot windows", this, SLOT(saveAllPlotWindows()));
   fileMenu->addAction("load plot windows", this, SLOT(loadPlotWindows()));
   fileMenu->addAction("exit", this, SLOT(close()), QKeySequence::Quit);
+
+  QMenu * refreshMenu = menuBar()->addMenu(tr("&Refresh"));
+  refreshMenu->addAction("refresh", this, SLOT(refresh()), QKeySequence::Refresh);
+
   menuBar()->addSeparator();
   QMenu * helpMenu = menuBar()->addMenu(tr("&About"));
   helpMenu->addAction("GUI Help", this, SLOT(help()));
@@ -140,4 +144,9 @@ void MainWindow::loadPlotWindows() {
   QStringList files=QFileDialog::getOpenFileNames(this, "Load saved plot windows", ".", "h5Layout Files (*.h5Layout.xml)");
   for (int i=0; i<files.size(); i++)
     curves->initLoadCurve(files[i]);
+}
+
+void MainWindow::refresh() {
+  QMessageBox::about(this, "refresh()", "refresh");
+  curves->refreshAllTabs();
 }

@@ -40,6 +40,8 @@ class Curves : public QTabWidget {
     void initLoadCurve(const QString &file);
     void loadCurve(QDomDocument * doc);
 
+    void refreshAllTabs();
+
   private slots:
     void plotCurrentTab();
 
