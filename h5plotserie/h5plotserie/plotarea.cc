@@ -81,16 +81,24 @@ void PlotWindow::detachPlot() {
   yMaxValue=-99e99;
 }
 
+#include <iostream>
+using namespace std;
 void PlotWindow::plotDataSet(PlotData pd, int penColor) {
-  H5::H5File* file = new H5::H5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString(), H5F_ACC_RDONLY);
+  QString myH5File(pd.getValue("Filepath")+"/"+pd.getValue("Filename"));
+  H5::H5File* file = new H5::H5File(myH5File.toStdString(), H5F_ACC_RDONLY);
+  cout << "Oeffne File '" << myH5File.toStdString() << "'." << endl;
   H5::VectorSerie<double> vs;
 
-  vs.open(*file, pd.getValue("x-Path").toStdString());
+  QString xPath=pd.getValue("x-Path");
+  cout << "    xPath:" << xPath.toStdString() << endl;
+  vs.open(*file, xPath.toStdString());
   std::vector<double> xVal = vs.getColumn(pd.getValue("x-Index").toInt());
+  cout << "        xVal.size()=" << xVal.size() << "  ";
   vs.close();
 
   vs.open(*file, pd.getValue("y-Path").toStdString());
   std::vector<double> yVal = vs.getColumn(pd.getValue("y-Index").toInt());
+  cout << "    yVal.size()=" << xVal.size() << "  ";
   vs.close();
 
   std::vector<double> y2Val;
@@ -101,6 +109,10 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
     vs.close();
     useY2=true;
   }
+
+  cout << endl;
+  (*file).close();
+  delete file;
 
   if (xVal.size()==yVal.size()) {
 

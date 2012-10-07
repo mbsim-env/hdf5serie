@@ -95,6 +95,16 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
   plotCurrentTab();
 }
 
+void Curves::refreshAllTabs() {
+  int currentTab=currentIndex();
+  int numberOfTabs=count();
+  for (int i=0; i<numberOfTabs; i++) {
+    setCurrentIndex(i);
+    plotCurrentTab();
+  }
+  setCurrentIndex(currentTab);
+}
+
 void Curves::plotCurrentTab() {
   const QString tabName = tabText(currentIndex());
   PlotWindow * plotWindow = static_cast<MainWindow*>(parent()->parent())->getPlotArea()->findChild<PlotWindow*>(tabName);
