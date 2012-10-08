@@ -23,6 +23,17 @@ AC_SUBST([MOC])
 AC_SUBST([UIC])
 AC_SUBST([RCC])
 
+dnl Check for ANSI C Signal Handling
+AC_MSG_CHECKING([for ANSI c signal SIGUSR2]); AC_COMPILE_IFELSE([
+#include <signal.h>
+int main() {
+  signal(SIGUSR2, 0);
+  return 0;
+}
+], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_ANSICSIGNAL],[],[Use ANSI C Signal Handling])],
+   [AC_MSG_RESULT([no])])
+
+
 dnl HDF5Serie
 PKG_CHECK_MODULES(HDF5SERIE, hdf5serie)
 

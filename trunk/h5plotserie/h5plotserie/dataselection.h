@@ -66,7 +66,7 @@ class DataSelection : public QSplitter {
     void getPath(QTreeWidgetItem* item, QString &s, int col);
     int getTopLevelIndex(QTreeWidgetItem* item);
 
-    QList<H5::H5File*> file;
+    QList<QString> file;
     QList<QFileInfo> fileInfo;
 };
 

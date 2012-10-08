@@ -17,6 +17,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include "config.h"
 #include "QMessageBox"
 #include "plotarea.h"
 #include "plotdata.h"
@@ -29,6 +30,13 @@
 #include <qwt_plot_grid.h>
 
 #include <hdf5serie/vectorserie.h>
+
+#ifdef HAVE_ANSICSIGNAL
+#  include <signal.h>
+#  include <fstream>
+#  include <unistd.h>
+#endif
+
 
 PlotArea::PlotArea(QWidget * parent) : QMdiArea(parent) {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -81,38 +89,39 @@ void PlotWindow::detachPlot() {
   yMaxValue=-99e99;
 }
 
-#include <iostream>
-using namespace std;
 void PlotWindow::plotDataSet(PlotData pd, int penColor) {
-  QString myH5File(pd.getValue("Filepath")+"/"+pd.getValue("Filename"));
-  H5::H5File* file = new H5::H5File(myH5File.toStdString(), H5F_ACC_RDONLY);
-  cout << "Oeffne File '" << myH5File.toStdString() << "'." << endl;
-  H5::VectorSerie<double> vs;
+#ifdef HAVE_ANSICSIGNAL
+  std::ifstream lockFile((pd.getValue("Filepath").toStdString()+"/."+pd.getValue("Filename").toStdString()+".pid").c_str());
+  if(lockFile.good() && ! lockFile.eof()) {
+    pid_t pid;
+    lockFile>>pid;
+    lockFile.close();
+    if(kill(pid, SIGUSR2)==0)
+      usleep(1000000);
+  }
+#endif
+  H5::H5File* h5file = new H5::H5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString(), H5F_ACC_RDONLY);
 
-  QString xPath=pd.getValue("x-Path");
-  cout << "    xPath:" << xPath.toStdString() << endl;
-  vs.open(*file, xPath.toStdString());
+  H5::VectorSerie<double> vs;
+  vs.open(*h5file, pd.getValue("x-Path").toStdString());
   std::vector<double> xVal = vs.getColumn(pd.getValue("x-Index").toInt());
-  cout << "        xVal.size()=" << xVal.size() << "  ";
   vs.close();
 
-  vs.open(*file, pd.getValue("y-Path").toStdString());
+  vs.open(*h5file, pd.getValue("y-Path").toStdString());
   std::vector<double> yVal = vs.getColumn(pd.getValue("y-Index").toInt());
-  cout << "    yVal.size()=" << xVal.size() << "  ";
   vs.close();
 
   std::vector<double> y2Val;
   bool useY2=false;
   if (pd.getValue("y2-Path").length()>0) {
-    vs.open(*file, pd.getValue("y2-Path").toStdString());
+    vs.open(*h5file, pd.getValue("y2-Path").toStdString());
     y2Val = vs.getColumn(pd.getValue("y2-Index").toInt());
     vs.close();
     useY2=true;
   }
 
-  cout << endl;
-  (*file).close();
-  delete file;
+  (*h5file).close();
+  delete h5file;
 
   if (xVal.size()==yVal.size()) {
 

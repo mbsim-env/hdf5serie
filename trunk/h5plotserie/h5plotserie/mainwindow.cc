@@ -147,6 +147,5 @@ void MainWindow::loadPlotWindows() {
 }
 
 void MainWindow::refresh() {
-  QMessageBox::about(this, "refresh()", "refresh");
   curves->refreshAllTabs();
 }
