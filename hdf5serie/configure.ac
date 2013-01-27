@@ -73,7 +73,7 @@ AC_TRY_LINK([#include <H5Cpp.h>],[H5::H5File file],[AC_MSG_RESULT([yes])],
 # from now on only libtool is used for linking
 LDFLAGS="$LDFLAGS -no-undefined"
 
-AC_CONFIG_FILES([Makefile hdf5serie/Makefile hdf5serie/check/Makefile
+AC_CONFIG_FILES([Makefile doc/Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc
   doc/Doxyfile hdf5serie/dump/h5dumpserie.m hdf5serie/dump/hdf5serieappenddataset.m])
 
