@@ -1,3 +1,5 @@
+docdir = @datadir@/doc/@PACKAGE@
+
 clean:
 	rm -rf html
 
