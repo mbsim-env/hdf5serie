@@ -32,7 +32,7 @@ AC_ARG_WITH([doxygenpath],
   [doxygenpath="$withval"],[doxygenpath=""])
 AC_PATH_PROG([doxygen],[doxygen],[no],[$doxygenpath:$PATH])
 if test $doxygen = "no" ; then
-  AC_MSG_RESULT([can't generate API documentation. 'doxygen' is required.])
+  AC_MSG_RESULT([can not generate API documentation. 'doxygen' is required.])
 fi
 #DOXYGENDEPTAGFILES=$(pkg-config deppackage --variable=DOXYGENTAGFILES)
 #AC_SUBST([DOXYGENDEPTAGFILES])
