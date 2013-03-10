@@ -322,4 +322,6 @@ int main(int argc, char* argv[]) {
 
   delete[]column;
   delete[]dataSet;
+
+  return 0;
 }
