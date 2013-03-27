@@ -134,7 +134,7 @@ namespace H5 {
   vector<vector<T> > MatrixSerie<T>::getMatrix(const int number) {
     vector<vector<T> > matrix(dims[1], vector<T>(dims[2], T()));
     if(number<0 || number>=(int)dims[0]) {
-      cout<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
+      cerr<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
           <<"  Requested matrix number is out of range, returning a dummy matrix."<<endl;
       return matrix;
     }

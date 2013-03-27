@@ -130,7 +130,7 @@ namespace H5 {
   std::vector<T> VectorSerie<T>::getRow(const int row) {
     std::vector<T> data(dims[1], T());
     if(row<0 || row>=(int)dims[0]) {
-      cout<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
+      cerr<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
           <<"  Requested vector number is out of range, returning a dummy vector."<<endl;
       return data;
     }
@@ -237,7 +237,7 @@ namespace H5 {
   vector<string> VectorSerie<string>::getRow(const int row) {
     vector<string> data(dims[1], string());
     if(row<0 || row>=(int)dims[0]) {
-      cout<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
+      cerr<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
           <<"  Requested vector number is out of range, returning a dummy vector."<<endl;
       return data;
     }
