@@ -360,7 +360,7 @@ serie.create(parent, "mystructserie");
   S StructSerie<S>::getRow(const int row) {
     S data;
     if(row<0 || row>=(int)dims[0]) {
-      std::cout<<"WARNING from HDF5 object with id = "<<getId()<<":"<<std::endl
+      std::cerr<<"WARNING from HDF5 object with id = "<<getId()<<":"<<std::endl
                <<"  Requested struct number is out of range, returning a dummy struct."<<std::endl;
       return data;
     }
