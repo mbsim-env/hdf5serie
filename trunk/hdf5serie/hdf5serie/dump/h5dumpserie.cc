@@ -29,6 +29,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <algorithm>
+#include <limits>
 #ifdef HAVE_ANSICSIGNAL
 #  include <signal.h>
 #endif
