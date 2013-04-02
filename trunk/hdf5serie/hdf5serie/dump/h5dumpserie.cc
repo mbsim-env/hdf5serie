@@ -62,7 +62,7 @@ string comment="#";
 string quote="\"";
 string delim=" ";
 string mynan="nan";
-int precision=17;
+int precision=numeric_limits<double>::digits10+2;
 
 int string2int(string str) {
   stringstream sstr(str);
