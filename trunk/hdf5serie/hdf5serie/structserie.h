@@ -30,6 +30,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
+#include <stdexcept>
 
 namespace H5 {
 
@@ -207,7 +208,7 @@ serie.create(parent, "mystructserie");
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template<class S> \
   void StructSerie<S>::registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name) { \
-    assert(e.size()==0 || e.size()==N); \
+    if(e.size()!=0 && e.size()!=N) throw std::runtime_error("wrong dimension"); \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \
     CTYPE dummy; \
@@ -225,7 +226,7 @@ serie.create(parent, "mystructserie");
 
   template<class S>
   void StructSerie<S>::create(const CommonFG& parent, const std::string& name, int compression, int chunkSize) {
-    assert(!firstCall);
+    if(firstCall) throw std::runtime_error("wrong call sequence");
     dims[0]=0;
     hsize_t maxDims[]={H5S_UNLIMITED};
     DataSpace fileDataSpace(1, dims, maxDims);
@@ -242,7 +243,7 @@ serie.create(parent, "mystructserie");
   
   template<class S>
   void StructSerie<S>::open(const CommonFG& parent, const std::string& name) {
-    assert(!firstCall);
+    if(firstCall) throw std::runtime_error("wrong call sequence");
     DataSet dataSet=parent.openDataSet(name);
     p_setId(dataSet.getId());
     incRefCount();
@@ -300,19 +301,19 @@ serie.create(parent, "mystructserie");
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
   
-    char* buf=new char[memDataType.getSize()];
-    std::vector<char*> charptr;
+    std::vector<char> buf(memDataType.getSize());
+    std::list<std::vector<char> > charptr;
     for(int i=0; i<memDataType.getNmembers(); i++) {
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
       if(memDataType.getMemberDataType(i)==H5TYPE) \
-        *(CTYPE*)(buf+memDataType.getMemberOffset(i))=*(CTYPE*)((char*)&data+structOffset[i]);
+        *(CTYPE*)(&buf[0]+memDataType.getMemberOffset(i))=*(CTYPE*)((char*)&data+structOffset[i]);
 #     include "knownpodtypes.def"
 #     undef FOREACHKNOWNTYPE
       if(memDataType.getMemberDataType(i)==StrType(PredType::C_S1, H5T_VARIABLE)) {
-        char* str=new char[((std::string*)((char*)&data+structOffset[i]))->size()+1];
-        charptr.push_back(str);
+        charptr.push_back(std::vector<char>(((std::string*)((char*)&data+structOffset[i]))->size()+1));
+        char* str=&(*--charptr.end())[0];
         strcpy(str, ((std::string*)((char*)&data+structOffset[i]))->c_str());
-        *(char**)(buf+memDataType.getMemberOffset(i))=str;
+        *(char**)(&buf[0]+memDataType.getMemberOffset(i))=str;
       }
       if(memDataType.getMemberDataType(i).getClass()==H5T_ARRAY) {
         hsize_t dims[1];
@@ -320,26 +321,23 @@ serie.create(parent, "mystructserie");
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
         if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) { \
           std::vector<CTYPE>* vec=(std::vector<CTYPE>*)((char*)&data+structOffset[i]); \
-          assert(vec->size()==dims[0]); \
-          memcpy(buf+memDataType.getMemberOffset(i), &((*vec)[0]), dims[0]*sizeof(CTYPE)); \
+          if(vec->size()!=dims[0]) throw std::runtime_error("the dimension does not match"); \
+          memcpy(&buf[0]+memDataType.getMemberOffset(i), &((*vec)[0]), dims[0]*sizeof(CTYPE)); \
         }
 #       include "knownpodtypes.def"
 #       undef FOREACHKNOWNTYPE
         if(memDataType.getMemberDataType(i)==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
           for(unsigned int j=0; j<dims[0]; j++) {
             std::vector<std::string>* vec=(std::vector<std::string>*)((char*)&data+structOffset[i]);
-            assert(vec->size()==dims[0]);
-            char* str=new char[(*vec)[j].size()+1];
-            charptr.push_back(str);
+            if(vec->size()!=dims[0]) throw std::runtime_error("the dimension does not match");
+            charptr.push_back(std::vector<char>((*vec)[j].size()+1));
+            char* str=&(*--charptr.end())[0];
             strcpy(str, (*vec)[j].c_str());
-            *(char**)(buf+memDataType.getMemberOffset(i)+j*sizeof(char*))=str;
+            *(char**)(&buf[0]+memDataType.getMemberOffset(i)+j*sizeof(char*))=str;
           }
       }
     }
-    write(buf, memDataType, memDataSpace, fileDataSpace);
-    for(unsigned int i=0; i<charptr.size(); i++)
-      delete[]charptr[i];
-    delete[]buf;
+    write(&buf[0], memDataType, memDataSpace, fileDataSpace);
   }
 
   template<class S>
@@ -370,16 +368,16 @@ serie.create(parent, "mystructserie");
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
     
-    char* buf=new char[memDataType.getSize()];
-    read(buf, memDataType, memDataSpace, fileDataSpace);
+    std::vector<char> buf(memDataType.getSize());
+    read(&buf[0], memDataType, memDataSpace, fileDataSpace);
     for(int i=0; i<memDataType.getNmembers(); i++) {
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
       if(memDataType.getMemberDataType(i)==H5TYPE) \
-        *(CTYPE*)((char*)&data+structOffset[i])=*(CTYPE*)(buf+memDataType.getMemberOffset(i));
+        *(CTYPE*)((char*)&data+structOffset[i])=*(CTYPE*)(&buf[0]+memDataType.getMemberOffset(i));
 #     include "knownpodtypes.def"
 #     undef FOREACHKNOWNTYPE
       if(memDataType.getMemberDataType(i)==StrType(PredType::C_S1, H5T_VARIABLE)) {
-        char* str=*(char**)(buf+memDataType.getMemberOffset(i));
+        char* str=*(char**)(&buf[0]+memDataType.getMemberOffset(i));
         *((std::string*)((char*)&data+structOffset[i]))=str;
         free(str);
       }
@@ -390,7 +388,7 @@ serie.create(parent, "mystructserie");
         if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) { \
           std::vector<CTYPE>* vec=(std::vector<CTYPE>*)((char*)&data+structOffset[i]); \
           vec->resize(dims[0]); \
-          memcpy(&((*vec)[0]), buf+memDataType.getMemberOffset(i), dims[0]*sizeof(CTYPE)); \
+          memcpy(&((*vec)[0]), &buf[0]+memDataType.getMemberOffset(i), dims[0]*sizeof(CTYPE)); \
         }
 #       include "knownpodtypes.def"
 #       undef FOREACHKNOWNTYPE
@@ -398,14 +396,13 @@ serie.create(parent, "mystructserie");
           std::vector<std::string>* vec=(std::vector<std::string>*)((char*)&data+structOffset[i]);
           vec->resize(dims[0]);
           for(unsigned int j=0; j<dims[0]; j++) {
-            char* str=*(char**)(buf+memDataType.getMemberOffset(i)+j*sizeof(char*));
+            char* str=*(char**)(&buf[0]+memDataType.getMemberOffset(i)+j*sizeof(char*));
             (*vec)[j]=str;
             free(str);
           }
         }
       }
     }
-    delete[]buf;
     return data;
   }
   

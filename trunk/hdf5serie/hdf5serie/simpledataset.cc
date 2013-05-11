@@ -24,6 +24,8 @@
 #include <assert.h>
 #include <cstring>
 #include <cstdlib>
+#include <stdexcept>
+#include "utils.h"
 
 using namespace std;
 
@@ -325,14 +327,13 @@ namespace H5 {
     hsize_t dims[]={data.size(),data[0].size()};
     extend(dims);
     DataSpace dataSpace=getSpace();
-    T* buf=new T[dims[0]*dims[1]];
+    vector<T> buf(dims[0]*dims[1]);
     T dummy;
     for(unsigned int r=0; r<dims[0]; r++) {
-      assert(data[r].size()==dims[1]);
+      if(data[r].size()!=dims[1]) throw runtime_error("all row of the input must have the same length");
       memcpy(&buf[r*dims[1]], &data[r][0], sizeof(dummy)*dims[1]);
     }
-    DataSet::write(buf, memDataType, dataSpace, dataSpace);
-    delete[]buf;
+    DataSet::write(&buf[0], memDataType, dataSpace, dataSpace);
   }
   template<>
   void SimpleDataSet<vector<vector<string> > >::write(const vector<vector<string> >& data);
@@ -343,13 +344,12 @@ namespace H5 {
     hsize_t dims[2];
     dataSpace.getSimpleExtentDims(dims);
     vector<vector<T> > data(dims[0]);
-    T* buf=new T[dims[0]*dims[1]];
-    DataSet::read(buf, memDataType, dataSpace, dataSpace);
+    vector<T> buf(dims[0]*dims[1]);
+    DataSet::read(&buf[0], memDataType, dataSpace, dataSpace);
     for(unsigned int r=0; r<dims[0]; r++) {
       data[r].resize(dims[1]);
       memcpy(&data[r][0], &buf[r*dims[1]], sizeof(T)*dims[1]);
     }
-    delete[]buf;
     return data;
   }
   template<>
@@ -411,10 +411,9 @@ namespace H5 {
   template<>
   string SimpleDataSet<string>::read() {
     string data;
-    char *buf[1];
-    DataSet::read(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
+    VecStr buf(1);
+    DataSet::read(&buf[0], StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
     data=buf[0];
-    free(buf[0]);
     return data;
   }
 
@@ -425,14 +424,12 @@ namespace H5 {
     hsize_t dims[]={data.size()};
     extend(dims);
     DataSpace dataSpace=getSpace();
-    char** buf=new char*[dims[0]];
+    VecStr buf(dims[0]);
     for(unsigned int i=0; i<dims[0]; i++) {
-      buf[i]=new char[data[i].size()+1];
+      buf[i]=(char*)malloc((data[i].size()+1)*sizeof(char));
       strcpy(buf[i], data[i].c_str());
     }
-    DataSet::write(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
-    for(unsigned int i=0; i<dims[0]; i++) delete[]buf[i];
-    delete[]buf;
+    DataSet::write(&buf[0], StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
   }
 
   template<>
@@ -440,14 +437,12 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     hsize_t dims[1];
     dataSpace.getSimpleExtentDims(dims);
-    char** buf=new char*[dims[0]];
-    DataSet::read(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
+    VecStr buf(dims[0]);
+    DataSet::read(&buf[0], StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
     vector<string> data;
     for(unsigned int i=0; i<dims[0]; i++) {
       data.push_back(buf[i]);
-      free(buf[i]);
     }
-    delete[]buf;
     return data;
   }
 
@@ -458,18 +453,14 @@ namespace H5 {
     hsize_t dims[]={data.size(),data[0].size()};
     extend(dims);
     DataSpace dataSpace=getSpace();
-    char** buf=new char*[dims[0]*dims[1]];
+    VecStr buf(dims[0]*dims[1]);
     for(unsigned int r=0; r<dims[0]; r++)
       for(unsigned int c=0; c<dims[1]; c++) {
-	assert(data[r].size()==dims[1]);
-	buf[r*dims[1]+c]=new char[data[r][c].size()+1];
+	if(data[r].size()!=dims[1]) throw runtime_error("all rows of the input must have the same size");
+	buf[r*dims[1]+c]=(char*)malloc((data[r][c].size()+1)*sizeof(char));
 	strcpy(buf[r*dims[1]+c],data[r][c].c_str());
       }
-    DataSet::write(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
-    for(unsigned int r=0; r<dims[0]; r++)
-      for(unsigned int c=0; c<dims[1]; c++)
-        delete[]buf[r*dims[1]+c];
-    delete[]buf;
+    DataSet::write(&buf[0], StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
   }
 
   template<>
@@ -477,15 +468,13 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     hsize_t dims[2];
     dataSpace.getSimpleExtentDims(dims);
-    char** buf=new char*[dims[0]*dims[1]];
-    DataSet::read(buf, StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
+    VecStr buf(dims[0]*dims[1]);
+    DataSet::read(&buf[0], StrType(PredType::C_S1, H5T_VARIABLE), dataSpace, dataSpace);
     vector<vector<string> > data(dims[0]);
     for(unsigned int r=0; r<dims[0]; r++)
       for(unsigned int c=0; c<dims[1]; c++) {
         data[r].push_back(buf[r*dims[1]+c]);
-        free(buf[r*dims[1]+c]);
       }
-    delete[]buf;
     return data;
   }
 

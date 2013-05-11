@@ -24,6 +24,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
+#include "utils.h"
 
 using namespace std;
 
@@ -112,7 +114,7 @@ namespace H5 {
 
   template<class T>
   void VectorSerie<T>::append(const std::vector<T> &data) {
-    assert(data.size()==dims[1]);
+    if(data.size()!=dims[1]) throw runtime_error("dataset dimension does not match");
     dims[0]++;
     DataSet::extend(dims);
 
@@ -214,7 +216,7 @@ namespace H5 {
 
   template<>
   void VectorSerie<string>::append(const vector<string> &data) {
-    assert(data.size()==dims[1]);
+    if(data.size()!=dims[1]) throw runtime_error("dataset dimension does not match");
     dims[0]++;
     DataSet::extend(dims);
   
@@ -223,14 +225,12 @@ namespace H5 {
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
   
-    char** dummy=new char*[dims[1]];
+    VecStr dummy(dims[1]);
     for(unsigned int i=0; i<dims[1]; i++) {
-      dummy[i]=new char[data[i].size()+1];
+      dummy[i]=(char*)malloc((data[i].size()+1)*sizeof(char));
       strcpy(dummy[i], data[i].c_str());
     }
-    write(dummy, memDataType, memDataSpace, fileDataSpace);
-    for(unsigned int i=0; i<dims[1]; i++) delete[]dummy[i];
-    delete[]dummy;
+    write(&dummy[0], memDataType, memDataSpace, fileDataSpace);
   }
   
   template<>
@@ -247,13 +247,10 @@ namespace H5 {
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
   
-    char** dummy=new char*[dims[1]];
-    read(dummy, memDataType, memDataSpace, fileDataSpace);
-    for(unsigned int i=0; i<dims[1]; i++) {
+    VecStr dummy(dims[1]);
+    read(&dummy[0], memDataType, memDataSpace, fileDataSpace);
+    for(unsigned int i=0; i<dims[1]; i++)
       data[i]=dummy[i];
-      free(dummy[i]);
-    }
-    delete[]dummy;
     return data;
   }
   
@@ -267,14 +264,11 @@ namespace H5 {
   
     DataSpace coldataspace(2, count);
   
-    char** dummy=new char*[rows];
-    read(dummy, memDataType, coldataspace, fileDataSpace);
+    VecStr dummy(rows);
+    read(&dummy[0], memDataType, coldataspace, fileDataSpace);
     vector<string> data(rows);
-    for(unsigned int i=0; i<rows; i++) {
+    for(unsigned int i=0; i<rows; i++)
       data[i]=dummy[i];
-      free(dummy[i]);
-    }
-    delete[]dummy;
     return data;
   }
 
