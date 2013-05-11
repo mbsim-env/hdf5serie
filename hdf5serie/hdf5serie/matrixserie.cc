@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -112,7 +113,7 @@ namespace H5 {
 
   template<class T>
   void MatrixSerie<T>::append(const vector<vector<T> > &matrix) {
-    assert(matrix.size()==dims[1]);
+    if(matrix.size()!=dims[1]) throw runtime_error("the row dimension does not match");
     dims[0]++;
     DataSet::extend(dims);
 
@@ -121,13 +122,12 @@ namespace H5 {
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
 
-    T* data=new T[dims[1]*dims[2]];
+    vector<T> data(dims[1]*dims[2]);
     for(unsigned int r=0; r<matrix.size(); r++) {
-      assert(matrix[r].size()==dims[2]);
+      if(matrix[r].size()!=dims[2]) throw runtime_error("the column dimension does not match");
       memcpy(&data[r*dims[2]],&matrix[r][0],sizeof(double)*dims[2]);
     }
-    write(data, memDataType, memDataSpace, fileDataSpace);
-    delete[]data;
+    write(&data[0], memDataType, memDataSpace, fileDataSpace);
   }
 
   template<class T>
@@ -144,11 +144,10 @@ namespace H5 {
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
 
-    T* data=new T[dims[1]*dims[2]];
-    read(data, memDataType, memDataSpace, fileDataSpace);
+    vector<T> data(dims[1]*dims[2]);
+    read(&data[0], memDataType, memDataSpace, fileDataSpace);
     for(unsigned int r=0; r<matrix.size(); r++)
       memcpy(&matrix[r][0],&data[r*dims[2]],sizeof(double)*dims[2]);
-    delete[]data;
     return matrix;
   }
 

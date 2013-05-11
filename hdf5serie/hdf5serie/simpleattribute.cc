@@ -24,6 +24,8 @@
 #include <assert.h>
 #include <cstring>
 #include <cstdlib>
+#include <stdexcept>
+#include "utils.h"
 
 using namespace std;
 
@@ -175,7 +177,7 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     hsize_t dims[1];
     dataSpace.getSimpleExtentDims(dims);
-    assert(data.size()==dims[0]);
+    if(data.size()!=dims[0]) throw runtime_error("the dimension does not match");
     Attribute::write(memDataType, &data[0]);
   }
   template<>
@@ -273,15 +275,14 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     hsize_t dims[2];
     dataSpace.getSimpleExtentDims(dims);
-    T* buf=new T[dims[0]*dims[1]];
-    assert(data.size()==dims[0]);
+    vector<T> buf(dims[0]*dims[1]);
+    if(data.size()!=dims[0]) throw runtime_error("the row dimension does not match");
     T dummy;
     for(unsigned int r=0; r<dims[0]; r++) {
-      assert(data[r].size()==dims[1]);
+      if(data[r].size()!=dims[1]) throw runtime_error("the column dimension does not match");
       memcpy(&buf[r*dims[1]], &data[r][0], sizeof(dummy)*dims[1]);
     }
-    Attribute::write(memDataType, buf);
-    delete[]buf;
+    Attribute::write(memDataType, &buf[0]);
   }
   template<>
   void SimpleAttribute<vector<vector<string> > >::write(const vector<vector<string> >& data);
@@ -292,13 +293,12 @@ namespace H5 {
     hsize_t dims[2];
     dataSpace.getSimpleExtentDims(dims);
     vector<vector<T> > data(dims[0]);
-    T* buf=new T[dims[0]*dims[1]];
-    Attribute::read(memDataType, buf);
+    vector<T> buf(dims[0]*dims[1]);
+    Attribute::read(memDataType, &buf[0]);
     for(unsigned int r=0; r<dims[0]; r++) {
       data[r].resize(dims[1]);
       memcpy(&data[r][0], &buf[r*dims[1]], sizeof(T)*dims[1]);
     }
-    delete[]buf;
     return data;
   }
   template<>
@@ -341,10 +341,9 @@ namespace H5 {
   template<>
   string SimpleAttribute<string>::read() {
     string data;
-    char *buf[1];
-    Attribute::read(StrType(PredType::C_S1, H5T_VARIABLE), buf);
+    VecStr buf(1);
+    Attribute::read(StrType(PredType::C_S1, H5T_VARIABLE), &buf[0]);
     data=buf[0];
-    free(buf[0]);
     return data;
   }
 
@@ -355,15 +354,13 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     hsize_t dims[1];
     dataSpace.getSimpleExtentDims(dims);
-    assert(data.size()==dims[0]);
-    char** buf=new char*[dims[0]];
+    if(data.size()!=dims[0]) throw runtime_error("the dimension does not match");
+    VecStr buf(dims[0]);
     for(unsigned int i=0; i<dims[0]; i++) {
-      buf[i]=new char[data[i].size()+1];
+      buf[i]=(char*)malloc((data[i].size()+1)*sizeof(char));
       strcpy(buf[i], data[i].c_str());
     }
-    Attribute::write(StrType(PredType::C_S1, H5T_VARIABLE), buf);
-    for(unsigned int i=0; i<dims[0]; i++) delete[]buf[i];
-    delete[]buf;
+    Attribute::write(StrType(PredType::C_S1, H5T_VARIABLE), &buf[0]);
   }
 
   template<>
@@ -371,14 +368,11 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     hsize_t dims[1];
     dataSpace.getSimpleExtentDims(dims);
-    char** buf=new char*[dims[0]];
-    Attribute::read(StrType(PredType::C_S1, H5T_VARIABLE), buf);
+    VecStr buf(dims[0]);
+    Attribute::read(StrType(PredType::C_S1, H5T_VARIABLE), &buf[0]);
     vector<string> data;
-    for(unsigned int i=0; i<dims[0]; i++) {
+    for(unsigned int i=0; i<dims[0]; i++)
       data.push_back(buf[i]);
-      free(buf[i]);
-    }
-    delete[]buf;
     return data;
   }
 
@@ -389,19 +383,15 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     hsize_t dims[2];
     dataSpace.getSimpleExtentDims(dims);
-    assert(data.size()==dims[0]);
-    char** buf=new char*[dims[0]*dims[1]];
+    if(data.size()!=dims[0]) throw runtime_error("the row dimension does not match");
+    VecStr buf(dims[0]*dims[1]);
     for(unsigned int r=0; r<dims[0]; r++)
       for(unsigned int c=0; c<dims[1]; c++) {
-	assert(data[r].size()==dims[1]);
-	buf[r*dims[1]+c]=new char[data[r][c].size()+1];
+	if(data[r].size()!=dims[1]) throw runtime_error("the column dimension does not match");
+	buf[r*dims[1]+c]=(char*)malloc((data[r][c].size()+1)*sizeof(char));
 	strcpy(buf[r*dims[1]+c],data[r][c].c_str());
       }
-    Attribute::write(StrType(PredType::C_S1, H5T_VARIABLE), buf);
-    for(unsigned int r=0; r<dims[0]; r++)
-      for(unsigned int c=0; c<dims[1]; c++)
-        delete[]buf[r*dims[1]+c];
-    delete[]buf;
+    Attribute::write(StrType(PredType::C_S1, H5T_VARIABLE), &buf[0]);
   }
 
   template<>
@@ -409,15 +399,12 @@ namespace H5 {
     DataSpace dataSpace=getSpace();
     hsize_t dims[2];
     dataSpace.getSimpleExtentDims(dims);
-    char** buf=new char*[dims[0]*dims[1]];
-    Attribute::read(StrType(PredType::C_S1, H5T_VARIABLE), buf);
+    VecStr buf(dims[0]*dims[1]);
+    Attribute::read(StrType(PredType::C_S1, H5T_VARIABLE), &buf[0]);
     vector<vector<string> > data(dims[0]);
     for(unsigned int r=0; r<dims[0]; r++)
-      for(unsigned int c=0; c<dims[1]; c++) {
+      for(unsigned int c=0; c<dims[1]; c++)
         data[r].push_back(buf[r*dims[1]+c]);
-        free(buf[r*dims[1]+c]);
-      }
-    delete[]buf;
     return data;
   }
 
