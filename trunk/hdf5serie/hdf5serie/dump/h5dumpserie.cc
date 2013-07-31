@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
 #         define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
           if(memberDataType==H5TYPE) \
             cout<<(k==0&&i==0?"":delim)<<*(CTYPE*)(buf+memberOffset);
-#         include "knownpodtypes.def"
+#         include "hdf5serie/knownpodtypes.def"
 #         undef FOREACHKNOWNTYPE
           if(memberDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
             char* str=*(char**)(buf+memberOffset);
@@ -281,7 +281,7 @@ int main(int argc, char* argv[]) {
             if(memberDataType==ArrayType(H5TYPE,1,dims)) \
               for(unsigned int l=0; l<dims[0]; l++) \
                 cout<<(k==0&&i==0&&l==0?"":delim)<<*(CTYPE*)(buf+memberOffset+sizeof(CTYPE)*l);
-#           include "knownpodtypes.def"
+#           include "hdf5serie/knownpodtypes.def"
 #           undef FOREACHKNOWNTYPE
             if(memberDataType==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
               for(unsigned int l=0; l<dims[0]; l++) {
@@ -307,7 +307,7 @@ int main(int argc, char* argv[]) {
 #         define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
           if(memDataType==H5TYPE) \
             cout<<(k==0&&i==0?"":delim)<<*(CTYPE*)(buf+sizeof(CTYPE)*(column[k][i]-1));
-#         include "knownpodtypes.def"
+#         include "hdf5serie/knownpodtypes.def"
 #         undef FOREACHKNOWNTYPE
           if(memDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
             char* str=*(char**)(buf+sizeof(char*)*(column[k][i]-1));
