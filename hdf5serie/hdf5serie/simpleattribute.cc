@@ -414,17 +414,17 @@ namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleAttribute<CTYPE>;
-# include "hdf5serie/knowntypes.def"
+# include "knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleAttribute<vector<CTYPE> >;
-# include "hdf5serie/knowntypes.def"
+# include "knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
   template class SimpleAttribute<vector<vector<CTYPE> > >;
-# include "hdf5serie/knowntypes.def"
+# include "knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
 }

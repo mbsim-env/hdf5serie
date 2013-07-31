@@ -23,7 +23,7 @@
 #include <string.h>
 #include <fstream>
 #include <H5Cpp.h>
-#include <simpleattribute.h>
+#include <hdf5serie/simpleattribute.h>
 
 using namespace std;
 using namespace H5;

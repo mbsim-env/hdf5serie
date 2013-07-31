@@ -64,7 +64,7 @@ LIBS=$OLDLIBS
 AC_SUBST([QWT_CFLAGS])
 AC_SUBST([QWT_LIBS])
 
-CPPFLAGS="$CPPFLAGS -Wall -Werror"
+CPPFLAGS="$CPPFLAGS -Wall -Werror -I\$(top_srcdir)"
 
 LDFLAGS="$LDFLAGS -no-undefined"
 
