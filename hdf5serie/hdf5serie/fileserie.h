@@ -28,6 +28,7 @@
 namespace H5 {
 
   class FileSerie : public H5File {
+    using H5File::flush;
     private:
       static std::list<FileSerie*> openedFile;
       static bool flushOnes;
