@@ -82,10 +82,6 @@ int main() {
 
 #include <H5Cpp.h>
 
-#if H5_VERS_MAJOR!=1 || H5_VERS_MINOR!=8 || H5_VERS_RELEASE<2
-  #error "Need HDF5 version ==1.8; >=1.8.2"
-#endif
-
 namespace H5 {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \

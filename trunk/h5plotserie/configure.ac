@@ -66,7 +66,7 @@ AC_SUBST([QWT_LIBS])
 
 CPPFLAGS="$CPPFLAGS -Wall -Werror -I\$(top_srcdir)"
 
-LDFLAGS="$LDFLAGS -no-undefined"
+LDFLAGS="$LDFLAGS -no-undefined -Wl,--no-undefined"
 
 AC_CONFIG_FILES([Makefile h5plotserie/Makefile])
 
