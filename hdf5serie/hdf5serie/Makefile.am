@@ -9,6 +9,8 @@ libhdf5serie_la_SOURCES = toh5type.cc \
   matrixserie.cc
 
 hdf5serieincludedir = $(includedir)/hdf5serie
+libhdf5serie_la_CPPFLAGS = -I$(top_srcdir)
+
 hdf5serieinclude_HEADERS = toh5type.h \
   simpleattribute.h \
   simpledataset.h\

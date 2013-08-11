@@ -15,7 +15,7 @@ AC_HEADER_STDBOOL
 AC_TYPE_PID_T
 
 dnl force strict standard conformance
-CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors -Wno-long-long -I\$(top_srcdir)"
+CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors -Wno-long-long"
 CFLAGS="$CFLAGS -std=iso9899:1990"
 CXXFLAGS="$CXXFLAGS -std=c++98"
 
