@@ -66,7 +66,9 @@ namespace H5 {
   }
 
   template<class T>
-  void VectorSerie<T>::create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression, int chunkSize) {
+  void VectorSerie<T>::create(const CommonFG& parent, const std::string& name,
+                              const std::vector<std::string>& columnLabel, int compression, int chunkSize) {
+    // create dataset with chunk cache size = chunk size
     dims[0]=0;
     dims[1]=columnLabel.size();
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
@@ -75,8 +77,12 @@ namespace H5 {
     hsize_t chunkDims[]={(hsize_t)chunkSize, (hsize_t)(dims[1])};
     prop.setChunk(2, chunkDims);
     if(compression>0) prop.setDeflate(compression);
-    DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);
-    p_setId(dataset.getId());
+    hid_t apl=H5Pcreate(H5P_DATASET_ACCESS);
+    H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*chunkSize, 0.75);
+    hid_t did=H5Dcreate(dynamic_cast<const Group&>(parent).getId(), name.c_str(), memDataType.getId(),
+                        fileDataSpace.getId(), H5P_DEFAULT, prop.getId(), apl);
+    H5Pclose(apl);
+    p_setId(did);
     incRefCount();
 
     SimpleAttribute<std::vector<std::string> > colHead(*this, "Column Label", columnLabel);
@@ -89,18 +95,32 @@ namespace H5 {
 
   template<class T>
   void VectorSerie<T>::open(const CommonFG& parent, const std::string& name) {
-    DataSet dataset=parent.openDataSet(name);
-    p_setId(dataset.getId());
+    // open the dataset, get column size and chunk size, close dataset again
+    hid_t did=H5Dopen(dynamic_cast<const Group&>(parent).getId(), name.c_str(), H5P_DEFAULT);
+    hid_t sid=H5Dget_space(did);
+    assert(H5Sget_simple_extent_ndims(sid)==2);
+    hsize_t maxDims[2];
+    H5Sget_simple_extent_dims(sid, dims, maxDims);
+    assert(maxDims[0]==H5S_UNLIMITED);
+    H5Sclose(sid);
+    hid_t cpl=H5Dget_create_plist(did);
+    H5Pget_chunk(cpl, 2, maxDims);
+    H5Pclose(cpl);
+    hid_t apl=H5Dget_access_plist(did);
+    H5Dclose(did);
+    // reopen the dataset with chunk cache == chunk size
+    H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*maxDims[0], 0.75);
+    did=H5Dopen(dynamic_cast<const Group&>(parent).getId(), name.c_str(), apl);
+    H5Pclose(apl);
+    // assigne the dataset to the c++ object
+    p_setId(did);
     incRefCount();
 
+    // get file space
     DataSpace fileDataSpace=getSpace();
-    // Check if fileDataSpace and memDataType complies with the class
-    assert(fileDataSpace.getSimpleExtentNdims()==2);
-    hsize_t maxDims[2];
-    fileDataSpace.getSimpleExtentDims(dims, maxDims);
-    assert(maxDims[0]==H5S_UNLIMITED);
     assert(getDataType().getClass()==memDataType.getClass());
 
+    // create mem space
     hsize_t memDims[]={1, dims[1]};
     memDataSpace=DataSpace(2, memDims);
     //cout<<"INFO from HDF5:"<<endl
