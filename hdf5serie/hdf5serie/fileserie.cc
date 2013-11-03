@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <iostream>
+#include <cstdlib>
 #ifdef HAVE_ANSICSIGNAL
 #  include <signal.h>
 #endif
@@ -74,6 +75,11 @@ FileSerie::FileSerie(const H5std_string &name, unsigned int flags,
 }
 
 FileSerie::~FileSerie() {
+  if(getenv("HDF5SERIE_CACHEHITRATE")) {
+    double rate;
+    H5Fget_mdc_hit_rate(getId(), &rate);
+    cerr<<"HDF5 metadata cache hit rate for file "<<getFileName()<<" = "<<rate<<"."<<endl;
+  }
   ::unlink((string(dirname((char*)getFileName().c_str()))+"/."+basename((char*)getFileName().c_str())+".pid").c_str());
   openedFile.remove(this);
 }
