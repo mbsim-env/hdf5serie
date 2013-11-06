@@ -66,14 +66,14 @@ namespace H5 {
   void SimpleAttribute<T>::create(const H5Object& parent, const string& name) {
     DataSpace dataSpace(0, NULL);
     Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
-    p_setId(attribute.getId());
+    p_setId(attribute.getId()); // does not increments the ref count
     incRefCount();
   }
 
   template<class T>
   void SimpleAttribute<T>::open(const H5Object& parent, const string& name) {
     Attribute attribute=parent.openAttribute(name);
-    p_setId(attribute.getId());
+    p_setId(attribute.getId()); // does not increments the ref count
     incRefCount();
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
@@ -157,14 +157,14 @@ namespace H5 {
     hsize_t dims[]={(hsize_t)count};
     DataSpace dataSpace(1, dims);
     Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
-    p_setId(attribute.getId());
+    p_setId(attribute.getId()); // does not increments the ref count
     incRefCount();
   }
 
   template<class T>
   void SimpleAttribute<vector<T> >::open(const H5Object& parent, const string& name) {
     Attribute attribute=parent.openAttribute(name);
-    p_setId(attribute.getId());
+    p_setId(attribute.getId()); // does not increments the ref count
     incRefCount();
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
@@ -255,14 +255,14 @@ namespace H5 {
     hsize_t dims[]={(hsize_t)rows, (hsize_t)columns};
     DataSpace dataSpace(2, dims);
     Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
-    p_setId(attribute.getId());
+    p_setId(attribute.getId()); // does not increments the ref count
     incRefCount();
   }
 
   template<class T>
   void SimpleAttribute<vector<vector<T> > >::open(const H5Object& parent, const string& name) {
     Attribute attribute=parent.openAttribute(name);
-    p_setId(attribute.getId());
+    p_setId(attribute.getId()); // does not increments the ref count
     incRefCount();
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();

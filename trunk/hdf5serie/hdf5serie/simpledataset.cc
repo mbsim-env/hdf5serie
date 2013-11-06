@@ -66,16 +66,14 @@ namespace H5 {
   void SimpleDataSet<T>::create(const CommonFG& parent, const string& name) {
     dataSpace=DataSpace(0, NULL);
     DataSet dataset=parent.createDataSet(name, memDataType, dataSpace);
-    p_setId(dataset.getId());
-    incRefCount();
+    p_setId(dataset.getId()); // increments the ref count
   }
 
   template<class T>
   void SimpleDataSet<T>::open(const CommonFG& parent, const string& name) {
     DataSet dataset=parent.openDataSet(name);
     dataSpace=dataset.getSpace();
-    p_setId(dataset.getId());
-    incRefCount();
+    p_setId(dataset.getId()); // increments the ref count
     // Check if dataSpace and memDataType complies with the class
     assert(dataSpace.getSimpleExtentNdims()==0);
     assert(getDataType().getClass()==memDataType.getClass());
@@ -180,15 +178,13 @@ namespace H5 {
     hsize_t chunkDims[]={1};
     prop.setChunk(1, chunkDims);
     DataSet dataset=parent.createDataSet(name, memDataType, dataSpace, prop);
-    p_setId(dataset.getId());
-    incRefCount();
+    p_setId(dataset.getId()); // increments the ref count
   }
 
   template<class T>
   void SimpleDataSet<vector<T> >::open(const CommonFG& parent, const string& name) {
     DataSet dataset=parent.openDataSet(name);
-    p_setId(dataset.getId());
-    incRefCount();
+    p_setId(dataset.getId()); // increments the ref count
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==1);
@@ -303,15 +299,13 @@ namespace H5 {
     hsize_t chunkDims[]={1,1};
     prop.setChunk(2, chunkDims);
     DataSet dataset=parent.createDataSet(name, memDataType, dataSpace, prop);
-    p_setId(dataset.getId());
-    incRefCount();
+    p_setId(dataset.getId()); // increments the ref count
   }
 
   template<class T>
   void SimpleDataSet<vector<vector<T> > >::open(const CommonFG& parent, const string& name) {
     DataSet dataset=parent.openDataSet(name);
-    p_setId(dataset.getId());
-    incRefCount();
+    p_setId(dataset.getId()); // increments the ref count
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==2);
