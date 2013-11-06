@@ -82,8 +82,7 @@ namespace H5 {
     hid_t did=H5Dcreate(dynamic_cast<const Group&>(parent).getId(), name.c_str(), memDataType.getId(),
                         fileDataSpace.getId(), H5P_DEFAULT, prop.getId(), apl);
     H5Pclose(apl);
-    p_setId(did);
-    incRefCount();
+    p_setId(did);// increments the ref count
 
     SimpleAttribute<std::vector<std::string> > colHead(*this, "Column Label", columnLabel);
 
@@ -113,8 +112,7 @@ namespace H5 {
     did=H5Dopen(dynamic_cast<const Group&>(parent).getId(), name.c_str(), apl);
     H5Pclose(apl);
     // assigne the dataset to the c++ object
-    p_setId(did);
-    incRefCount();
+    p_setId(did);// increments the ref count
 
     // get file space
     DataSpace fileDataSpace=getSpace();
