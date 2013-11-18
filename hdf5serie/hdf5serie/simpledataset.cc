@@ -65,15 +65,15 @@ namespace H5 {
   template<class T>
   void SimpleDataSet<T>::create(const CommonFG& parent, const string& name) {
     dataSpace=DataSpace(0, NULL);
-    DataSet dataset=parent.createDataSet(name, memDataType, dataSpace);
-    p_setId(dataset.getId()); // increments the ref count
+    DataSet dataset=parent.createDataSet(name, memDataType, dataSpace); // increments the ref count
+    setId(dataset.getId()); // increments the ref count (the dtor of dataset decrements it again)
   }
 
   template<class T>
   void SimpleDataSet<T>::open(const CommonFG& parent, const string& name) {
-    DataSet dataset=parent.openDataSet(name);
+    DataSet dataset=parent.openDataSet(name); // increments the ref count
     dataSpace=dataset.getSpace();
-    p_setId(dataset.getId()); // increments the ref count
+    setId(dataset.getId()); // increments the ref count (the dtor of dataset decrements it again)
     // Check if dataSpace and memDataType complies with the class
     assert(dataSpace.getSimpleExtentNdims()==0);
     assert(getDataType().getClass()==memDataType.getClass());
@@ -177,14 +177,14 @@ namespace H5 {
     DSetCreatPropList prop;
     hsize_t chunkDims[]={1};
     prop.setChunk(1, chunkDims);
-    DataSet dataset=parent.createDataSet(name, memDataType, dataSpace, prop);
-    p_setId(dataset.getId()); // increments the ref count
+    DataSet dataset=parent.createDataSet(name, memDataType, dataSpace, prop); // increment the refcount
+    setId(dataset.getId()); // increments the ref count (the dtor of dataset decrements it again)
   }
 
   template<class T>
   void SimpleDataSet<vector<T> >::open(const CommonFG& parent, const string& name) {
-    DataSet dataset=parent.openDataSet(name);
-    p_setId(dataset.getId()); // increments the ref count
+    DataSet dataset=parent.openDataSet(name); // increment the refcount
+    setId(dataset.getId()); // increments the ref count (the dtor of dataset decrements it again)
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==1);
@@ -298,14 +298,14 @@ namespace H5 {
     DSetCreatPropList prop;
     hsize_t chunkDims[]={1,1};
     prop.setChunk(2, chunkDims);
-    DataSet dataset=parent.createDataSet(name, memDataType, dataSpace, prop);
-    p_setId(dataset.getId()); // increments the ref count
+    DataSet dataset=parent.createDataSet(name, memDataType, dataSpace, prop); // increment the refcount
+    setId(dataset.getId()); // increments the ref count (the dtor of dataset decrements it again)
   }
 
   template<class T>
   void SimpleDataSet<vector<vector<T> > >::open(const CommonFG& parent, const string& name) {
-    DataSet dataset=parent.openDataSet(name);
-    p_setId(dataset.getId()); // increments the ref count
+    DataSet dataset=parent.openDataSet(name); // increment the refcount
+    setId(dataset.getId()); // increments the ref count (the dtor of dataset decrements it again)
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==2);
