@@ -76,8 +76,8 @@ namespace H5 {
     hsize_t chunkDims[]={(hsize_t)chunkSize, dims[1], dims[2]};
     prop.setChunk(3, chunkDims);
     if(compression>0) prop.setDeflate(compression);
-    DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop);
-    p_setId(dataset.getId()); // increments the ref count
+    DataSet dataset=parent.createDataSet(name, memDataType, fileDataSpace, prop); // increments the refcount
+    setId(dataset.getId()); // increments the ref count (the dtor of dataset decrements it again)
 
     hsize_t memDims[]={1, dims[1], dims[2]};
     memDataSpace=DataSpace(3, memDims);
@@ -87,8 +87,8 @@ namespace H5 {
 
   template<class T>
   void MatrixSerie<T>::open(const CommonFG& parent, const string& name) {
-    DataSet dataset=parent.openDataSet(name);
-    p_setId(dataset.getId()); // increments the ref count
+    DataSet dataset=parent.openDataSet(name); // increments the refcount
+    setId(dataset.getId()); // increments the ref count (the dtor of dataset decrements it again)
 
     DataSpace fileDataSpace=getSpace();
     // Check if fileDataSpace and memDataType complies with the class

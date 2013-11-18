@@ -65,16 +65,14 @@ namespace H5 {
   template<class T>
   void SimpleAttribute<T>::create(const H5Object& parent, const string& name) {
     DataSpace dataSpace(0, NULL);
-    Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
-    p_setId(attribute.getId()); // does not increments the ref count
-    incRefCount();
+    Attribute attribute=parent.createAttribute(name, memDataType, dataSpace); // increments the refcount
+    setId(attribute.getId()); // increments the refcount (the dtor of attribute decrements it again)
   }
 
   template<class T>
   void SimpleAttribute<T>::open(const H5Object& parent, const string& name) {
-    Attribute attribute=parent.openAttribute(name);
-    p_setId(attribute.getId()); // does not increments the ref count
-    incRefCount();
+    Attribute attribute=parent.openAttribute(name); // increments the refcount
+    setId(attribute.getId()); // increments the refcount (the dtor of attribute decrements it again)
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==0);
@@ -156,16 +154,14 @@ namespace H5 {
   void SimpleAttribute<vector<T> >::create(const H5Object& parent, const string& name, const int count) {
     hsize_t dims[]={(hsize_t)count};
     DataSpace dataSpace(1, dims);
-    Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
-    p_setId(attribute.getId()); // does not increments the ref count
-    incRefCount();
+    Attribute attribute=parent.createAttribute(name, memDataType, dataSpace); // increments the refcount
+    setId(attribute.getId()); // increments the refcount (the dtor of attribute decrements it again)
   }
 
   template<class T>
   void SimpleAttribute<vector<T> >::open(const H5Object& parent, const string& name) {
-    Attribute attribute=parent.openAttribute(name);
-    p_setId(attribute.getId()); // does not increments the ref count
-    incRefCount();
+    Attribute attribute=parent.openAttribute(name); // increments the refcount
+    setId(attribute.getId()); // increments the refcount (the dtor of attribute decrements it again)
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==1);
@@ -254,16 +250,14 @@ namespace H5 {
   void SimpleAttribute<vector<vector<T> > >::create(const H5Object& parent, const string& name, const int rows, const int columns) {
     hsize_t dims[]={(hsize_t)rows, (hsize_t)columns};
     DataSpace dataSpace(2, dims);
-    Attribute attribute=parent.createAttribute(name, memDataType, dataSpace);
-    p_setId(attribute.getId()); // does not increments the ref count
-    incRefCount();
+    Attribute attribute=parent.createAttribute(name, memDataType, dataSpace); // increments the refcount
+    setId(attribute.getId()); // increments the refcount (the dtor of attribute decrements it again)
   }
 
   template<class T>
   void SimpleAttribute<vector<vector<T> > >::open(const H5Object& parent, const string& name) {
-    Attribute attribute=parent.openAttribute(name);
-    p_setId(attribute.getId()); // does not increments the ref count
-    incRefCount();
+    Attribute attribute=parent.openAttribute(name); // increments the refcount
+    setId(attribute.getId()); // increments the refcount (the dtor of attribute decrements it again)
     // Check if dataSpace and memDataType complies with the class
     DataSpace dataSpace=getSpace();
     assert(dataSpace.getSimpleExtentNdims()==2);

@@ -234,8 +234,8 @@ serie.create(parent, "mystructserie");
     hsize_t chunkDims[]={chunkSize};
     prop.setChunk(1, chunkDims);
     if(compression>0) prop.setDeflate(compression);
-    DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop);
-    p_setId(dataSet.getId()); // increment the ref count
+    DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop); // increments the refcount
+    setId(dataSet.getId()); // increment the ref count (the ctor of dataset decrements it again)
     //std::cout<<"INFO from HDF5:"<<std::endl
     //         <<"  Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<std::endl;
   }
@@ -243,8 +243,8 @@ serie.create(parent, "mystructserie");
   template<class S>
   void StructSerie<S>::open(const CommonFG& parent, const std::string& name) {
     if(firstCall) throw std::runtime_error("wrong call sequence");
-    DataSet dataSet=parent.openDataSet(name);
-    p_setId(dataSet.getId()); // increment the ref count
+    DataSet dataSet=parent.openDataSet(name); // increments the refcount
+    setId(dataSet.getId()); // increment the ref count (the ctor of dataset decrements it again)
   
     DataSpace fileDataSpace=getSpace();
     // Check if dataspace and datatype complies with the class
