@@ -79,7 +79,7 @@ namespace H5 {
     if(compression>0) prop.setDeflate(compression);
     hid_t apl=H5Pcreate(H5P_DATASET_ACCESS);
     H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*chunkSize, 0.75);
-    hid_t did=H5Dcreate(dynamic_cast<const Group&>(parent).getId(), name.c_str(), memDataType.getId(),
+    hid_t did=H5Dcreate(dynamic_cast<const IdComponent&>(parent).getId(), name.c_str(), memDataType.getId(),
                         fileDataSpace.getId(), H5P_DEFAULT, prop.getId(), apl); // increments the refcount
     H5Pclose(apl);
     p_setId(did); // transfer the c handle did to c++ (do not increment the refcount since H5Dclose(did) is not called)
@@ -95,7 +95,7 @@ namespace H5 {
   template<class T>
   void VectorSerie<T>::open(const CommonFG& parent, const std::string& name) {
     // open the dataset, get column size and chunk size, close dataset again
-    hid_t did=H5Dopen(dynamic_cast<const Group&>(parent).getId(), name.c_str(), H5P_DEFAULT); // increments the refcount
+    hid_t did=H5Dopen(dynamic_cast<const IdComponent&>(parent).getId(), name.c_str(), H5P_DEFAULT); // increments the refcount
     hid_t sid=H5Dget_space(did);
     assert(H5Sget_simple_extent_ndims(sid)==2);
     hsize_t maxDims[2];
@@ -109,7 +109,7 @@ namespace H5 {
     H5Dclose(did); // decrements the refcount
     // reopen the dataset with chunk cache == chunk size
     H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*maxDims[0], 0.75);
-    did=H5Dopen(dynamic_cast<const Group&>(parent).getId(), name.c_str(), apl); // increments the refcount
+    did=H5Dopen(dynamic_cast<const IdComponent&>(parent).getId(), name.c_str(), apl); // increments the refcount
     H5Pclose(apl);
     // assigne the dataset to the c++ object
     p_setId(did); // transfer the c handle did to c++ (do not increment the refcount since H5Dclose(did) is not called)
