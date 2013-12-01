@@ -203,7 +203,7 @@ void PlotWindow::replotPlot() {
 }
 
 void PlotWindow::closeEvent(QCloseEvent *) {
-  Curves * c = (dynamic_cast<MainWindow*>(parent()->parent()->parent()))->getCurves();
+  Curves * c = (static_cast<MainWindow*>(parent()->parent()->parent()))->getCurves();
   PlotDataTable * pd=c->findChild<PlotDataTable*>(windowTitle());
   if (pd) {
     int index=c->indexOf(pd);
