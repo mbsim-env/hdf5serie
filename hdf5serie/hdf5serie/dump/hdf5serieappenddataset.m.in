@@ -29,7 +29,7 @@ function hdf5serieappenddataset(hdf5filename, path, data, chunk, h5import)
 %    <Cuboid name="Box1" enable="true">
 %      <minimalColorValue>0</minimalColorValue>
 %      <maximalColorValue>1</maximalColorValue>
-%      <staticColor>nan</staticColor>
+%      <diffuseColor>[0.3;1;1]</diffuseColor>
 %      <initialTranslation>[0;0;0]</initialTranslation>
 %      <initialRotation>[0;0;0]</initialRotation>
 %      <scaleFactor>1</scaleFactor>
@@ -38,7 +38,7 @@ function hdf5serieappenddataset(hdf5filename, path, data, chunk, h5import)
 %    <Frame name="P1" enable="true">
 %      <minimalColorValue>0</minimalColorValue>
 %      <maximalColorValue>1</maximalColorValue>
-%      <staticColor>nan</staticColor>
+%      <diffuseColor>[-1;1;1]</diffuseColor>
 %      <initialTranslation>[0;0;0]</initialTranslation>
 %      <initialRotation>[0;0;0]</initialRotation>
 %      <scaleFactor>1</scaleFactor>
