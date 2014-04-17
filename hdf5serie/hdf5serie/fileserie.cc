@@ -30,8 +30,9 @@
 #  include <signal.h>
 #endif
 
-using namespace H5;
 using namespace std;
+
+namespace H5 {
 
 list<FileSerie*> FileSerie::openedFile;
 bool FileSerie::flushOnes=false;
@@ -109,4 +110,6 @@ void FileSerie::openFile(const char *name, unsigned int flags, const FileAccProp
 void FileSerie::deletePIDFiles() {
   for(list<FileSerie*>::iterator i=openedFile.begin(); i!=openedFile.end(); ++i)
     ::unlink((string(dirname((char*)(*i)->getFileName().c_str()))+"/."+basename((char*)(*i)->getFileName().c_str())+".pid").c_str());
+}
+
 }
