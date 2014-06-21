@@ -22,6 +22,7 @@
 #ifndef _HDF5SERIE_VECTORSERIE_H_
 #define _HDF5SERIE_VECTORSERIE_H_
 
+#include <fmatvec/atom.h>
 #include <H5Cpp.h>
 #include <vector>
 #include <string>
@@ -64,11 +65,12 @@ namespace H5 {
    * The same applies to a matrix-object for std::vector<std::vector<T> >.
   */
   template<class T>
-  class VectorSerie : public DataSet {
+  class VectorSerie : public DataSet, public fmatvec::Atom {
     private:
       DataType memDataType;
       DataSpace memDataSpace;
       hsize_t dims[2];
+      std::vector<T> buf;
     public:
       /** \brief A stub constructor
        *
