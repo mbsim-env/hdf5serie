@@ -22,12 +22,13 @@
 #ifndef _HDF5SERIE_FILESERIE_H_
 #define _HDF5SERIE_FILESERIE_H_
 
+#include <fmatvec/atom.h>
 #include <H5Cpp.h>
 #include <list>
 
 namespace H5 {
 
-  class FileSerie : public H5File {
+  class FileSerie : public H5File, public fmatvec::Atom {
     using H5File::flush;
     private:
       static std::list<FileSerie*> openedFile;

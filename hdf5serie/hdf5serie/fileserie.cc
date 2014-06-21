@@ -40,12 +40,12 @@ int FileSerie::defaultCompression=1;
 int FileSerie::defaultChunkSize=100;
 
 void FileSerie::sigUSR2Handler(int i) {
-  cout<<"HDF5Serie: Received USR2 signal! Ask for flushing files!"<<endl;
+  msgStatic(Info)<<"HDF5Serie: Received USR2 signal! Ask for flushing files!"<<endl;
   flushOnes=true;
 }
 
 void FileSerie::flushAllFiles() {
-  cout<<"HDF5Serie: Flushing files!"<<endl;
+  msgStatic(Info)<<"HDF5Serie: Flushing files!"<<endl;
   for(list<FileSerie*>::iterator i=openedFile.begin(); i!=openedFile.end(); ++i)
     (*i)->flush(H5F_SCOPE_GLOBAL);
   flushOnes=false;
@@ -76,10 +76,10 @@ FileSerie::FileSerie(const H5std_string &name, unsigned int flags,
 }
 
 FileSerie::~FileSerie() {
-  if(getenv("HDF5SERIE_CACHEHITRATE")) {
+  if(msgAct(Debug)) {
     double rate;
     H5Fget_mdc_hit_rate(getId(), &rate);
-    cerr<<"HDF5 metadata cache hit rate for file "<<getFileName()<<" = "<<rate<<"."<<endl;
+    msg(Debug)<<"HDF5 metadata cache hit rate for file "<<getFileName()<<" = "<<rate<<"."<<endl;
   }
   ::unlink((string(dirname((char*)getFileName().c_str()))+"/."+basename((char*)getFileName().c_str())+".pid").c_str());
   openedFile.remove(this);
