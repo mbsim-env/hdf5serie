@@ -88,8 +88,8 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1]};
     memDataSpace=DataSpace(2, memDims);
-    //cout<<"INFO from HDF5:"<<endl
-    //    <<"  Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
+    msg(Debug)<<"HDF5:\n"
+              <<"Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
   }
 
   template<class T>
@@ -121,8 +121,8 @@ namespace H5 {
     // create mem space
     hsize_t memDims[]={1, dims[1]};
     memDataSpace=DataSpace(2, memDims);
-    //cout<<"INFO from HDF5:"<<endl
-    //    <<"  Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
+    msg(Debug)<<"HDF5:\n"
+              <<"Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
   }
 
   template<class T>
@@ -150,8 +150,8 @@ namespace H5 {
   std::vector<T> VectorSerie<T>::getRow(const int row) {
     std::vector<T> data(dims[1], T());
     if(row<0 || row>=(int)dims[0]) {
-      cerr<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
-          <<"  Requested vector number is out of range, returning a dummy vector."<<endl;
+      msg(Warn)<<"HDF5 object with id = "<<getId()<<":\n"
+               <<"Requested vector number is out of range, returning a dummy vector."<<endl;
       return data;
     }
 
@@ -255,8 +255,8 @@ namespace H5 {
   vector<string> VectorSerie<string>::getRow(const int row) {
     vector<string> data(dims[1], string());
     if(row<0 || row>=(int)dims[0]) {
-      cerr<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
-          <<"  Requested vector number is out of range, returning a dummy vector."<<endl;
+      msg(Warn)<<"HDF5 object with id = "<<getId()<<":\n"
+               <<"Requested vector number is out of range, returning a dummy vector."<<endl;
       return data;
     }
 

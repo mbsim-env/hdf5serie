@@ -22,6 +22,7 @@
 #ifndef _HDF5SERIE_STRUCTSERIE_H_
 #define _HDF5SERIE_STRUCTSERIE_H_
 
+#include <fmatvec/atom.h>
 #include <H5Cpp.h>
 #include <vector>
 #include <string>
@@ -236,8 +237,8 @@ serie.create(parent, "mystructserie");
     if(compression>0) prop.setDeflate(compression);
     DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop); // increments the refcount
     setId(dataSet.getId()); // increment the ref count (the ctor of dataset decrements it again)
-    //std::cout<<"INFO from HDF5:"<<std::endl
-    //         <<"  Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<std::endl;
+    fmatvec::Atom::msg(fmatvec::Atom::Debug)<<"HDF5:\n"
+      <<"Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<std::endl;
   }
   
   template<class S>
@@ -260,8 +261,8 @@ serie.create(parent, "mystructserie");
       assert(getCompType().getMemberOffset(i)==memDataType.getMemberOffset(i));
       assert(getCompType().getMemberDataType(i).getClass()==memDataType.getMemberDataType(i).getClass());
     }
-    //std::cout<<"INFO from HDF5:"<<std::endl
-    //         <<"  Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<std::endl;
+    fmatvec::Atom::msg(fmatvec::Atom::Debug)<<"HDF5:\n"
+      <<"Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<std::endl;
   }
   
   template<class S>
@@ -356,8 +357,8 @@ serie.create(parent, "mystructserie");
   S StructSerie<S>::getRow(const int row) {
     S data;
     if(row<0 || row>=(int)dims[0]) {
-      std::cerr<<"WARNING from HDF5 object with id = "<<getId()<<":"<<std::endl
-               <<"  Requested struct number is out of range, returning a dummy struct."<<std::endl;
+      fmatvec::Atom::msg(fmatvec::Atom::Warn)<<"HDF5 object with id = "<<getId()<<":\n"
+                                             <<"Requested struct number is out of range, returning a dummy struct."<<std::endl;
       return data;
     }
 

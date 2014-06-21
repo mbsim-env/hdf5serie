@@ -9,7 +9,8 @@ libhdf5serie_la_SOURCES = toh5type.cc \
   matrixserie.cc
 
 hdf5serieincludedir = $(includedir)/hdf5serie
-libhdf5serie_la_CPPFLAGS = -I$(top_srcdir)
+libhdf5serie_la_CPPFLAGS = -I$(top_srcdir) $(FMATVEC_CFLAGS)
+libhdf5serie_la_LIBADD   = $(FMATVEC_LIBS)
 
 hdf5serieinclude_HEADERS = toh5type.h \
   simpleattribute.h \

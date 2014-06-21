@@ -81,8 +81,8 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1], dims[2]};
     memDataSpace=DataSpace(3, memDims);
-    //cout<<"INFO from HDF5:"<<endl
-    //    <<"  Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
+    msg(Debug)<<"HDF5:\n"
+              <<"Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
   }
 
   template<class T>
@@ -100,8 +100,8 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1], dims[2]};
     memDataSpace=DataSpace(3, memDims);
-    //cout<<"INFO from HDF5:"<<endl
-    //    <<"  Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
+    msg(Debug)<<"HDF5:l\n"
+              <<"Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
   }
 
   template<class T>
@@ -132,8 +132,8 @@ namespace H5 {
   vector<vector<T> > MatrixSerie<T>::getMatrix(const int number) {
     vector<vector<T> > matrix(dims[1], vector<T>(dims[2], T()));
     if(number<0 || number>=(int)dims[0]) {
-      cerr<<"WARNING from HDF5 object with id = "<<getId()<<":"<<endl
-          <<"  Requested matrix number is out of range, returning a dummy matrix."<<endl;
+      msg(Warn)<<"HDF5 object with id = "<<getId()<<":\n"
+               <<"Requested matrix number is out of range, returning a dummy matrix."<<endl;
       return matrix;
     }
 

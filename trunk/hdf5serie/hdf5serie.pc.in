@@ -13,7 +13,7 @@ hdf5_prefix=@hdf5_prefix@
 
 Name: hdf5serie
 Description: A c++ wrapper for HDF5 to write data series
-Requires: 
+Requires: fmatvec
 Version: @VERSION@
 Libs: -L${libdir} -lhdf5serie @HDF5LDFLAGS@ @LIBS@
 Cflags: -I${includedir} @HDF5CPPFLAGS@

@@ -47,6 +47,8 @@ int main() {
 ], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_ANSICSIGNAL],[],[Use ANSI C Signal Handling])],
    [AC_MSG_RESULT([no])])
 
+PKG_CHECK_MODULES(FMATVEC, fmatvec)
+
 dnl Check for hdf5 library
 AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
