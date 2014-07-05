@@ -61,7 +61,7 @@ namespace H5 {
    * array is one struct.
   */
   template<class S>
-  class StructSerie : public DataSet {
+  class StructSerie : public fmatvec::Atom, public DataSet {
     private:
       CompType memDataType;
       DataSpace memDataSpace;
@@ -232,7 +232,7 @@ serie.create(parent, "mystructserie");
     hsize_t maxDims[]={H5S_UNLIMITED};
     DataSpace fileDataSpace(1, dims, maxDims);
     DSetCreatPropList prop;
-    hsize_t chunkDims[]={chunkSize};
+    hsize_t chunkDims[]={static_cast<hsize_t>(chunkSize)};
     prop.setChunk(1, chunkDims);
     if(compression>0) prop.setDeflate(compression);
     DataSet dataSet=parent.createDataSet(name, memDataType, fileDataSpace, prop); // increments the refcount
@@ -362,7 +362,7 @@ serie.create(parent, "mystructserie");
       return data;
     }
 
-    hsize_t start[]={row};
+    hsize_t start[]={static_cast<hsize_t>(row)};
     hsize_t count[]={1};
     DataSpace fileDataSpace=getSpace();
     fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
