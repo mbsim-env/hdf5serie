@@ -24,7 +24,9 @@ AC_CANONICAL_HOST
 if test "_$host_os" = "_mingw32" ; then
   AC_DEFINE([MINGW], [1], [Host System is MinGW/MSys])
   CPPFLAGS="$CPPFLAGS -Wno-uninitialized" # MinGW-g++-3.4 and -O2 => uninitialized value in stl header
+  WIN32=yes
 fi
+AM_CONDITIONAL([COND_WIN32], [test "_$WIN32" = "_yes"])
 
 dnl Check for doxygen
 AC_ARG_WITH([doxygenpath],
@@ -77,6 +79,6 @@ LDFLAGS="$LDFLAGS -no-undefined -Wl,--no-undefined"
 AC_CONFIG_FILES([Makefile doc/Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc
   doc/Doxyfile hdf5serie/dump/h5dumpserie.m hdf5serie/dump/hdf5serieappenddataset.m])
-
+AC_CONFIG_FILES([hdf5serie/check/testdump.sh],[chmod +x hdf5serie/check/testdump.sh])
 
 AC_OUTPUT

@@ -1,12 +1,12 @@
-check_PROGRAMS = testlib
-check_SCRIPTS = valgrindtestlib.sh \
-  testdump.sh \
-  valgrindtestdump.sh
+if COND_WIN32
+else
+  MAYBE_VALGRIND_TESTS = valgrindtestlib.sh valgrindtestdump.sh
+endif
 
-TESTS = testlib \
-  valgrindtestlib.sh \
-  testdump.sh \
-  valgrindtestdump.sh
+check_PROGRAMS = testlib
+check_SCRIPTS = testdump.sh $(MAYBE_VALGRIND_TESTS)
+
+TESTS = testlib testdump.sh $(MAYBE_VALGRIND_TESTS)
 
 testlib_SOURCES = testlib.cc
 
