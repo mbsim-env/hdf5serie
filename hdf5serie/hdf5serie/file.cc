@@ -38,7 +38,8 @@ namespace {
       static char *sleep=getenv("HDF5SERIE_REFRESHSLEEP");
       if(sleep)
         msec=boost::lexical_cast<int>(sleep);
-      boost::this_thread::sleep_for(boost::chrono::milliseconds(msec));
+      //only newer boost version: boost::this_thread::sleep_for(boost::chrono::milliseconds(msec));
+      boost::this_thread::sleep(boost::posix_time::milliseconds(msec)); // boost deprecated
 #endif
     }
   }
