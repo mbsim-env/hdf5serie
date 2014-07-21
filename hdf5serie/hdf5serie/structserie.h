@@ -109,12 +109,12 @@ serie.create(parent, "mystructserie");
       void registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name);
 #else
 // Use this code section else
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
       void registerMember(const S& s, const CTYPE& e, const std::string name);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
 
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
       void registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
@@ -190,7 +190,7 @@ serie.create(parent, "mystructserie");
     memDataSpace=DataSpace(1, memDims);
   }
 
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   template<class S> \
   void StructSerie<S>::registerMember(const S& s, const CTYPE& e, const std::string name) { \
     int size; \
@@ -206,10 +206,10 @@ serie.create(parent, "mystructserie");
 # include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   template<class S> \
   void StructSerie<S>::registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name) { \
-    if(e.size()!=0 && e.size()!=N) throw std::runtime_error("wrong dimension"); \
+    if(e.size()!=0 && e.size()!=N) throw Exception("wrong dimension"); \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \
     CTYPE dummy; \
@@ -227,7 +227,7 @@ serie.create(parent, "mystructserie");
 
   template<class S>
   void StructSerie<S>::create(const CommonFG& parent, const std::string& name, int compression, int chunkSize) {
-    if(firstCall) throw std::runtime_error("wrong call sequence");
+    if(firstCall) throw Exception("wrong call sequence");
     dims[0]=0;
     hsize_t maxDims[]={H5S_UNLIMITED};
     DataSpace fileDataSpace(1, dims, maxDims);
@@ -243,7 +243,7 @@ serie.create(parent, "mystructserie");
   
   template<class S>
   void StructSerie<S>::open(const CommonFG& parent, const std::string& name) {
-    if(firstCall) throw std::runtime_error("wrong call sequence");
+    if(firstCall) throw Exception("wrong call sequence");
     DataSet dataSet=parent.openDataSet(name); // increments the refcount
     setId(dataSet.getId()); // increment the ref count (the ctor of dataset decrements it again)
   
@@ -303,7 +303,7 @@ serie.create(parent, "mystructserie");
     std::vector<char> buf(memDataType.getSize());
     std::list<std::vector<char> > charptr;
     for(int i=0; i<memDataType.getNmembers(); i++) {
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
       if(memDataType.getMemberDataType(i)==H5TYPE) \
         *(CTYPE*)(&buf[0]+memDataType.getMemberOffset(i))=*(CTYPE*)((char*)&data+structOffset[i]);
 #     include "knownpodtypes.def"
@@ -317,10 +317,10 @@ serie.create(parent, "mystructserie");
       if(memDataType.getMemberDataType(i).getClass()==H5T_ARRAY) {
         hsize_t dims[1];
         memDataType.getMemberArrayType(i).getArrayDims(dims);
-#       define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+#       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
         if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) { \
           std::vector<CTYPE>* vec=(std::vector<CTYPE>*)((char*)&data+structOffset[i]); \
-          if(vec->size()!=dims[0]) throw std::runtime_error("the dimension does not match"); \
+          if(vec->size()!=dims[0]) throw Exception("the dimension does not match"); \
           memcpy(&buf[0]+memDataType.getMemberOffset(i), &((*vec)[0]), dims[0]*sizeof(CTYPE)); \
         }
 #       include "knownpodtypes.def"
@@ -328,7 +328,7 @@ serie.create(parent, "mystructserie");
         if(memDataType.getMemberDataType(i)==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
           for(unsigned int j=0; j<dims[0]; j++) {
             std::vector<std::string>* vec=(std::vector<std::string>*)((char*)&data+structOffset[i]);
-            if(vec->size()!=dims[0]) throw std::runtime_error("the dimension does not match");
+            if(vec->size()!=dims[0]) throw Exception("the dimension does not match");
             charptr.push_back(std::vector<char>((*vec)[j].size()+1));
             char* str=&(*--charptr.end())[0];
             strcpy(str, (*vec)[j].c_str());
@@ -370,7 +370,7 @@ serie.create(parent, "mystructserie");
     std::vector<char> buf(memDataType.getSize());
     read(&buf[0], memDataType, memDataSpace, fileDataSpace);
     for(int i=0; i<memDataType.getNmembers(); i++) {
-#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+#     define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
       if(memDataType.getMemberDataType(i)==H5TYPE) \
         *(CTYPE*)((char*)&data+structOffset[i])=*(CTYPE*)(&buf[0]+memDataType.getMemberOffset(i));
 #     include "knownpodtypes.def"
@@ -383,7 +383,7 @@ serie.create(parent, "mystructserie");
       if(memDataType.getMemberDataType(i).getClass()==H5T_ARRAY) {
         hsize_t dims[1];
         memDataType.getMemberArrayType(i).getArrayDims(dims);
-#       define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+#       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
         if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) { \
           std::vector<CTYPE>* vec=(std::vector<CTYPE>*)((char*)&data+structOffset[i]); \
           vec->resize(dims[0]); \

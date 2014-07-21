@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([hdf5serie],[1.0.1],[friedrich.at.gc@googlemail.com])
+AC_INIT([hdf5serie],[2.0.0],[friedrich.at.gc@googlemail.com])
 AC_CONFIG_SRCDIR([hdf5serie/toh5type.cc])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
@@ -72,9 +72,32 @@ AC_CHECK_HEADERS([H5Cpp.h], [],
 AC_MSG_CHECKING([for hdf5 c++ library])
 AC_TRY_LINK([#include <H5Cpp.h>],[H5::H5File file],[AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no]); AC_MSG_ERROR([Can not link with hdf5 c++ library])])
+dnl check for swmr branch
+AC_CHECK_LIB([hdf5], [H5Dflush], [AC_DEFINE([HDF5_SWMR], [1], [HDF5 SWMR branch detected])],
+  [AC_MSG_NOTICE([To use SWMR features please use the HDF5 branch from svn: http://svn.hdfgroup.uiuc.edu/hdf5/branches/revise_chunks])])
 
 # from now on only libtool is used for linking
 LDFLAGS="$LDFLAGS -no-undefined -Wl,--no-undefined"
+
+# boost
+AC_CHECK_HEADERS([boost/filesystem.hpp],[],[AC_MSG_ERROR([Can not find boost/filesystem.hpp])])
+
+AC_ARG_WITH([boost-filesystem-lib],
+  [  --with-boost-filesystem-lib=LIBNAME  The library name of boost filesystem excluding prefix/suffix (Default: boost_filesystem).],
+  [BOOST_FILESYSTEM_LIB="$withval"], [BOOST_FILESYSTEM_LIB="boost_filesystem"])
+AC_SUBST([BOOST_FILESYSTEM_LIB])
+AC_ARG_WITH([boost-system-lib],
+  [  --with-boost-system-lib=LIBNAME  The library name of boost system excluding prefix/suffix (Default: boost_system).],
+  [BOOST_SYSTEM_LIB="$withval"], [BOOST_SYSTEM_LIB="boost_system"])
+AC_SUBST([BOOST_SYSTEM_LIB])
+AC_ARG_WITH([boost-chrono-lib],
+  [  --with-boost-chrono-lib=LIBNAME  The library name of boost chrono excluding prefix/suffix (Default: boost_chrono).],
+  [BOOST_CHRONO_LIB="$withval"], [BOOST_CHRONO_LIB="boost_chrono"])
+AC_SUBST([BOOST_CHRONO_LIB])
+AC_ARG_WITH([boost-thread-lib],
+  [  --with-boost-thread-lib=LIBNAME  The library name of boost thread excluding prefix/suffix (Default: boost_thread).],
+  [BOOST_THREAD_LIB="$withval"], [BOOST_THREAD_LIB="boost_thread"])
+AC_SUBST([BOOST_THREAD_LIB])
 
 AC_CONFIG_FILES([Makefile doc/Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc

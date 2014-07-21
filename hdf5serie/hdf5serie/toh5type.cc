@@ -20,14 +20,26 @@
  */
 
 #include <config.h>
-#include <hdf5serie/toh5type.h> 
+#include <stdexcept>
+#include "toh5type.h"
+#include "interface.h"
 
 using namespace std;
 
 namespace H5 {
 
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  DataType toH5Type(const CTYPE& dummy) { \
+hid_t returnVarLenStrDatatypeID() {
+  static hid_t varLenStrDataTypeID=-1;
+  if(varLenStrDataTypeID<0) {
+    varLenStrDataTypeID=H5Tcopy(H5T_C_S1);
+    if(H5Tset_size(varLenStrDataTypeID, H5T_VARIABLE)<0)
+      throw Exception("Internal error: Can not create varaible length string datatype.");
+  }
+  return varLenStrDataTypeID;
+}
+
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+  hid_t toH5Type(const CTYPE& dummy) { \
     return H5TYPE; \
   }
 # include "hdf5serie/knowntypes.def"

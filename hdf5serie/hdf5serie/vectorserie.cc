@@ -21,6 +21,8 @@
 
 #include <config.h>
 #include <hdf5serie/vectorserie.h>
+#include <hdf5serie/simpleattribute.h>
+#include <hdf5serie/toh5type.h>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -34,198 +36,145 @@ namespace H5 {
   // template definitions
 
   template<class T>
-  VectorSerie<T>::VectorSerie() : DataSet(), memDataSpace() {
-    T dummy;
-    memDataType=toH5Type(dummy);
-    dims[0]=0;
-    dims[1]=0;
+  VectorSerie<T>::VectorSerie(int dummy, GroupBase *parent_, const string &name_) : Dataset(parent_, name_) {
+    T dummy2;
+    memDataTypeID=toH5Type(dummy2);
+    open();
   }
 
   template<class T>
-  VectorSerie<T>::VectorSerie(const VectorSerie<T>& dataset) : DataSet(dataset) {
+  VectorSerie<T>::VectorSerie(GroupBase *parent_, const string &name_, int cols, int compression, int chunkSize) : Dataset(parent_, name_) {
     T dummy;
-    memDataType=toH5Type(dummy);
-    DataSpace fileDataSpace=getSpace();
-    fileDataSpace.getSimpleExtentDims(dims);
-    hsize_t memDims[]={1, dims[1]};
-    memDataSpace=DataSpace(2, memDims);
-  }
-
-  template<class T>
-  VectorSerie<T>::VectorSerie(const CommonFG& parent, const std::string& name) {
-    T dummy;
-    memDataType=toH5Type(dummy);
-    open(parent, name);
-  }
-
-  template<class T>
-  VectorSerie<T>::VectorSerie(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression, int chunkSize) {
-    T dummy;
-    memDataType=toH5Type(dummy);
-    create(parent, name, columnLabel, compression, chunkSize);
-  }
-
-  template<class T>
-  void VectorSerie<T>::create(const CommonFG& parent, const std::string& name,
-                              const std::vector<std::string>& columnLabel, int compression, int chunkSize) {
+    memDataTypeID=toH5Type(dummy);
     // create dataset with chunk cache size = chunk size
     dims[0]=0;
-    dims[1]=columnLabel.size();
+    dims[1]=cols;
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
-    DataSpace fileDataSpace(2, dims, maxDims);
-    DSetCreatPropList prop;
+    ScopedHID fileDataSpaceID(H5Screate_simple(2, dims, maxDims), &H5Sclose);
+    ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
     hsize_t chunkDims[]={(hsize_t)chunkSize, (hsize_t)(dims[1])};
-    prop.setChunk(2, chunkDims);
-    if(compression>0) prop.setDeflate(compression);
-    hid_t apl=H5Pcreate(H5P_DATASET_ACCESS);
+    H5Pset_chunk(propID, 2, chunkDims);
+    if(compression>0) H5Pset_deflate(propID, compression);
+    ScopedHID apl(H5Pcreate(H5P_DATASET_ACCESS), &H5Pclose);
     H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*chunkSize, 0.75);
-    hid_t did=H5Dcreate(dynamic_cast<const IdComponent&>(parent).getId(), name.c_str(), memDataType.getId(),
-                        fileDataSpace.getId(), H5P_DEFAULT, prop.getId(), apl); // increments the refcount
-    H5Pclose(apl);
-    p_setId(did); // transfer the c handle did to c++ (do not increment the refcount since H5Dclose(did) is not called)
-
-    SimpleAttribute<std::vector<std::string> > colHead(*this, "Column Label", columnLabel);
+    id.reset(H5Dcreate2(parent->getID(), name.c_str(), memDataTypeID,
+                       fileDataSpaceID, H5P_DEFAULT, propID, apl), &H5Dclose);
 
     hsize_t memDims[]={1, dims[1]};
-    memDataSpace=DataSpace(2, memDims);
+    memDataSpaceID.reset(H5Screate_simple(2, memDims, NULL), &H5Sclose);
     msg(Debug)<<"HDF5:\n"
-              <<"Created object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
+              <<"Created object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
   }
 
   template<class T>
-  void VectorSerie<T>::open(const CommonFG& parent, const std::string& name) {
+  VectorSerie<T>::~VectorSerie() {
+  }
+
+  template<class T>
+  void VectorSerie<T>::close() {
+    Dataset::close();
+    memDataSpaceID.reset();
+    id.reset();
+  }
+
+  template<class T>
+  void VectorSerie<T>::open() {
     // open the dataset, get column size and chunk size, close dataset again
-    hid_t did=H5Dopen(dynamic_cast<const IdComponent&>(parent).getId(), name.c_str(), H5P_DEFAULT); // increments the refcount
-    hid_t sid=H5Dget_space(did);
-    assert(H5Sget_simple_extent_ndims(sid)==2);
+    id.reset(H5Dopen(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Dclose);
+    ScopedHID sid(H5Dget_space(id), &H5Sclose);
+    if(H5Sget_simple_extent_ndims(sid)!=2)
+      throw Exception("A VectorSerie dataset must have 2 dimensions.");
     hsize_t maxDims[2];
     H5Sget_simple_extent_dims(sid, dims, maxDims);
-    assert(maxDims[0]==H5S_UNLIMITED);
-    H5Sclose(sid);
-    hid_t cpl=H5Dget_create_plist(did);
+    if(maxDims[0]!=H5S_UNLIMITED)
+      throw Exception("A VectorSerie dataset must have unlimited dimension in the first dimension.");
+    ScopedHID cpl(H5Dget_create_plist(id), &H5Pclose);
     H5Pget_chunk(cpl, 2, maxDims);
-    H5Pclose(cpl);
-    hid_t apl=H5Dget_access_plist(did);
-    H5Dclose(did); // decrements the refcount
+    ScopedHID apl(H5Dget_access_plist(id), &H5Pclose);
+    id.reset();
     // reopen the dataset with chunk cache == chunk size
     H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*maxDims[0], 0.75);
-    did=H5Dopen(dynamic_cast<const IdComponent&>(parent).getId(), name.c_str(), apl); // increments the refcount
-    H5Pclose(apl);
-    // assigne the dataset to the c++ object
-    p_setId(did); // transfer the c handle did to c++ (do not increment the refcount since H5Dclose(did) is not called)
-
-    // get file space
-    DataSpace fileDataSpace=getSpace();
-    assert(getDataType().getClass()==memDataType.getClass());
+    id.reset(H5Dopen(parent->getID(), name.c_str(), apl), &H5Dclose);
 
     // create mem space
     hsize_t memDims[]={1, dims[1]};
-    memDataSpace=DataSpace(2, memDims);
+    memDataSpaceID.reset(H5Screate_simple(2, memDims, NULL), &H5Sclose);
     msg(Debug)<<"HDF5:\n"
-              <<"Opened object with name = "<<name<<", id = "<<getId()<<" at parent with id = "<<((Group*)&parent)->getId()<<"."<<endl;
+              <<"Opened object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
+    Dataset::open();
   }
 
   template<class T>
-  void VectorSerie<T>::setDescription(const std::string& description) {
-    SimpleAttribute<std::string> desc(*this, "Description", description);
+  void VectorSerie<T>::setDescription(const string& description) {
+    SimpleAttribute<string> *desc=createChildAttribute<SimpleAttribute<string> >("Description")();
+    desc->write(description);
   }
 
   template<class T>
-  void VectorSerie<T>::append(const std::vector<T> &data) {
-    if(data.size()!=dims[1]) throw runtime_error("dataset dimension does not match");
+  void VectorSerie<T>::append(const vector<T> &data) {
+    if(data.size()!=dims[1]) throw Exception("dataset dimension does not match");
     dims[0]++;
-    DataSet::extend(dims);
+    H5Dset_extent(id, dims);
 
     hsize_t start[]={dims[0]-1,0};
     hsize_t count[]={1, dims[1]};
-    DataSpace fileDataSpace=getSpace();
-    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
 
-    write(&data[0], memDataType, memDataSpace, fileDataSpace);
+    H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
   }
-  template<>
-  void VectorSerie<std::string>::append(const std::vector<std::string> &data);
 
   template<class T>
-  std::vector<T> VectorSerie<T>::getRow(const int row) {
-    std::vector<T> data(dims[1], T());
-    if(row<0 || row>=(int)dims[0]) {
-      msg(Warn)<<"HDF5 object with id = "<<getId()<<":\n"
+  vector<T> VectorSerie<T>::getRow(const int row) {
+    vector<T> data(dims[1], T());
+    if(row<0 || row>=getRows()) {
+      msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
                <<"Requested vector number is out of range, returning a dummy vector."<<endl;
       return data;
     }
 
     hsize_t start[]={(hsize_t)row,0};
     hsize_t count[]={1, dims[1]};
-    DataSpace fileDataSpace=getSpace();
-    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
 
-    read(&data[0], memDataType, memDataSpace, fileDataSpace);
+    H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
     return data;
   }
-  template<>
-  std::vector<std::string> VectorSerie<std::string>::getRow(const int row);
 
   template<class T>
-  std::vector<T> VectorSerie<T>::getColumn(const int column) {
+  vector<T> VectorSerie<T>::getColumn(const int column) {
     hsize_t rows=getRows();
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
-    DataSpace fileDataSpace=getSpace();
-    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
 
-    DataSpace coldataspace(2, count);
+    ScopedHID colDataSpaceID(H5Screate_simple(2, count, NULL), &H5Sclose);
 
-    std::vector<T> data(rows);
-    read(&data[0], memDataType, coldataspace, fileDataSpace);
+    vector<T> data(rows);
+    H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
     return data;
   }
-  template<>
-  std::vector<std::string> VectorSerie<std::string>::getColumn(const int column);
 
   template<class T>
-  std::string VectorSerie<T>::getDescription() {
-    // save and disable c error printing
-    H5E_auto2_t func;
-    void* client_data;
-    Exception::getAutoPrint(func, &client_data);
-    Exception::dontPrint();
-    std::string ret;
-    // catch error if Attribute is not found
-    try {
-      ret=SimpleAttribute<std::string>::getData(*this, "Description");
-    }
-    catch(AttributeIException e) {
-      ret=std::string();
-    }
-    // restore c error printing
-    Exception::setAutoPrint(func, client_data);
-    return ret;
+  string VectorSerie<T>::getDescription() {
+    SimpleAttribute<string> *desc=openChildAttribute<SimpleAttribute<string> >("Description");
+    return desc->read();
   }
 
   template<class T>
-  std::vector<std::string> VectorSerie<T>::getColumnLabel() {
-    // save and disable c error printing
-    H5E_auto2_t func;
-    void* client_data;
-    Exception::getAutoPrint(func, &client_data);
-    Exception::dontPrint();
-    std::vector<std::string> ret;
-    // catch error if Attribute is not found
-    try {
-      ret=SimpleAttribute<std::vector<std::string> >::getData(*this, "Column Label");
-    }
-    catch(AttributeIException e) {
-      ret=std::vector<std::string>(getColumns());
-    }
-    // restore c error printing
-    Exception::setAutoPrint(func, client_data);
-    return ret;
+  void VectorSerie<T>::setColumnLabel(const vector<string>& columnLabel) {
+    if(dims[1]!=columnLabel.size())
+      throw Exception("Size of column labe does not match");
+    SimpleAttribute<vector<string> > *col=createChildAttribute<SimpleAttribute<vector<string> > >("Column Label")(columnLabel.size());
+    col->write(columnLabel);
   }
 
   template<class T>
-  void VectorSerie<T>::extend(const hsize_t* size) {
-    assert(1);
+  vector<string> VectorSerie<T>::getColumnLabel() {
+    SimpleAttribute<vector<string> > *col=openChildAttribute<SimpleAttribute<vector<string> > >("Column Label");
+    return col->read();
   }
 
 
@@ -234,39 +183,39 @@ namespace H5 {
 
   template<>
   void VectorSerie<string>::append(const vector<string> &data) {
-    if(data.size()!=dims[1]) throw runtime_error("dataset dimension does not match");
+    if(data.size()!=dims[1]) throw Exception("dataset dimension does not match");
     dims[0]++;
-    DataSet::extend(dims);
+    H5Dset_extent(id, dims);
   
     hsize_t start[]={dims[0]-1,0};
     hsize_t count[]={1, dims[1]};
-    DataSpace fileDataSpace=getSpace();
-    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
   
     VecStr dummy(dims[1]);
     for(unsigned int i=0; i<dims[1]; i++) {
       dummy[i]=(char*)malloc((data[i].size()+1)*sizeof(char));
       strcpy(dummy[i], data[i].c_str());
     }
-    write(&dummy[0], memDataType, memDataSpace, fileDataSpace);
+    H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);
   }
   
   template<>
   vector<string> VectorSerie<string>::getRow(const int row) {
     vector<string> data(dims[1], string());
-    if(row<0 || row>=(int)dims[0]) {
-      msg(Warn)<<"HDF5 object with id = "<<getId()<<":\n"
+    if(row<0 || row>=getRows()) {
+      msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
                <<"Requested vector number is out of range, returning a dummy vector."<<endl;
       return data;
     }
 
     hsize_t start[]={(hsize_t)row,0};
     hsize_t count[]={1, dims[1]};
-    DataSpace fileDataSpace=getSpace();
-    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
   
     VecStr dummy(dims[1]);
-    read(&dummy[0], memDataType, memDataSpace, fileDataSpace);
+    H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);
     for(unsigned int i=0; i<dims[1]; i++)
       data[i]=dummy[i];
     return data;
@@ -277,13 +226,13 @@ namespace H5 {
     hsize_t rows=getRows();
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
-    DataSpace fileDataSpace=getSpace();
-    fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
   
-    DataSpace coldataspace(2, count);
+    ScopedHID colDataSpaceID(H5Screate_simple(2, count, NULL), &H5Sclose);
   
     VecStr dummy(rows);
-    read(&dummy[0], memDataType, coldataspace, fileDataSpace);
+    H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);
     vector<string> data(rows);
     for(unsigned int i=0; i<rows; i++)
       data[i]=dummy[i];
@@ -294,7 +243,7 @@ namespace H5 {
 
   // explizit template instantations
 
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   template class VectorSerie<CTYPE>;
 # include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE

@@ -20,19 +20,13 @@
  */
 
 #include <config.h>
-#include <fstream>
+#include <string>
 #include <hdf5serie/vectorserie.h>
-#include <hdf5serie/structserie.h>
 #include <hdf5serie/simpledataset.h>
-#include <iostream>
+#include <hdf5serie/toh5type.h>
 #include <iomanip>
-#include <sstream>
-#include <unistd.h>
-#include <algorithm>
 #include <limits>
-#ifdef HAVE_ANSICSIGNAL
-#  include <signal.h>
-#endif
+#include <boost/lexical_cast.hpp>
 
 using namespace H5;
 using namespace std;
@@ -65,12 +59,7 @@ string delim=" ";
 string mynan="nan";
 int precision=numeric_limits<double>::digits10+1;
 
-int string2int(string str) {
-  stringstream sstr(str);
-  int i;
-  sstr>>i;
-  return i;
-}
+void printRow(Dataset *d, int row);
 
 int main(int argc, char* argv[]) {
   vector<string> arg;
@@ -121,13 +110,14 @@ int main(int argc, char* argv[]) {
 
   i=find(arg.begin(), arg.end(), "-p");
   if(i!=arg.end()) {
-    precision=string2int(*(i+1));
+    precision=boost::lexical_cast<int>(*(i+1));
     arg.erase(i, i+2);
   }
 
   unsigned int maxrows=0;
-  vector<int>* column=new vector<int>[arg.size()];
-  DataSet* dataSet=new DataSet[arg.size()];
+  vector<vector<int> > column(arg.size());
+  vector<Dataset*> dataSet(arg.size());
+  vector<boost::shared_ptr<File> > file(arg.size());
   int col=1;
   for(unsigned int k=0; k<arg.size(); k++) {
     string para=arg[k];
@@ -135,17 +125,7 @@ int main(int argc, char* argv[]) {
     int i;
     i=para.find(".h5/");
     string filename=para.substr(0, i+3);
-#ifdef HAVE_ANSICSIGNAL
-    ifstream lockFile(("."+filename+".pid").c_str());
-    if(lockFile.good() && ! lockFile.eof()) {
-      pid_t pid;
-      lockFile>>pid;
-      lockFile.close();
-      if(kill(pid, SIGUSR2)==0)
-        usleep(1000000);
-    }
-#endif
-    H5File file(filename, H5F_ACC_RDONLY);
+    file[k].reset(new File(filename, File::read));
 
     string dummy=para.substr(i+3);
     i=dummy.find(':');
@@ -159,30 +139,26 @@ int main(int argc, char* argv[]) {
       columnname=dummy.substr(i+1)+',';
     }
 
-    dataSet[k]=file.openDataSet(datasetname);
-    DataType datatype=dataSet[k].getDataType();
-
-    DataSpace space=dataSet[k].getSpace();
-    int N=space.getSimpleExtentNdims();
-    hsize_t* dims=new hsize_t[N];
-    space.getSimpleExtentDims(dims);
-    int columns;
-    if(datatype.getClass()==H5T_COMPOUND)
-      columns=dataSet[k].getCompType().getNmembers();
-    else
+    dataSet[k]=dynamic_cast<Dataset*>(file[k]->openChildObject(datasetname));
+    vector<hsize_t> dims=dataSet[k]->getExtentDims();
+    if(dims.size()==0)
+      continue;
+    int columns=0;
+    if(dims.size()==1)
+      columns=1;
+    if(dims.size()==2)
       columns=dims[1];
     maxrows=maxrows>dims[0]?maxrows:dims[0];
-    delete[]dims;
     while((i=columnname.find(','))>0) {
       string columnstr=columnname.substr(0,i);
       columnname=columnname.substr(i+1);
       i=columnstr.find('-');
       if(i<0)
-        column[k].push_back(string2int(columnstr));
+        column[k].push_back(boost::lexical_cast<int>(columnstr));
       else {
         int begin, end;
-        if(columnstr.substr(0,i)=="") begin=1; else begin=string2int(columnstr.substr(0,i));
-        if(columnstr.substr(i+1)=="") end=columns; else end=string2int(columnstr.substr(i+1));
+        if(columnstr.substr(0,i)=="") begin=1; else begin=boost::lexical_cast<int>(columnstr.substr(0,i));
+        if(columnstr.substr(i+1)=="") end=columns; else end=boost::lexical_cast<int>(columnstr.substr(i+1));
         if(end>=begin)
           for(int j=begin; j<=end; j++)
             column[k].push_back(j);
@@ -193,47 +169,40 @@ int main(int argc, char* argv[]) {
     }
     if(header) {
       cout<<comment<<" File/DataSet: "<<filename<<datasetname<<endl;
-      try {
-        H5E_auto2_t func;
-        void *client_data;
-        Exception::getAutoPrint(func, &client_data);
-        Exception::dontPrint();
-        string desc=SimpleAttribute<string>::getData(dataSet[k], "Description");
-        if(desc!="") cout<<comment<<"   Description: "<<desc<<endl;
-        Exception::setAutoPrint(func, client_data);
+      if(dataSet[k]->hasChildAttribute("Description")) {
+        string desc=dataSet[k]->openChildAttribute<SimpleAttribute<string> >("Description")->read();
+        cout<<comment<<"   Description: "<<desc<<endl;
       }
-      catch(...) {
-      }
-      if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
-        try {
-          CompType dataType=dataSet[k].getCompType();
-          cout<<comment<<"   Member Label:"<<endl;
-          for(unsigned int j=0; j<column[k].size(); j++) {
-            if(dataType.getMemberDataType(column[k][j]-1).getClass()==H5T_ARRAY) {
-              hsize_t dims[1];
-              dataType.getMemberArrayType(column[k][j]-1).getArrayDims(dims);
-              for(unsigned int l=0; l<dims[0]; l++)
-                cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<"("<<l+1<<")"<<endl;
-            }
-            else
-              cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<endl;
-          }
-        }
-        catch(...) {
-          cout<<comment<<"   Member labels are not avaliable."<<endl;
-        }
-      }
-      else {
-        try {
-          vector<string> cols=SimpleAttribute<vector<string> >::getData(dataSet[k], "Column Label");
+
+//      if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
+//        try {
+//          CompType dataType=dataSet[k].getCompType();
+//          cout<<comment<<"   Member Label:"<<endl;
+//          for(unsigned int j=0; j<column[k].size(); j++) {
+//            if(dataType.getMemberDataType(column[k][j]-1).getClass()==H5T_ARRAY) {
+//              hsize_t dims[1];
+//              dataType.getMemberArrayType(column[k][j]-1).getArrayDims(dims);
+//              for(unsigned int l=0; l<dims[0]; l++)
+//                cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<"("<<l+1<<")"<<endl;
+//            }
+//            else
+//              cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<dataType.getMemberName(column[k][j]-1)<<endl;
+//          }
+//        }
+//        catch(...) {
+//          cout<<comment<<"   Member labels are not avaliable."<<endl;
+//        }
+//      }
+//      else {
+        if(dataSet[k]->hasChildAttribute("Column Label")) {
+          vector<string> cols=dataSet[k]->openChildAttribute<SimpleAttribute<vector<string> > >("Column Label")->read();
           cout<<comment<<"   Column Label:"<<endl;
           for(unsigned int j=0; j<column[k].size(); j++)
             cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<cols[column[k][j]-1]<<endl;
         }
-        catch(...) {
+        else
           cout<<comment<<"   Column labels are not avaliable."<<endl;
-        }
-      }
+//      }
     }
   }
 
@@ -241,88 +210,104 @@ int main(int argc, char* argv[]) {
   for(unsigned int row=0; row<maxrows; row++) {
     for(unsigned int k=0; k<arg.size(); k++) {
       // Output mynan for to short datasets
-      DataSpace space=dataSet[k].getSpace();
-      int N=space.getSimpleExtentNdims();
-      hsize_t* dims=new hsize_t[N];
-      space.getSimpleExtentDims(dims);
+      vector<hsize_t> dims=dataSet[k]->getExtentDims();
       if(row>=dims[0]) {
         for(unsigned int i=0; i<column[k].size(); i++)
           cout<<(k==0&&i==0?"":delim)<<mynan;
         continue;
       }
-      delete[]dims;
       
-      if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
-        hsize_t dims[]={1};
-        DataSpace memDataSpace(1, dims);
-        DataSpace fileDataSpace=dataSet[k].getSpace();
-        hsize_t start[]={row}, count[]={1};
-        fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
-        CompType memDataType=dataSet[k].getCompType();//////////
-        char* buf=new char[memDataType.getSize()];
-        dataSet[k].read(buf, memDataType, memDataSpace, fileDataSpace);
-        for(unsigned int i=0; i<column[k].size(); i++) {
-          DataType memberDataType=memDataType.getMemberDataType(column[k][i]-1);
-          int memberOffset=memDataType.getMemberOffset(column[k][i]-1);
-#         define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-          if(memberDataType==H5TYPE) \
-            cout<<(k==0&&i==0?"":delim)<<*(CTYPE*)(buf+memberOffset);
-#         include "hdf5serie/knownpodtypes.def"
-#         undef FOREACHKNOWNTYPE
-          if(memberDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
-            char* str=*(char**)(buf+memberOffset);
-            cout<<(k==0&&i==0?"":delim)<<quote<<str<<quote;
-            free(str);
-          }
-          if(memberDataType.getClass()==H5T_ARRAY) {
-            hsize_t dims[1];
-            memDataType.getMemberArrayType(column[k][i]-1).getArrayDims(dims);
-#           define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-            if(memberDataType==ArrayType(H5TYPE,1,dims)) \
-              for(unsigned int l=0; l<dims[0]; l++) \
-                cout<<(k==0&&i==0&&l==0?"":delim)<<*(CTYPE*)(buf+memberOffset+sizeof(CTYPE)*l);
-#           include "hdf5serie/knownpodtypes.def"
-#           undef FOREACHKNOWNTYPE
-            if(memberDataType==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
-              for(unsigned int l=0; l<dims[0]; l++) {
-                char* str=*(char**)(buf+memberOffset+sizeof(char*)*l);
-                cout<<(k==0&&i==0&&l==0?"":delim)<<quote<<str<<quote;
-                free(str);
-              }
-          }
-        }
-        delete[]buf;
-      }
-      else {
-        hsize_t dims[2];
-        DataSpace fileDataSpace=dataSet[k].getSpace();
-        fileDataSpace.getSimpleExtentDims(dims);
-        hsize_t start[]={row,0}, count[]={1,dims[1]};
-        fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
-        DataSpace memDataSpace(2, count);
-        DataType memDataType=dataSet[k].getDataType();//////////
-        char* buf=new char[memDataType.getSize()*dims[1]];
-        dataSet[k].read(buf, memDataType, memDataSpace, fileDataSpace);
-        for(unsigned int i=0; i<column[k].size(); i++) {
-#         define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-          if(memDataType==H5TYPE) \
-            cout<<(k==0&&i==0?"":delim)<<*(CTYPE*)(buf+sizeof(CTYPE)*(column[k][i]-1));
-#         include "hdf5serie/knownpodtypes.def"
-#         undef FOREACHKNOWNTYPE
-          if(memDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
-            char* str=*(char**)(buf+sizeof(char*)*(column[k][i]-1));
-            cout<<(k==0&&i==0?"":delim)<<quote<<str<<quote;
-            free(str);
-          }
-        }
-        delete[]buf;
-      }
+      cout<<(k==0?"":delim);
+      printRow(dataSet[k], row);
     }
     cout<<endl;
   }
 
-  delete[]column;
-  delete[]dataSet;
-
   return 0;
+}
+
+//      if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
+//        hsize_t dims[]={1};
+//        DataSpace memDataSpace(1, dims);
+//        DataSpace fileDataSpace=dataSet[k].getSpace();
+//        hsize_t start[]={row}, count[]={1};
+//        fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
+//        CompType memDataType=dataSet[k].getCompType();//////////
+//        char* buf=new char[memDataType.getSize()];
+//        dataSet[k].read(buf, memDataType, memDataSpace, fileDataSpace);
+//        for(unsigned int i=0; i<column[k].size(); i++) {
+//          DataType memberDataType=memDataType.getMemberDataType(column[k][i]-1);
+//          int memberOffset=memDataType.getMemberOffset(column[k][i]-1);
+//#         define FOREACHKNOWNTYPE(CTYPE, H5TYPE)
+//          if(memberDataType==H5TYPE)
+//            cout<<(k==0&&i==0?"":delim)<<*(CTYPE*)(buf+memberOffset);
+//#         include "hdf5serie/knownpodtypes.def"
+//#         undef FOREACHKNOWNTYPE
+//          if(memberDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
+//            char* str=*(char**)(buf+memberOffset);
+//            cout<<(k==0&&i==0?"":delim)<<quote<<str<<quote;
+//            free(str);
+//          }
+//          if(memberDataType.getClass()==H5T_ARRAY) {
+//            hsize_t dims[1];
+//            memDataType.getMemberArrayType(column[k][i]-1).getArrayDims(dims);
+//#           define FOREACHKNOWNTYPE(CTYPE, H5TYPE)
+//            if(memberDataType==ArrayType(H5TYPE,1,dims))
+//              for(unsigned int l=0; l<dims[0]; l++)
+//                cout<<(k==0&&i==0&&l==0?"":delim)<<*(CTYPE*)(buf+memberOffset+sizeof(CTYPE)*l);
+//#           include "hdf5serie/knownpodtypes.def"
+//#           undef FOREACHKNOWNTYPE
+//            if(memberDataType==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
+//              for(unsigned int l=0; l<dims[0]; l++) {
+//                char* str=*(char**)(buf+memberOffset+sizeof(char*)*l);
+//                cout<<(k==0&&i==0&&l==0?"":delim)<<quote<<str<<quote;
+//                free(str);
+//              }
+//          }
+//        }
+//        delete[]buf;
+//      }
+//      else {
+
+string quoteString(hid_t type) {
+  if(type==returnVarLenStrDatatypeID())
+    return quote;
+  return "";
+}
+
+void printRow(Dataset *d, int row) {
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+  { \
+    VectorSerie<CTYPE> *dd=dynamic_cast<VectorSerie<CTYPE>*>(d); \
+    if(dd) { \
+      vector<CTYPE> vec=dd->getRow(row); \
+      for(size_t i=0; i<vec.size(); ++i) \
+        cout<<(i==0?"":delim)<<quoteString(H5TYPE)<<vec[i]<<quoteString(H5TYPE); \
+    } \
+  }
+# include "hdf5serie/knowntypes.def"
+# undef FOREACHKNOWNTYPE
+
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+  { \
+    SimpleDataset<vector<CTYPE> > *dd=dynamic_cast<SimpleDataset<vector<CTYPE> >*>(d); \
+    if(dd) { \
+      vector<CTYPE> vec=dd->read(); \
+      cout<<quoteString(H5TYPE)<<vec[row]<<quoteString(H5TYPE); \
+    } \
+  }
+# include "hdf5serie/knowntypes.def"
+# undef FOREACHKNOWNTYPE
+
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+  { \
+    SimpleDataset<vector<vector<CTYPE> > > *dd=dynamic_cast<SimpleDataset<vector<vector<CTYPE> > >*>(d); \
+    if(dd) { \
+      vector<vector<CTYPE> > mat=dd->read(); \
+      for(size_t i=0; i<mat[0].size(); ++i) \
+        cout<<(i==0?"":delim)<<quoteString(H5TYPE)<<mat[row][i]<<quoteString(H5TYPE); \
+    } \
+  }
+# include "hdf5serie/knowntypes.def"
+# undef FOREACHKNOWNTYPE
 }

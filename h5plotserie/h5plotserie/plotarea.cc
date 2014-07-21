@@ -90,38 +90,21 @@ void PlotWindow::detachPlot() {
 }
 
 void PlotWindow::plotDataSet(PlotData pd, int penColor) {
-#ifdef HAVE_ANSICSIGNAL
-  std::ifstream lockFile((pd.getValue("Filepath").toStdString()+"/."+pd.getValue("Filename").toStdString()+".pid").c_str());
-  if(lockFile.good() && ! lockFile.eof()) {
-    pid_t pid;
-    lockFile>>pid;
-    lockFile.close();
-    if(kill(pid, SIGUSR2)==0)
-      usleep(1000000);
-  }
-#endif
-  H5::H5File* h5file = new H5::H5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString(), H5F_ACC_RDONLY);
+  H5::File h5file(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString(), H5::File::read);
 
-  H5::VectorSerie<double> vs;
-  vs.open(*h5file, pd.getValue("x-Path").toStdString());
-  std::vector<double> xVal = vs.getColumn(pd.getValue("x-Index").toInt());
-  vs.close();
+  H5::VectorSerie<double> *vs=h5file.openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
+  std::vector<double> xVal = vs->getColumn(pd.getValue("x-Index").toInt());
 
-  vs.open(*h5file, pd.getValue("y-Path").toStdString());
-  std::vector<double> yVal = vs.getColumn(pd.getValue("y-Index").toInt());
-  vs.close();
+  vs=h5file.openChildObject<H5::VectorSerie<double> >(pd.getValue("y-Path").toStdString());
+  std::vector<double> yVal = vs->getColumn(pd.getValue("y-Index").toInt());
 
   std::vector<double> y2Val;
   bool useY2=false;
   if (pd.getValue("y2-Path").length()>0) {
-    vs.open(*h5file, pd.getValue("y2-Path").toStdString());
-    y2Val = vs.getColumn(pd.getValue("y2-Index").toInt());
-    vs.close();
+    vs=h5file.openChildObject<H5::VectorSerie<double> >(pd.getValue("y2-Path").toStdString());
+    y2Val = vs->getColumn(pd.getValue("y2-Index").toInt());
     useY2=true;
   }
-
-  (*h5file).close();
-  delete h5file;
 
   if (xVal.size()==yVal.size()) {
 
