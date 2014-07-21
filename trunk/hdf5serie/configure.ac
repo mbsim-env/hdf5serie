@@ -96,7 +96,7 @@ AC_ARG_WITH([boost-chrono-lib],
 AC_SUBST([BOOST_CHRONO_LIB])
 AC_ARG_WITH([boost-thread-lib],
   [  --with-boost-thread-lib=LIBNAME  The library name of boost thread excluding prefix/suffix (Default: boost_thread).],
-  [BOOST_THREAD_LIB="$withval"], [BOOST_THREAD_LIB="boost_thread"])
+  [BOOST_THREAD_LIB="$withval"], [BOOST_THREAD_LIB="boost_thread-mt"])
 AC_SUBST([BOOST_THREAD_LIB])
 
 AC_CONFIG_FILES([Makefile doc/Makefile hdf5serie/Makefile hdf5serie/check/Makefile
