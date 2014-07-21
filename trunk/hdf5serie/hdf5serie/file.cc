@@ -32,6 +32,7 @@ namespace bfs=boost::filesystem;
 
 namespace {
   void sendUserSignal(pid_t pid) {
+#ifdef HAVE_SIGUSR2
     if(kill(pid, SIGUSR2)==0) {
 #ifndef HDF5_SWMR
       int msec=50;
@@ -42,6 +43,7 @@ namespace {
       boost::this_thread::sleep(boost::posix_time::milliseconds(msec)); // boost deprecated
 #endif
     }
+#endif
   }
 }
 
@@ -61,9 +63,11 @@ File::File(const bfs::path &filename, FileAccess type_) : GroupBase(NULL, filena
     writerFiles.insert(this);
     // create pid file
     bfs::ofstream f(pidFilename);
+#ifdef HAVE_SIGUSR2
     f<<getpid()<<endl;
     // install signal handler
     signal(SIGUSR2, &sigUsr2Handler);
+#endif
   }
   else {
     // get pid of writing process
