@@ -11,7 +11,7 @@ h5lsserie_SOURCES = h5lsserie.cc
 
 h5lsserie_CPPFLAGS = -I..
 h5lsserie_LDFLAGS = -L.. -Wl,-rpath -Wl,\$$ORIGIN/../lib
-h5lsserie_LDADD = ../libhdf5serie.la
+h5lsserie_LDADD = ../libhdf5serie.la -l@BOOST_FILESYSTEM_LIB@ -l@BOOST_SYSTEM_LIB@
 
 
 octavedir = @datadir@/hdf5serie/octave

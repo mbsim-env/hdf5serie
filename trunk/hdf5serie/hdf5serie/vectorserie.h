@@ -22,13 +22,9 @@
 #ifndef _HDF5SERIE_VECTORSERIE_H_
 #define _HDF5SERIE_VECTORSERIE_H_
 
-#include <fmatvec/atom.h>
-#include <H5Cpp.h>
+#include <hdf5serie/interface.h>
+#include <hdf5serie/file.h>
 #include <vector>
-#include <string>
-#include <assert.h>
-#include <hdf5serie/simpleattribute.h>
-#include <hdf5serie/fileserie.h>
 
 namespace H5 {
 
@@ -65,51 +61,21 @@ namespace H5 {
    * The same applies to a matrix-object for std::vector<std::vector<T> >.
   */
   template<class T>
-  class VectorSerie : public DataSet, public fmatvec::Atom {
+  class VectorSerie : public Dataset {
+    friend class Container<Object, GroupBase>;
     private:
-      DataType memDataType;
-      DataSpace memDataSpace;
+      hid_t memDataTypeID;
+      ScopedHID memDataSpaceID;
       hsize_t dims[2];
-      std::vector<T> buf;
+    protected:
+      VectorSerie(int dummy, GroupBase *parent_, const std::string &name_);
+      VectorSerie(GroupBase *parent_, const std::string &name_, int cols,
+        int compression=File::getDefaultCompression(), int chunkSize=File::getDefaultChunkSize());
+      ~VectorSerie();
+      void close();
+      void open();
+
     public:
-      /** \brief A stub constructor
-       *
-       * Creates a empty object.
-      */
-      VectorSerie();
-
-      /** \brief Copy constructor */
-      VectorSerie(const VectorSerie<T>& dataset);
-
-      /** \brief Constructor for opening a dataset
-       *
-       * see open()
-       */
-      VectorSerie(const CommonFG& parent, const std::string& name);
-
-      /** \brief Dataset creating constructor
-       *
-       * see create()
-      */
-      VectorSerie(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression=FileSerie::getDefaultCompression(), int chunkSize=FileSerie::getDefaultChunkSize());
-
-      /** \brief Creating a dataset
-       *
-       * Creates a dataset named \a name as a child of position \a parent.
-       * By default the dataset is compressed using deflate (gzip) with compression level
-       * FileSerie::defaultCompression. Use \a compression to adjuste the compression level [1-9] or 0 to disable compression.
-       * Each element of the data vector (columns in the HDF5 file) must be given 
-       * a description label using the parameter \a columnLabel. The column labels are
-       * stored as a string vector attribute named \p Column \p Label in the dataset.
-      */
-      void create(const CommonFG& parent, const std::string& name, const std::vector<std::string>& columnLabel, int compression=FileSerie::getDefaultCompression(), int chunkSize=FileSerie::getDefaultChunkSize());
-
-      /** \brief Open a dataset
-       *
-       * Opens the dataset named \a name as a child of position \a parent.
-       */
-      void open(const CommonFG& parent, const std::string& name);
-
       /** \brief Sets a description for the dataset
        *
        * The value of \a desc is stored as an string attribute named \p Description in the dataset.
@@ -147,14 +113,14 @@ namespace H5 {
        */
       std::string getDescription();
 
+      void setColumnLabel(const std::vector<std::string> &columnLabel);
+
       /** \brief Returns the column labels
        *
        * Return the value of the string vector attribute named \p Column \p Label of
        * the dataset.
        */
       std::vector<std::string> getColumnLabel();
-
-      void extend(const hsize_t* size);
   };
 
 
@@ -163,10 +129,8 @@ namespace H5 {
 
   template<class T>
   int VectorSerie<T>::getRows() {
-    // get current dims from dataspace (maybe another (single-)writer process has increased the number of rows)
-    DataSpace fileDataSpace=getSpace();
-    fileDataSpace.getSimpleExtentDims(dims);
-    // return current value
+    ScopedHID fileSpaceID(H5Dget_space(id), &H5Sclose);
+    H5Sget_simple_extent_dims(fileSpaceID, dims, NULL);
     return dims[0];
   }
 

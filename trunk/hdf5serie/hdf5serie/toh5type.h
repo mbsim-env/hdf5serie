@@ -80,12 +80,15 @@ int main() {
 
 
 
-#include <H5Cpp.h>
+#include <hdf5.h>
+#include <string>
 
 namespace H5 {
 
-# define FOREACHKNOWNTYPE(CTYPE, H5TYPE, TYPE) \
-  DataType toH5Type(const CTYPE& dummy);
+hid_t returnVarLenStrDatatypeID();
+
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+  hid_t toH5Type(const CTYPE& dummy);
 # include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 

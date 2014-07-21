@@ -62,7 +62,7 @@ class DataSelection : public QSplitter {
     QLineEdit * path;
     QListWidget * currentData; //=listWidget;
 
-    void insertChildInTree(H5::Group &grp, QTreeWidgetItem *item);
+    void insertChildInTree(H5::Group *grp, QTreeWidgetItem *item);
     void getPath(QTreeWidgetItem* item, QString &s, int col);
     int getTopLevelIndex(QTreeWidgetItem* item);
 

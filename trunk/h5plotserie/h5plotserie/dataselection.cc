@@ -32,6 +32,8 @@
 #include "curves.h"
 #include "mainwindow.h"
 
+using namespace std;
+
 DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
 
   QWidget* dummy=new QWidget(this);
@@ -84,31 +86,30 @@ DataSelection::~DataSelection() {
 void DataSelection::addFile(const QString &name) {
   fileInfo.append(name);
   file.append(name);
-  H5::H5File* h5file = new H5::H5File(file.back().toStdString(), H5F_ACC_RDONLY);
+  H5::File h5file(file.back().toStdString(), H5::File::read);
 
   TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileInfo.back().fileName()));
   fileBrowser->addTopLevelItem(topitem);
   QList<QTreeWidgetItem *> items;
-  for(unsigned int i=0; i<h5file->getNumObjs(); i++)  {
-    QTreeWidgetItem *item = new TreeWidgetItem(QStringList(h5file->getObjnameByIdx(i).c_str()));
-    H5::Group grp = h5file->openGroup(h5file->getObjnameByIdx(i));
+  set<string> names=h5file.getChildObjectNames();
+  for(set<string>::iterator name=names.begin(); name!=names.end(); ++name) {
+    QTreeWidgetItem *item = new TreeWidgetItem(QStringList(name->c_str()));
+    H5::Group *grp = h5file.openChildObject<H5::Group>(*name);
     insertChildInTree(grp, item);
     topitem->addChild(item);
   }
-  h5file->close();
-  delete h5file;
 }
 
-void DataSelection::insertChildInTree(H5::Group &grp, QTreeWidgetItem *item) {
-  for(unsigned int j=0; j<grp.getNumObjs(); j++) {
-    QTreeWidgetItem *child = new TreeWidgetItem(QStringList(grp.getObjnameByIdx(j).c_str()));
+void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
+  set<string> names=grp->getChildObjectNames();
+  for(set<string>::iterator name=names.begin(); name!=names.end(); ++name) {
+    QTreeWidgetItem *child = new TreeWidgetItem(QStringList(name->c_str()));
     item->addChild(child);
-    if(grp.getObjTypeByIdx(j)==0) {
-      H5::Group childgrp = grp.openGroup(grp.getObjnameByIdx(j));
-      insertChildInTree(childgrp, child);
-    }
+    H5::Group *g=dynamic_cast<H5::Group*>(grp->openChildObject(*name));
+    if(g)
+      insertChildInTree(g, child);
     else {
-      if(grp.getObjnameByIdx(j) == "data") {
+      if(*name == "data") {
         QString path; 
         getPath(item,path,0);
         path += "/data";
@@ -130,15 +131,11 @@ void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
   if( item->text(col) == "data") {
     QString path = static_cast<TreeWidgetItem*>(item)->getPath();
     int j = getTopLevelIndex(item);
-    H5::H5File* h5file = new H5::H5File(file[j].toStdString(), H5F_ACC_RDONLY);
-    H5::VectorSerie<double> vs;
-    vs.open(*h5file, path.toStdString());
+    H5::File h5file(file[j].toStdString(), H5::File::read);
+    H5::VectorSerie<double> *vs=h5file.openChildObject<H5::VectorSerie<double> >(path.toStdString());
     QStringList sl;
-    for(unsigned int i=0; i<vs.getColumns(); i++)
-      sl << vs.getColumnLabel()[i].c_str();
-    vs.close();
-    h5file->close();
-    delete h5file;
+    for(unsigned int i=0; i<vs->getColumns(); i++)
+      sl << vs->getColumnLabel()[i].c_str();
     currentData->addItems(sl);
   }
 }
@@ -155,25 +152,20 @@ void DataSelection::selectFromCurrentData(QListWidgetItem* item) {
   QString path = static_cast<TreeWidgetItem*>(fileBrowser->currentItem())->getPath();
   int col = currentData->row(item);
   int j = getTopLevelIndex(fileBrowser->currentItem());
-  H5::H5File* h5file = new H5::H5File(file[j].toStdString(), H5F_ACC_RDONLY);
-  H5::VectorSerie<double> vs;
-  vs.open(*h5file, path.toStdString());
+  H5::File h5file(file[j].toStdString(), H5::File::read);
+  H5::VectorSerie<double> *vs=h5file.openChildObject<H5::VectorSerie<double> >(path.toStdString());
 
   PlotData pd;
   pd.setValue("Filepath", fileInfo[j].absolutePath());
   pd.setValue("Filename", fileInfo[j].fileName());
-  pd.setValue("x-Label", QString::fromStdString(vs.getColumnLabel()[0]));
-  pd.setValue("y-Label", QString::fromStdString(vs.getColumnLabel()[col]));
+  pd.setValue("x-Label", QString::fromStdString(vs->getColumnLabel()[0]));
+  pd.setValue("y-Label", QString::fromStdString(vs->getColumnLabel()[col]));
   pd.setValue("offset", "0");
   pd.setValue("gain", "1");
   pd.setValue("x-Path", path);
   pd.setValue("y-Path", path);
   pd.setValue("x-Index", QString("%1").arg(0));
   pd.setValue("y-Index", QString("%1").arg(col));
-
-  vs.close();
-  h5file->close();
-  delete h5file;
 
   if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
     static_cast<MainWindow*>(parent()->parent())->getCurves()->modifyPlotData(pd, "add");

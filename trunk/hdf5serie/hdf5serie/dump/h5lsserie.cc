@@ -20,18 +20,20 @@
  */
 
 #include <iostream>
-#include <string.h>
+#include <cstring>
 #include <fstream>
-#include <H5Cpp.h>
+#include <hdf5serie/file.h>
 #include <hdf5serie/simpleattribute.h>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 using namespace H5;
+using namespace boost::filesystem;
 
-void walkH5(string indent, string path, CommonFG *obj);
+void walkH5(const string &indent, const path &filename, const string &path, GroupBase *obj);
 void printhelp();
-void printDesc(string indent, H5Object *obj);
-void printLabel(string indent, H5Object *obj);
+void printDesc(string indent, Object *obj);
+void printLabel(string indent, Dataset *d);
 
 bool d=false, l=false, f=false, h=false;
 
@@ -55,66 +57,42 @@ int main(int argc, char *argv[]) {
     f.close();
     if(good)
     {
-      H5File *file=new H5File(filename, H5F_ACC_RDONLY);
-      walkH5("", filename, file);
-      delete file;
+      File file(filename, File::read);
+      walkH5("", filename, "", &file);
     }
   }
 
   return 0;
 }
 
-void walkH5(string indent, string path, CommonFG *obj) {
-  for(size_t i=0; i<obj->getNumObjs(); i++) {
-    string name=obj->getObjnameByIdx(i);
-    Group nextobj;
-    string link;
-    char *buff;
-    DataSet ds;
-    int ind;
-    hid_t id;
-    switch(obj->getObjTypeByIdx(i)) {
+void walkH5(const string &indent, const path &filename, const string &path, GroupBase *obj) {
+  set<string> names=obj->getChildObjectNames();
+  for(set<string>::iterator it=names.begin(); it!=names.end(); ++it) {
+    string name=*it;
+    if(obj->isExternalLink(name) && !f) {
+      pair<boost::filesystem::path, string> link=obj->getExternalLink(name);
+      cout<<indent<<"* "<<name<<" (External Link: \""<<link.first.string()<<link.second<<"\")"<<endl;
+      continue;
+    }
 
-      case H5G_GROUP:
-        // print and walk
-        cout<<indent<<"+ "<<name<<endl;
-        nextobj=obj->openGroup(name);
-        printDesc(indent, &nextobj);
-        walkH5(indent+"  ", path+"/"+name, &nextobj);
-        break;
+    Object *child=obj->openChildObject(name);
 
-      case H5G_LINK:
-      case H5G_UDLINK:
-        // get link name
-        H5L_info_t link_buff;
-        id=dynamic_cast<IdComponent*>(obj)->getId();
-        H5Lget_info(id, name.c_str(), &link_buff, H5P_DEFAULT);
-        buff=new char[link_buff.u.val_size];
-        H5Lget_val(id, name.c_str(), buff, link_buff.u.val_size, H5P_DEFAULT);
-        const char *filename;
-        const char *obj_path;
-        H5Lunpack_elink_val(buff, link_buff.u.val_size, NULL, &filename, &obj_path);
-        link=path;
-        ind=link.find_last_of("/\\"); // search the last slash or backslash
-        link=ind>=0?link.substr(0,ind):".";
-        // print and walk
-        cout<<indent<<"* "<<name<<" (External Link: \""<<link<<obj_path<<filename<<"\")"<<endl;
-        delete[]buff;
-        nextobj=obj->openGroup(name);
-        printDesc(indent, &nextobj);
-        if(f) walkH5(indent+"  ", path+"/"+name, &nextobj);
-        break;
+    Group *g=dynamic_cast<Group*>(child);
+    if(g) {
+      // print and walk
+      cout<<indent<<"+ "<<name<<endl;
+      printDesc(indent, g);
+      walkH5(indent+"  ", filename, path+"/"+name, g);
+      continue;
+    }
 
-      case H5G_DATASET:
-        // print
-        cout<<indent<<"- "<<name<<" (Path: \""<<path<<"/data\")"<<endl;
-        ds=obj->openDataSet(name);
-        printLabel(indent, &ds);
-        printDesc(indent, &ds);
-        break;
-
-      default:
-        break;
+    Dataset *d=dynamic_cast<Dataset*>(child);
+    if(d) {
+      // print
+      cout<<indent<<"- "<<name<<" (Path: \""<<filename.string()<<path<<"/"<<name<<"\")"<<endl;
+      printLabel(indent, d);
+      printDesc(indent, d);
+      continue;
     }
   }
 }
@@ -139,52 +117,23 @@ cout<<
 "    -f:         Follow external links"<<endl;
 }
 
-void printDesc(string indent, H5Object *obj) {
+void printDesc(string indent, Object *obj) {
   if(d==false) return;
 
-  // save and disable c error printing
-  H5E_auto2_t func;
-  void* client_data;
-  Exception::getAutoPrint(func, &client_data);
-  Exception::dontPrint();
-  string ret;
-  // catch error if Attribute is not found
-  try {
-    ret=SimpleAttribute<string>::getData(*obj, "Description");
-  }
-  catch(AttributeIException e) {
-    ret=string();
-  }
-  // restore c error printing
-  Exception::setAutoPrint(func, client_data);
-
-  if(ret!="")
+  if(obj->hasChildAttribute("Description")) {
+    string ret=obj->openChildAttribute<SimpleAttribute<string> >("Description")->read();
     cout<<indent<<"  Description: \""<<ret<<"\""<<endl;
+  }
 }
 
-void printLabel(string indent, H5Object *obj) {
+void printLabel(string indent, Dataset *d) {
   if(l==false) return;
 
-  // save and disable c error printing
-  H5E_auto2_t func;
-  void* client_data;
-  Exception::getAutoPrint(func, &client_data);
-  Exception::dontPrint();
-  vector<string> ret;
-  // catch error if Attribute is not found
-  try {
-    ret=SimpleAttribute<vector<string> >::getData(*obj, "Column Label");
-  }
-  catch(AttributeIException e) {
-    ret=vector<string>(0);
-  }
-  // restore c error printing
-  Exception::setAutoPrint(func, client_data);
-
-  if(ret.size()>0) {
+  if(d->hasChildAttribute("Column Label")) {
+    vector<string> ret=d->openChildAttribute<SimpleAttribute<vector<string> > >("Column Label")->read();
     cout<<indent<<"  Column Label: ";
     for(size_t i=0; i<ret.size(); i++)
-      cout<<"\""<<ret[i]<<"\" ";
+      cout<<"\""<<ret[i]<<"\""<<(i!=ret.size()-1?",":"")<<" ";
     cout<<endl;
   }
 }
