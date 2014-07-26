@@ -54,6 +54,7 @@ int main() {
   dsd->write(d);
   dsd->setDescription("testdesc");
   cout<<dsd->read()<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -73,6 +74,7 @@ int main() {
   dsd->write(d);
   dsd->setDescription("testdesc");
   cout<<dsd->read()<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -100,6 +102,7 @@ int main() {
   vector<double> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -123,6 +126,7 @@ int main() {
   vector<string> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -160,6 +164,7 @@ int main() {
   double d=5.67;
   dsd->write(d);
   cout<<dsd->read()<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -179,6 +184,7 @@ int main() {
   string d="sdlfkjsf";
   dsd->write(d);
   cout<<dsd->read()<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -206,6 +212,7 @@ int main() {
   vector<double> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -229,6 +236,7 @@ int main() {
   vector<string> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -267,6 +275,7 @@ int main() {
   vector<string> outhead;
   outhead=ts->getColumnLabel();
   for(unsigned int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
+  file.reopenAsSWMR();
   }
   {
   File file("test2d.h5", File::read);
@@ -360,6 +369,7 @@ int main() {
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
+  file.reopenAsSWMR();
   }
 
   /***** Attribute vector<vector<string>> *****/
@@ -377,6 +387,7 @@ int main() {
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
+  file.reopenAsSWMR();
   }
 
   /***** Dataset vector<vector<double>> *****/
@@ -393,6 +404,7 @@ int main() {
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
+  file.reopenAsSWMR();
   }
 
   /***** Dataset vector<vector<string>> *****/
@@ -409,6 +421,7 @@ int main() {
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
+  file.reopenAsSWMR();
   }
 
 //  /***** Dataset vector<vector<double>> fmatvec *****/

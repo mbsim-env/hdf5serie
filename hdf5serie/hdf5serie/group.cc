@@ -170,6 +170,7 @@ pair<path, string> GroupBase::getExternalLink(const string &name_) {
   const char *obj_path;
   H5Lunpack_elink_val(&buff[0], link_buff.u.val_size, NULL, &linkFilename, &obj_path);
   return make_pair(absolute(linkFilename, path(getFile()->getName()).parent_path()), obj_path);
+  //MFMF use same algo for retrun.first as in doc of H5Lcreate_external
 }
 
 void GroupBase::createExternalLink(const string &name_, const pair<boost::filesystem::path, string> &target) {
@@ -178,6 +179,13 @@ void GroupBase::createExternalLink(const string &name_, const pair<boost::filesy
 
 void GroupBase::createSoftLink(const string &name_, const string &target) {
   H5Lcreate_soft( target.c_str(), id, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+}
+
+void GroupBase::handleExternalLink(const string &name_) {
+  if(!isExternalLink(name_))
+    return;
+  pair<path, string> link=getExternalLink(name_);
+  getFile()->addFileToNotifyOnRefresh(link.first);
 }
 
 

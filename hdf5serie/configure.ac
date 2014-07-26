@@ -39,16 +39,6 @@ fi
 #DOXYGENDEPTAGFILES=$(pkg-config deppackage --variable=DOXYGENTAGFILES)
 #AC_SUBST([DOXYGENDEPTAGFILES])
 
-dnl Check for ANSI C Signal Handling
-AC_MSG_CHECKING([for ANSI c signal SIGUSR2]); AC_COMPILE_IFELSE([
-#include <signal.h>
-int main() {
-  signal(SIGUSR2, 0);
-  return 0;
-}
-], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_ANSICSIGNAL],[],[Use ANSI C Signal Handling])],
-   [AC_MSG_RESULT([no])])
-
 PKG_CHECK_MODULES(FMATVEC, fmatvec)
 
 dnl Check for hdf5 library
@@ -78,16 +68,6 @@ AC_CHECK_LIB([hdf5], [H5Dflush], [AC_DEFINE([HDF5_SWMR], [1], [HDF5 SWMR branch 
 
 # from now on only libtool is used for linking
 LDFLAGS="$LDFLAGS -no-undefined -Wl,--no-undefined"
-
-dnl Check for ANSI C Signal Handling
-AC_MSG_CHECKING([for ANSI c signal SIGUSR2]); AC_COMPILE_IFELSE([
-#include <signal.h>
-int main() {
-  signal(SIGUSR2, 0);
-  return 0;
-}
-], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SIGUSR2],[],[SIGUSR2 exists])],
-[AC_MSG_RESULT([no])])
 
 # boost
 AC_CHECK_HEADERS([boost/filesystem.hpp],[],[AC_MSG_ERROR([Can not find boost/filesystem.hpp])])

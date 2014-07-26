@@ -14,6 +14,6 @@ valgrindtestdump.log: valgrindtestlib.log
 
 testlib_SOURCES = testlib.cc
 
-testlib_CPPFLAGS = -I..
+testlib_CPPFLAGS = -I.. $(FMATVEC_CFLAGS)
 testlib_LDFLAGS = -L..
 testlib_LDADD = ../libhdf5serie.la

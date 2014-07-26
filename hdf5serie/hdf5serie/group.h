@@ -37,6 +37,7 @@ namespace H5 {
       void refresh();
       void flush();
       Dataset *openChildDataset(const std::string &name_, ElementType *objectType, hid_t *type);
+      void handleExternalLink(const std::string &name_);
     public:
       template<class T>
       Container<Object, GroupBase>::Creator<T> createChildObject(const std::string &name_) {
@@ -45,6 +46,7 @@ namespace H5 {
 
       template<class T>
       T* openChildObject(const std::string &name_) {
+        handleExternalLink(name_);
         return Container<Object, GroupBase>::openChild<T>(name_);
       }
       Object *openChildObject(const std::string &name_, ElementType *objectType=NULL, hid_t *type=NULL);
