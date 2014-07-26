@@ -31,13 +31,6 @@
 
 #include <hdf5serie/vectorserie.h>
 
-#ifdef HAVE_ANSICSIGNAL
-#  include <signal.h>
-#  include <fstream>
-#  include <unistd.h>
-#endif
-
-
 PlotArea::PlotArea(QWidget * parent) : QMdiArea(parent) {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);

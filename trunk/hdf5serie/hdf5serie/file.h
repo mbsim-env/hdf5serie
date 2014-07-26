@@ -24,6 +24,16 @@
 
 #include <hdf5serie/group.h>
 #include <boost/filesystem.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/shared_ptr.hpp>
+
+namespace boost {
+  namespace interprocess {
+    class named_semaphore;
+    class named_mutex;
+    class named_condition;
+  }
+}
 
 namespace H5 {
 
@@ -31,6 +41,7 @@ namespace H5 {
 
   class File : public GroupBase {
     friend class Dataset;
+    friend class GroupBase;
     public:
       enum FileAccess {
         read,
@@ -39,26 +50,44 @@ namespace H5 {
       File(const boost::filesystem::path &filename, FileAccess type_);
       ~File();
       void reopenAsSWMR();
+      static void reopenAllFilesAsSWMR();
       static int getDefaultCompression() { return defaultCompression; }
       static void setDefaultCompression(int comp) { defaultCompression=comp; }
       static int getDefaultChunkSize() { return defaultChunkSize; }
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
       void refresh();
       void flush();
-      static void flushAllFiles(bool onlyIfRequrestedBySignal=false);
+
+      void flushIfRequested();
+      static void flushAllFiles();
+      static void flushAllFilesIfRequested();
+      void refreshAfterWriterFlush();
+      static void refreshAllFiles();
+      static void refreshAllFilesAfterWriterFlush();
+
+      struct IPC {
+        boost::filesystem::path filename;
+        boost::shared_ptr<boost::interprocess::named_semaphore> sem;
+        boost::shared_ptr<boost::interprocess::named_mutex> mutex;
+        boost::shared_ptr<boost::interprocess::named_condition> cond;
+        boost::posix_time::ptime flushRequestTime;
+      };
     protected:
-      boost::filesystem::path pidFilename;
-      pid_t writerPID;
-      bool writerExists;
       FileAccess type;
       bool isSWMR;
       void close();
       void open();
       static int defaultCompression;
       static int defaultChunkSize;
+
       static std::set<File*> writerFiles;
-      static void sigUsr2Handler(int);
-      static bool flushAllFilesRequested;
+      static std::set<File*> readerFiles;
+      void requestWriterFlush();
+      bool waitForWriterFlush();
+      std::string interprocessBasename;
+      IPC ipc;
+      void addFileToNotifyOnRefresh(const boost::filesystem::path &filename);
+      std::vector<IPC> ipcAdd;
   };
 }
 
