@@ -29,9 +29,10 @@
 
 namespace boost {
   namespace interprocess {
-    class named_semaphore;
-    class named_mutex;
-    class named_condition;
+    class shared_memory_object;
+    class mapped_region;
+    class interprocess_mutex;
+    class interprocess_condition;
   }
 }
 
@@ -66,11 +67,14 @@ namespace H5 {
       static void refreshAllFilesAfterWriterFlush();
 
       struct IPC {
-        boost::filesystem::path filename;
-        boost::shared_ptr<boost::interprocess::named_semaphore> sem;
-        boost::shared_ptr<boost::interprocess::named_mutex> mutex;
-        boost::shared_ptr<boost::interprocess::named_condition> cond;
-        boost::posix_time::ptime flushRequestTime;
+        boost::filesystem::path filename; // the filename of this IPC
+        std::string interprocessName; // the name of this IPC
+        boost::shared_ptr<boost::interprocess::shared_memory_object> shm; // shared memory used for this IPC
+        boost::shared_ptr<boost::interprocess::mapped_region> shmmap; // mapping of shared memory to real memory
+        bool *flushVar; // true if flush by the writer is requested (lies in shared memory)
+        boost::interprocess::interprocess_mutex *mutex; // mutex for access of flushVar and cond (lies in shared memory)
+        boost::interprocess::interprocess_condition *cond; // condition to notify readers (lies in shared memory)
+        boost::posix_time::ptime flushRequestTime; // the time of the flush request (only used on reader side)
       };
     protected:
       FileAccess type;
@@ -84,7 +88,7 @@ namespace H5 {
       static std::set<File*> readerFiles;
       void requestWriterFlush();
       bool waitForWriterFlush();
-      std::string interprocessBasename;
+      std::string interprocessName;
       IPC ipc;
       void addFileToNotifyOnRefresh(const boost::filesystem::path &filename);
       std::vector<IPC> ipcAdd;
