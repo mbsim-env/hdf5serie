@@ -155,9 +155,15 @@ namespace H5 {
             std::runtime_error("The element "+name_+" if of other type.");
           return o;
         }
-        T* r=new T(0, static_cast<Self*>(this), name_);
-        ret.first->second=r;
-        return r;
+        try {
+          T* r=new T(0, static_cast<Self*>(this), name_);
+          ret.first->second=r;
+          return r;
+        }
+        catch(...) {
+          childs.erase(name_);
+          throw;
+        }
       }
   };
 

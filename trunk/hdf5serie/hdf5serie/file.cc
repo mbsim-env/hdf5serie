@@ -24,19 +24,26 @@
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/interprocess/sync/named_semaphore.hpp>
-#include <boost/interprocess/sync/named_mutex.hpp>
-#include <boost/interprocess/sync/named_condition.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
+#include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/functional/hash.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
-namespace bfs=boost::filesystem;
+using namespace boost::posix_time;
+using namespace boost::filesystem;
 
 namespace {
   void requestWriterFlush(H5::File::IPC &ipc, H5::File *me);
   void openIPC(H5::File::IPC &ipc, const boost::filesystem::path &filename);
   bool waitForWriterFlush(H5::File::IPC &ipc, H5::File *me);
+
+  set<string> ipcRemove;
+  void hdf5SerieAtExit();
+  void addIPCRemove(const string &interprocessName);
 }
 
 namespace H5 {
@@ -47,24 +54,26 @@ int File::defaultChunkSize=100;
 set<File*> File::writerFiles;
 set<File*> File::readerFiles;
 
-File::File(const bfs::path &filename, FileAccess type_) : GroupBase(NULL, filename.string()), type(type_), isSWMR(false) {
+File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.string()), type(type_), isSWMR(false) {
   file=this;
   open();
 
-  interprocessBasename=bfs::canonical(filename).string();
-  interprocessBasename="hdf5serie_"+boost::lexical_cast<string>(boost::hash<string>()(interprocessBasename));
+  interprocessName=canonical(filename).string();
+  interprocessName="hdf5serie_"+boost::lexical_cast<string>(boost::hash<string>()(interprocessName));
 
   if(type==write) {
     writerFiles.insert(this);
     // remove interprocess elements
-    named_semaphore::remove((interprocessBasename+"_sem").c_str());
-    named_mutex::remove((interprocessBasename+"_condmutex").c_str());
-    named_condition::remove((interprocessBasename+"_cond").c_str());
+    shared_memory_object::remove(interprocessName.c_str());
     // create interprocess elements
     ipc.filename=filename;
-    ipc.sem  =boost::make_shared<named_semaphore>(create_only, (interprocessBasename+"_sem").c_str(), 0);
-    ipc.mutex=boost::make_shared<named_mutex>    (create_only, (interprocessBasename+"_condmutex").c_str());
-    ipc.cond =boost::make_shared<named_condition>(create_only, (interprocessBasename+"_cond").c_str());
+    ipc.shm=boost::make_shared<shared_memory_object>(create_only, interprocessName.c_str(), read_write);
+    ipc.shm->truncate(sizeof(bool)+sizeof(interprocess_mutex)+sizeof(interprocess_condition));
+    ipc.shmmap=boost::make_shared<mapped_region>(*ipc.shm, read_write);
+    char *ptr=static_cast<char*>(ipc.shmmap->get_address());
+    ipc.flushVar=new(ptr) bool(false);              ptr+=sizeof(bool);
+    ipc.mutex   =new(ptr) interprocess_mutex();     ptr+=sizeof(interprocess_mutex);
+    ipc.cond    =new(ptr) interprocess_condition(); ptr+=sizeof(interprocess_condition);
   }
   else {
     readerFiles.insert(this);
@@ -74,19 +83,35 @@ File::File(const bfs::path &filename, FileAccess type_) : GroupBase(NULL, filena
     if(::waitForWriterFlush(ipc, this));
       refresh();
   }
+
+  // register atExit
+  static bool atExitRegistered=false;
+  if(!atExitRegistered)
+    if(atexit(hdf5SerieAtExit)!=0)
+      throw Exception("Internal error: can not register atexit.");
+  if(type==write)
+    addIPCRemove(interprocessName);
 }
 
 
 File::~File() {
   if(type==write) {
     writerFiles.erase(this);
-    // remove interprocess elements
-    named_semaphore::remove((interprocessBasename+"_sem").c_str());
-    named_mutex::remove((interprocessBasename+"_condmutex").c_str());
-    named_condition::remove((interprocessBasename+"_cond").c_str());
   }
   else
     readerFiles.erase(this);
+
+  // remove interprocess elements
+  ipc.shmmap.reset();
+  ipc.shm.reset();
+  if(type==write)
+    shared_memory_object::remove(interprocessName.c_str());
+  for(vector<IPC>::iterator it=ipcAdd.begin(); it!=ipcAdd.end(); ++it) {
+    it->shmmap.reset();
+    it->shm.reset();
+    if(type==write)
+      shared_memory_object::remove(it->interprocessName.c_str());
+  }
 
   close();
 }
@@ -142,8 +167,13 @@ void File::close() {
 
 void File::open() {
   if(type==write) {
-    if(!isSWMR)
-      id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT), &H5Fclose);
+    if(!isSWMR) {
+      ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
+#ifdef HDF5_SWMR
+      H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST); // We ALWAYS select the latest file format for SWMR
+#endif
+      id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, faid), &H5Fclose);
+    }
     else {
       unsigned int flag=H5F_ACC_RDWR;
 #ifdef HDF5_SWMR
@@ -165,12 +195,19 @@ void File::open() {
 
 
 void File::flushIfRequested() {
-  if(!ipc.sem->try_wait())
-    return;
-  while(ipc.sem->try_wait()); // decrement up to zero
-  msg(Info)<<"Flushing HDF5 file "+name+", requested by reader process, and send notification if flush finished."<<endl;
-  flush();
-  ipc.cond->notify_all();
+  bool localFlushVar;
+  {
+    scoped_lock<interprocess_mutex> lock(*ipc.mutex);
+    localFlushVar=*ipc.flushVar;
+  }
+  if(localFlushVar) {
+    if(msgAct(Debug))
+      msg(Debug)<<"Flushing HDF5 file "+name+", requested by reader process, and send notification if flush finished."<<endl;
+    flush();
+    scoped_lock<interprocess_mutex> lock(*ipc.mutex);
+    *ipc.flushVar=false;
+    ipc.cond->notify_all();
+  }
 }
 
 void File::flushAllFiles() {
@@ -208,26 +245,25 @@ void File::refreshAllFilesAfterWriterFlush() {
 }
 
 void File::requestWriterFlush() {
-  if(ipc.sem)
-    ::requestWriterFlush(ipc, this);
+  ::requestWriterFlush(ipc, this);
   // post also files with are linked by this file
   for(vector<IPC>::iterator it=ipcAdd.begin(); it!=ipcAdd.end(); ++it)
     ::requestWriterFlush(*it, this);
 }
 
 bool File::waitForWriterFlush() {
-  ::waitForWriterFlush(ipc, this);
+  bool ret=::waitForWriterFlush(ipc, this);
   // wait also for files with are linked by this file
   for(vector<IPC>::iterator it=ipcAdd.begin(); it!=ipcAdd.end(); ++it)
-    ::waitForWriterFlush(*it, this);
-
-  return true;
+    if(::waitForWriterFlush(*it, this))
+      ret=true;
+  return ret;
 }
 
 void File::addFileToNotifyOnRefresh(const boost::filesystem::path &filename) {
   IPC ipc;
   openIPC(ipc, filename);
-  if(!ipc.sem)
+  if(!ipc.shm)
     return;
   ipcAdd.push_back(ipc);
 
@@ -241,52 +277,75 @@ void File::addFileToNotifyOnRefresh(const boost::filesystem::path &filename) {
 namespace {
 
 void requestWriterFlush(H5::File::IPC &ipc, H5::File *me) {
-  if(!ipc.sem)
+  if(!ipc.shm)
     return;
-  me->msg(me->Info)<<"Ask writer process to flush hdf5 file "<<ipc.filename.string()<<"."<<endl;
+  if(me->msgAct(me->Debug))
+    me->msg(me->Debug)<<"Ask writer process to flush hdf5 file "<<ipc.filename.string()<<"."<<endl;
   // post this file
-  ipc.sem->post();
+  {
+    scoped_lock<interprocess_mutex> lock(*ipc.mutex);
+    *ipc.flushVar=true;
+  }
   // save current time for later use in timed_wait
-  ipc.flushRequestTime=boost::posix_time::second_clock::universal_time();
+  ipc.flushRequestTime=microsec_clock::universal_time();
 }
 
 bool waitForWriterFlush(H5::File::IPC &ipc, H5::File *me) {
-  if(!ipc.sem)
+  if(!ipc.shm)
     return false;
   // get time to wait
-  int msec=1000;
-  static char *sleep=getenv("HDF5SERIE_REFRESHWAITTIME");
-  if(sleep)
-    msec=boost::lexical_cast<int>(sleep);
+  int msec=1000/25; // default wait time is 1/25Hz
+  static char *waitTime=getenv("HDF5SERIE_REFRESHWAITTIME");
+  if(waitTime)
+    msec=boost::lexical_cast<int>(waitTime);
   // wait for file
-  bool flushReady;
+  bool flushReady=true;
   {
-     scoped_lock<named_mutex> lock(*ipc.mutex);
-     flushReady=ipc.cond->timed_wait(lock, ipc.flushRequestTime+boost::posix_time::milliseconds(msec));
+    scoped_lock<interprocess_mutex> lock(*ipc.mutex);
+    if(*ipc.flushVar) {
+      flushReady=ipc.cond->timed_wait(lock, ipc.flushRequestTime+milliseconds(msec));
+    }
   }
   // print message
-  if(flushReady)
-    me->msg(me->Info)<<"Flush of writer succsessfull. Using newest data now."<<endl;
+  if(flushReady) {
+    time_duration d=microsec_clock::universal_time()-ipc.flushRequestTime;
+    if(me->msgAct(me->Debug))
+      me->msg(me->Debug)<<"Flush of writer succsessfull after "<<d.total_milliseconds()<<" msec. Using newest data now."<<endl;
+  }
   else
-    me->msg(me->Warn)<<"Writer process has not flushed hdf5 file "<<ipc.filename.string()<<" after "<<msec<<" msec, continue with maybe not newest data."<<endl;
+    if(me->msgAct(me->Warn))
+      me->msg(me->Warn)<<"Writer process has not flushed hdf5 file "<<ipc.filename.string()<<" after "<<msec<<" msec, continue with maybe not newest data."<<endl;
 
   return true;
 }
 
-void openIPC(H5::File::IPC &ipc, const bfs::path &filename) {
-  string interprocessBasename=bfs::canonical(filename).string();
-  interprocessBasename="hdf5serie_"+boost::lexical_cast<string>(boost::hash<string>()(interprocessBasename));
+void openIPC(H5::File::IPC &ipc, const path &filename) {
+  string interprocessName=canonical(filename).string();
+  interprocessName="hdf5serie_"+boost::lexical_cast<string>(boost::hash<string>()(interprocessName));
   try {
     ipc.filename=filename;
-    ipc.sem  =boost::make_shared<named_semaphore>(open_only, (interprocessBasename+"_sem").c_str());
-    ipc.mutex=boost::make_shared<named_mutex>    (open_only, (interprocessBasename+"_condmutex").c_str());
-    ipc.cond =boost::make_shared<named_condition>(open_only, (interprocessBasename+"_cond").c_str());
+    ipc.interprocessName=interprocessName;
+    ipc.shm=boost::make_shared<shared_memory_object>(open_only, interprocessName.c_str(), read_write);
+    ipc.shmmap=boost::make_shared<mapped_region>(*ipc.shm, read_write);
+    char *ptr=static_cast<char*>(ipc.shmmap->get_address());
+    ipc.flushVar=reinterpret_cast<bool*>                  (ptr); ptr+=sizeof(bool);
+    ipc.mutex   =reinterpret_cast<interprocess_mutex*>    (ptr); ptr+=sizeof(interprocess_mutex);
+    ipc.cond    =reinterpret_cast<interprocess_condition*>(ptr); ptr+=sizeof(interprocess_condition);
   }
   catch(const interprocess_exception &ex) {
-    ipc.sem  .reset();
-    ipc.mutex.reset();
-    ipc.cond .reset();
+    ipc.shm.reset();
+    ipc.shmmap.reset();
   }
+}
+
+void hdf5SerieAtExit() {
+  for(set<string>::iterator it=ipcRemove.begin(); it!=ipcRemove.end(); ++it)
+    shared_memory_object::remove(it->c_str());
+  ipcRemove.clear();
+}
+
+void addIPCRemove(const string &interprocessName) {
+  ipcRemove.insert(interprocessName);
 }
 
 }
