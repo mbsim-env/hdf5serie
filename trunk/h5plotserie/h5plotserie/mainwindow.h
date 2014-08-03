@@ -45,11 +45,13 @@ class MainWindow : public QMainWindow {
     void saveAllPlotWindows();
     void loadPlotWindows();
     void refresh();
+    void autoRefresh(bool checked);
 
   private:
     PlotArea * plotArea;
     DataSelection * dataSelection;
     Curves * curves;
+    QTimer *autoReloadTimer;
 
 };
 

@@ -21,10 +21,14 @@
 #define DATASELECTION_H
 
 #include <QSplitter>
+#include <boost/shared_ptr.hpp>
+#include <boost/filesystem.hpp>
+#include <map>
 
 namespace H5 {
   class H5File;
   class Group;
+  class File;
 }
 
 class QTreeWidget;
@@ -46,6 +50,7 @@ class DataSelection : public QSplitter {
     
     void addFile(const QString &fileName);
     QList<QFileInfo> * getFileInfo() {return &fileInfo; }
+    std::map<boost::filesystem::path, boost::shared_ptr<H5::File> > &getH5File() { return h5File; }
 
   //public slots:
 
@@ -68,6 +73,8 @@ class DataSelection : public QSplitter {
 
     QList<QString> file;
     QList<QFileInfo> fileInfo;
+
+    std::map<boost::filesystem::path, boost::shared_ptr<H5::File> > h5File;
 };
 
 #endif // DATASELECTION_H
