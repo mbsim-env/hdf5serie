@@ -143,11 +143,15 @@ namespace H5 {
       };
       template<class T>
       Creator<T> createChild(const std::string &name_) {
+        if(name_.find_first_of('/')!=std::string::npos)
+          throw std::runtime_error("Internal error: must be a relative name, not absolute or a path");
         return Creator<T>(static_cast<Self*>(this), name_, childs);
       }
 
       template<class T>
       T* openChild(const std::string &name_) {
+        if(name_.find_first_of('/')!=std::string::npos)
+          throw std::runtime_error("Internal error: must be a relative name, not absolute or a path");
         std::pair<typename std::map<std::string, Child*>::iterator, bool> ret=childs.insert(std::pair<std::string, Child*>(name_, NULL));
         if(!ret.second) {
           T *o=dynamic_cast<T*>(ret.first->second);
@@ -178,15 +182,31 @@ namespace H5 {
       void flush();
       GroupBase *parent;
       File *file;
+      Object *getFileAsObject(); // helper function used in openChildAttribute
+      Object *getAttrParent(const std::string &path, size_t pos); // helper function used in openChildAttribute
     public:
       template<class T>
-      Creator<T> createChildAttribute(const std::string &name_) {
-        return createChild<T>(name_);
+      Creator<T> createChildAttribute(const std::string &path) {
+        if(path[0]=='/') // absolute path -> call openChildAttribute from file
+          return getFileAsObject()->createChildAttribute<T>(path.substr(1));
+        // now its a relative path
+        size_t pos;
+        if((pos=path.find_last_of('/'))==std::string::npos) // no / included -> call openChild from Container
+          return createChild<T>(path);
+        // now its a relative path including at least one /
+        return getAttrParent(path, pos)->createChild<T>(path.substr(pos+1));
       }
 
       template<class T>
-      T* openChildAttribute(const std::string &name_) {
-        return openChild<T>(name_);
+      T* openChildAttribute(const std::string &path) {
+        if(path[0]=='/') // absolute path -> call openChildAttribute from file
+          return getFileAsObject()->openChildAttribute<T>(path.substr(1));
+        // now its a relative path
+        size_t pos;
+        if((pos=path.find_last_of('/'))==std::string::npos) // no / included -> call openChild from Container
+          return openChild<T>(path);
+        // now its a relative path including at least one /
+        return getAttrParent(path, pos)->openChild<T>(path.substr(pos+1));
       }
       Attribute *openChildAttribute(const std::string &name_, ElementType *objectType=NULL, hid_t *type=NULL);
       std::set<std::string> getChildAttributeNames();

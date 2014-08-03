@@ -38,16 +38,37 @@ namespace H5 {
       void flush();
       Dataset *openChildDataset(const std::string &name_, ElementType *objectType, hid_t *type);
       void handleExternalLink(const std::string &name_);
+      GroupBase *getFileAsGroup();
     public:
       template<class T>
-      Container<Object, GroupBase>::Creator<T> createChildObject(const std::string &name_) {
-        return Container<Object, GroupBase>::createChild<T>(name_);
+      Container<Object, GroupBase>::Creator<T> createChildObject(const std::string &path) {
+        if(path[0]=='/') // absolute path -> call createChildObject from file
+          return getFileAsGroup()->createChildObject<T>(path.substr(1));
+        // now its a relative path
+        size_t pos;
+        if((pos=path.find_last_of('/'))==std::string::npos) // no / included -> call createChild from Container<Object, GroupBase>
+          return Container<Object, GroupBase>::createChild<T>(path);
+        // now its a relative path including at least one /
+        GroupBase *group=dynamic_cast<GroupBase*>(openChildObject(path.substr(0, pos)));
+        if(!group)
+          throw std::runtime_error("Got a path (including /) but this object is not a group");
+        return group->createChildObject<T>(path.substr(pos+1));
       }
 
       template<class T>
-      T* openChildObject(const std::string &name_) {
-        handleExternalLink(name_);
-        return Container<Object, GroupBase>::openChild<T>(name_);
+      T* openChildObject(const std::string &path) {
+        handleExternalLink(path);
+        if(path[0]=='/') // absolute path -> call openChildObject from file
+          return getFileAsGroup()->openChildObject<T>(path.substr(1));
+        // now its a relative path
+        size_t pos;
+        if((pos=path.find_first_of('/'))==std::string::npos) // no / included -> call openChild from Container<Object, GroupBase>
+          return Container<Object, GroupBase>::openChild<T>(path);
+        // now its a relative path including at least one /
+        GroupBase *group=dynamic_cast<GroupBase*>(openChildObject(path.substr(0, pos)));
+        if(!group)
+          throw std::runtime_error("Got a path (including /) but this object is not a group");
+        return group->openChildObject<T>(path.substr(pos+1));
       }
       Object *openChildObject(const std::string &name_, ElementType *objectType=NULL, hid_t *type=NULL);
       std::set<std::string> getChildObjectNames();

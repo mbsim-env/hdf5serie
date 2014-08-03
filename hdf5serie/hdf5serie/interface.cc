@@ -172,6 +172,19 @@ void Object::close() {
   Element::close();
 }
 
+Object *Object::getFileAsObject() {
+  return getFile();
+}
+
+Object *Object::getAttrParent(const string &path, size_t pos) {
+  GroupBase *group=dynamic_cast<GroupBase*>(this);
+  if(!group)
+    throw std::runtime_error("Got a path (including /) but this object is not a group");
+  return group->openChildObject(path.substr(0, pos));
+}
+
+
+
 Attribute::Attribute(Object *parent_, const std::string &name_) : Element(name_), parent(parent_), file(parent->getFile()) {
 }
 

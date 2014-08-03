@@ -188,6 +188,10 @@ void GroupBase::handleExternalLink(const string &name_) {
   getFile()->addFileToNotifyOnRefresh(link.first);
 }
 
+GroupBase *GroupBase::getFileAsGroup() {
+  return getFile();
+}
+
 
 
 Group::Group(int dummy, GroupBase *parent_, const string &name_) : GroupBase(parent_, name_) {
