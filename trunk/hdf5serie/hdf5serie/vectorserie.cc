@@ -127,9 +127,10 @@ namespace H5 {
   template<class T>
   vector<T> VectorSerie<T>::getRow(const int row) {
     vector<T> data(dims[1], T());
-    if(row<0 || row>=getRows()) {
+    int rows=getRows();
+    if(row<0 || row>=rows) {
       msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
-               <<"Requested vector number is out of range, returning a dummy vector."<<endl;
+               <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
       return data;
     }
 
@@ -203,9 +204,10 @@ namespace H5 {
   template<>
   vector<string> VectorSerie<string>::getRow(const int row) {
     vector<string> data(dims[1], string());
-    if(row<0 || row>=getRows()) {
+    int rows=getRows();
+    if(row<0 || row>=rows) {
       msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
-               <<"Requested vector number is out of range, returning a dummy vector."<<endl;
+               <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
       return data;
     }
 

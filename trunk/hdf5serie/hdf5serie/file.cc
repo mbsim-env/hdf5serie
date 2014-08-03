@@ -79,9 +79,6 @@ File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.st
     readerFiles.insert(this);
     // try to open interprocess elements
     openIPC(ipc, filename);
-    ::requestWriterFlush(ipc, this);
-    if(::waitForWriterFlush(ipc, this));
-      refresh();
   }
 
   // register atExit
@@ -266,10 +263,6 @@ void File::addFileToNotifyOnRefresh(const boost::filesystem::path &filename) {
   if(!ipc.shm)
     return;
   ipcAdd.push_back(ipc);
-
-  ::requestWriterFlush(ipc, this);
-  if(::waitForWriterFlush(ipc, this))
-    refresh();
 }
 
 }

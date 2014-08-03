@@ -59,6 +59,9 @@ namespace H5 {
       void refresh();
       void flush();
 
+      void requestWriterFlush();
+      bool waitForWriterFlush();
+
       void flushIfRequested();
       static void flushAllFiles();
       static void flushAllFilesIfRequested();
@@ -86,8 +89,6 @@ namespace H5 {
 
       static std::set<File*> writerFiles;
       static std::set<File*> readerFiles;
-      void requestWriterFlush();
-      bool waitForWriterFlush();
       std::string interprocessName;
       IPC ipc;
       void addFileToNotifyOnRefresh(const boost::filesystem::path &filename);
