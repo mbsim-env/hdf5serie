@@ -67,6 +67,7 @@ namespace H5 {
       static void flushAllFilesIfRequested();
       void refreshAfterWriterFlush();
       static void refreshAllFiles();
+      static void refreshFilesAfterWriterFlush(const std::set<H5::File*> &files);
       static void refreshAllFilesAfterWriterFlush();
 
       struct IPC {

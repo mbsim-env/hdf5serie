@@ -228,17 +228,21 @@ void File::refreshAllFiles() {
     (*it)->refresh();
 }
 
-void File::refreshAllFilesAfterWriterFlush() {
-  for(set<File*>::iterator it=readerFiles.begin(); it!=readerFiles.end(); ++it)
+void File::refreshFilesAfterWriterFlush(const std::set<File*> &files) {
+  for(set<File*>::iterator it=files.begin(); it!=files.end(); ++it)
     (*it)->requestWriterFlush();
   vector<bool> refreshNeeded;
-  refreshNeeded.reserve(readerFiles.size());
-  for(set<File*>::iterator it=readerFiles.begin(); it!=readerFiles.end(); ++it)
+  refreshNeeded.reserve(files.size());
+  for(set<File*>::iterator it=files.begin(); it!=files.end(); ++it)
     refreshNeeded.push_back((*it)->waitForWriterFlush());
   vector<bool>::iterator nit=refreshNeeded.begin();
-  for(set<File*>::iterator it=readerFiles.begin(); it!=readerFiles.end(); ++it, ++nit)
+  for(set<File*>::iterator it=files.begin(); it!=files.end(); ++it, ++nit)
     if(*nit)
       (*it)->refresh();
+}
+
+void File::refreshAllFilesAfterWriterFlush() {
+  refreshFilesAfterWriterFlush(readerFiles);
 }
 
 void File::requestWriterFlush() {
