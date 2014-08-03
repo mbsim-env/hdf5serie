@@ -95,6 +95,19 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
   plotCurrentTab();
 }
 
+void Curves::collectFilesToRefresh(std::set<H5::File*> &filesToRefresh) {
+  DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent())->getDataSelection();
+  PlotDataTable *plotDataTable=static_cast<PlotDataTable*>(currentWidget());
+  for(int i=0; i<plotDataTable->rowCount(); i++) {
+    PlotData pd;
+    for (int j=0; j<pd.numberOfItems(); j++)
+      pd.setValue(j, plotDataTable->item(i, j)->text());
+    filesToRefresh.insert(
+      dataSelection->getH5File()[boost::filesystem::canonical(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString())].get()
+    );
+  }
+}
+
 void Curves::refreshAllTabs() {
   int currentTab=currentIndex();
   int numberOfTabs=count();

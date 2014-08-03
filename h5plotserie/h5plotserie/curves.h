@@ -22,11 +22,16 @@
 
 #include <QTabWidget>
 #include <QTableWidget>
+#include <set>
 
 class QDomDocument;
 class QDomElement;
 class PlotData;
 class PlotDataTable;
+
+namespace H5 {
+  class File;
+}
 
 class Curves : public QTabWidget {
   
@@ -40,6 +45,7 @@ class Curves : public QTabWidget {
     void initLoadCurve(const QString &file);
     void loadCurve(QDomDocument * doc);
 
+    void collectFilesToRefresh(std::set<H5::File*> &filesToRefresh);
     void refreshAllTabs();
 
   private slots:

@@ -26,10 +26,13 @@
 #include "QFileDialog"
 #include "QFile"
 #include "QTextStream"
+#include "QTimer"
 #include "mainwindow.h"
 #include "dataselection.h"
 #include "curves.h"
 #include "plotarea.h"
+#include "set"
+#include "hdf5serie/file.h"
 
 using namespace std;
 
@@ -42,7 +45,15 @@ MainWindow::MainWindow() : QMainWindow() {
   fileMenu->addAction("exit", this, SLOT(close()), QKeySequence::Quit);
 
   QMenu * refreshMenu = menuBar()->addMenu(tr("&Refresh"));
-  refreshMenu->addAction("refresh", this, SLOT(refresh()), QKeySequence::Refresh);
+  refreshMenu->addAction("Refresh", this, SLOT(refresh()), QKeySequence::Refresh);
+  QAction *autoRefresh=new QAction("Auto refresh", this);
+  refreshMenu->addAction(autoRefresh);
+  autoRefresh->setCheckable(true);
+  autoRefresh->setShortcut(QKeySequence("Shift+F5"));
+  connect(autoRefresh, SIGNAL(toggled(bool)), this, SLOT(autoRefresh(bool)));
+
+  autoReloadTimer=new QTimer(this);
+  connect(autoReloadTimer, SIGNAL(timeout()), this, SLOT(refresh()));
 
   menuBar()->addSeparator();
   QMenu * helpMenu = menuBar()->addMenu(tr("&About"));
@@ -147,5 +158,16 @@ void MainWindow::loadPlotWindows() {
 }
 
 void MainWindow::refresh() {
+  set<H5::File*> filesToRefresh;
+  curves->collectFilesToRefresh(filesToRefresh);
+  H5::File::refreshFilesAfterWriterFlush(filesToRefresh);
+
   curves->refreshAllTabs();
+}
+
+void MainWindow::autoRefresh(bool checked) {
+  if(checked)
+    autoReloadTimer->start(500);
+  else
+    autoReloadTimer->stop();
 }

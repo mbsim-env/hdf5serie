@@ -23,6 +23,7 @@
 #include "plotdata.h"
 #include "curves.h"
 #include "mainwindow.h"
+#include "dataselection.h"
 
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
@@ -83,18 +84,19 @@ void PlotWindow::detachPlot() {
 }
 
 void PlotWindow::plotDataSet(PlotData pd, int penColor) {
-  H5::File h5file(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString(), H5::File::read);
+  DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent()->parent())->getDataSelection();
+  boost::shared_ptr<H5::File> h5file=dataSelection->getH5File()[boost::filesystem::canonical(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString())];
 
-  H5::VectorSerie<double> *vs=h5file.openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
+  H5::VectorSerie<double> *vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
   std::vector<double> xVal = vs->getColumn(pd.getValue("x-Index").toInt());
 
-  vs=h5file.openChildObject<H5::VectorSerie<double> >(pd.getValue("y-Path").toStdString());
+  vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y-Path").toStdString());
   std::vector<double> yVal = vs->getColumn(pd.getValue("y-Index").toInt());
 
   std::vector<double> y2Val;
   bool useY2=false;
   if (pd.getValue("y2-Path").length()>0) {
-    vs=h5file.openChildObject<H5::VectorSerie<double> >(pd.getValue("y2-Path").toStdString());
+    vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y2-Path").toStdString());
     y2Val = vs->getColumn(pd.getValue("y2-Index").toInt());
     useY2=true;
   }
