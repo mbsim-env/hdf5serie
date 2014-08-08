@@ -155,10 +155,31 @@ void File::flush() {
 }
 
 void File::close() {
+  // close everything (except the file itself)
   GroupBase::close();
-  ssize_t count=H5Fget_obj_count(id, H5F_OBJ_ALL | H5F_OBJ_LOCAL);
-  if(count>1)
-    throw Exception(str(boost::format("Internal error: Can not close file since %1% elements are still open.")%(count-1)));
+
+  // check if all object are closed now: if not -> throw internal error (with details about the opened objects)
+  ssize_t count=H5Fget_obj_count(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
+  if(count<0)
+    throw Exception("Internal error: H5Fget_obj_count failed");
+  if(count>0) {
+    vector<hid_t> obj(count, 0);
+    ssize_t ret=H5Fget_obj_ids(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL, count, &obj[0]);
+    if(ret<0)
+      throw Exception("Internal error: H5Fget_obj_ids failed");
+    vector<char> name(1000+1);
+    stringstream err;
+    err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
+    for(vector<hid_t>::iterator it=obj.begin(); it!=obj.end(); ++it) {
+      size_t ret=H5Iget_name(*it, &name[0], 1000);
+      if(ret<0)
+        throw Exception("Internal error: H5Iget_name");
+      err<<"type="<<H5Iget_type(*it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
+    }
+    throw Exception(err.str());
+  }
+
+  // now close also the file with is now the last opened identifier
   id.reset();
 }
 
