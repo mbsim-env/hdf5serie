@@ -44,24 +44,24 @@ PKG_CHECK_MODULES(FMATVEC, fmatvec)
 dnl Check for hdf5 library
 AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
-  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$withval/include -I$withval/include/cpp"
+  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$withval/include"
     HDF5LDFLAGS="-L$withval/lib"
     LDFLAGS="$LDFLAGS -L$withval/lib"
-    LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$withval],
-  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$prefix/include -I$prefix/include/cpp"
+    LIBS="$LIBS -lhdf5"; hdf5_prefix=$withval],
+  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$prefix/include"
     HDF5LDFLAGS="-L$prefix/lib"
     LDFLAGS="$LDFLAGS -L$prefix/lib"
-    LIBS="$LIBS -lhdf5_cpp -lhdf5"; hdf5_prefix=$prefix])
+    LIBS="$LIBS -lhdf5"; hdf5_prefix=$prefix])
 CPPFLAGS="$CPPFLAGS $HDF5CPPFLAGS"
 AC_SUBST([HDF5CPPFLAGS])
 AC_SUBST([HDF5LDFLAGS])
 AC_SUBST([hdf5_prefix])
 AC_PATH_PROG([h5dump],[h5dump],[no],[$hdf5_prefix/bin:$PATH])
-AC_CHECK_HEADERS([H5Cpp.h], [],
-  [AC_MSG_ERROR([Can not find hdf5 c++ header H5Cpp.h])])
-AC_MSG_CHECKING([for hdf5 c++ library])
-AC_TRY_LINK([#include <H5Cpp.h>],[H5::H5File file],[AC_MSG_RESULT([yes])],
-  [AC_MSG_RESULT([no]); AC_MSG_ERROR([Can not link with hdf5 c++ library])])
+AC_CHECK_HEADERS([hdf5.h], [],
+  [AC_MSG_ERROR([Can not find hdf5 c header hdf5.h])])
+AC_MSG_CHECKING([for hdf5 c library])
+AC_TRY_LINK([#include <hdf5.h>],[H5Fopen("dummy", H5F_ACC_RDWR, H5P_DEFAULT)],[AC_MSG_RESULT([yes])],
+  [AC_MSG_RESULT([no]); AC_MSG_ERROR([Can not link with hdf5 c library])])
 dnl check for swmr branch
 AC_CHECK_LIB([hdf5], [H5Dflush], [AC_DEFINE([HDF5_SWMR], [1], [HDF5 SWMR branch detected])],
   [AC_MSG_NOTICE([To use SWMR features please use the HDF5 branch from svn: http://svn.hdfgroup.uiuc.edu/hdf5/branches/revise_chunks])])
