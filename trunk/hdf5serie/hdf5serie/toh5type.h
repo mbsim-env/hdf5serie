@@ -50,7 +50,6 @@
  * \section example Example Code
  *
  * \code
-#include <H5Cpp.h>
 #include <hdf5serie/vectorserie.h>
 #include <string>
 
