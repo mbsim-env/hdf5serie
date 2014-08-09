@@ -23,7 +23,6 @@
 #define _HDF5SERIE_MATRIXSERIE_H_
 
 #include <fmatvec/atom.h>
-#include <H5Cpp.h>
 #include <vector>
 #include <string>
 #include <assert.h>
