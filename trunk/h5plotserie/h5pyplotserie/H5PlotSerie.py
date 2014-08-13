@@ -1,8 +1,8 @@
 import sys
 import os
-import matplotlib.pyplot as plt
 from PyQt4 import QtGui, QtCore, Qt
 from PyQt4.Qt import QVariant
+
 import HDF5Serie
 import H5QtMPLCanvas
 
@@ -17,7 +17,6 @@ class MyQListWidget(QtGui.QListWidget):
     def mousePressEvent(self, event):
         self._mouse_button = event.button()
         super(MyQListWidget, self).mousePressEvent(event)
-
 
 class H5PlotSerie(QtGui.QMainWindow):
     def __init__(self):
@@ -51,7 +50,7 @@ class H5PlotSerie(QtGui.QMainWindow):
         self.mainLayout.addWidget(self.searchEdit, 0, 0)
         self.connect(self.searchEdit, QtCore.SIGNAL('returnPressed()'), self.updateTree)
         
-        #Add tree widget
+        # Add tree widget
         self.treeGroups = QtGui.QTreeWidget()
         self.treeGroups.setMaximumWidth(500)
         self.mainLayout.addWidget(self.treeGroups, 1, 0)                
@@ -82,7 +81,7 @@ class H5PlotSerie(QtGui.QMainWindow):
         self.plots.tabCloseRequested.connect(self.closePlot)
         
         
-        #Add Menu bar
+        # Add Menu bar
         menu = QtGui.QMenuBar()
         file = menu.addMenu("File...")
         self.setMenuBar(menu)
@@ -112,7 +111,7 @@ class H5PlotSerie(QtGui.QMainWindow):
             self.addFile(str(url.toLocalFile().toLocal8Bit().data()))
         
     def loadFile(self):
-        filename = QtGui.QFileDialog.getOpenFileNameAndFilter(self, 'Load File', filter='*.h5', directory = self.currentDir)
+        filename = QtGui.QFileDialog.getOpenFileNameAndFilter(self, 'Load File', filter='*.h5', directory=self.currentDir)
         
         if filename is not None:
             filename = os.path.abspath(str(filename[0]))
@@ -178,7 +177,7 @@ class H5PlotSerie(QtGui.QMainWindow):
         root.setText(0, text)
         root.setToolTip(0, filename)
         data = QVariant(filename)
-        root.setData(0,QtCore.Qt.UserRole,data)
+        root.setData(0, QtCore.Qt.UserRole, data)
         self.treeGroups.addTopLevelItem(root)
         self.addSelectedSubitems(root, file, subgroups)
         
@@ -212,14 +211,14 @@ class H5PlotSerie(QtGui.QMainWindow):
         
     def createSubitem(self, groupname, parentItem, attributes):
         subItem = QtGui.QTreeWidgetItem()
-        subItem.setText(0,groupname)        
-        filenameData = QVariant(str(parentItem.data(0,QtCore.Qt.UserRole).toString()))
-        subgroupData = QVariant(str(parentItem.data(1,QtCore.Qt.UserRole).toString()) + '/' + groupname)
-        subItem.setData(0,QtCore.Qt.UserRole,filenameData)
-        subItem.setData(1,QtCore.Qt.UserRole,subgroupData)
+        subItem.setText(0, groupname)        
+        filenameData = QVariant(str(parentItem.data(0, QtCore.Qt.UserRole).toString()))
+        subgroupData = QVariant(str(parentItem.data(1, QtCore.Qt.UserRole).toString()) + '/' + groupname)
+        subItem.setData(0, QtCore.Qt.UserRole, filenameData)
+        subItem.setData(1, QtCore.Qt.UserRole, subgroupData)
         
         try:
-            subItem.setData(2,QtCore.Qt.UserRole,attributes)
+            subItem.setData(2, QtCore.Qt.UserRole, attributes)
             if 'Description' in attributes:
                 subItem.setToolTip(0, attributes['Description'])
         except:
@@ -230,8 +229,8 @@ class H5PlotSerie(QtGui.QMainWindow):
         
                 
     def getCurrentItemData(self):
-        filename = self.currentTreeItem.data(0,QtCore.Qt.UserRole).toString()
-        internalTree = self.currentTreeItem.data(1,QtCore.Qt.UserRole).toString()
+        filename = self.currentTreeItem.data(0, QtCore.Qt.UserRole).toString()
+        internalTree = self.currentTreeItem.data(1, QtCore.Qt.UserRole).toString()
         return str(filename), str(internalTree)
                 
     def loadData(self): 
@@ -284,12 +283,13 @@ class H5PlotSerie(QtGui.QMainWindow):
     def createPlotData(self):
         filename, internalTree = self.getCurrentItemData()
         data = self.h5Files[filename].getData(internalTree)
-        x = data[:,self.xInd]
-        y = data[:,self.yInd]
+        x = data[:, self.xInd]
+        y = data[:, self.yInd]
+        
         labels = self.h5Files[filename].getColumnLabels(internalTree)
         headLine = str(labels[self.yInd]) + ' vs. ' + str(labels[self.xInd])
-        xString = 'x = h5read(\'' + os.path.abspath(filename) + '\',\'' + internalTree + '\',' + '[' + str(self.xInd+1) + ',1], [1,' + str(len(x)) +']);'
-        yString = 'y = h5read(\'' + os.path.abspath(filename) + '\',\'' + internalTree + '\',' + '[' + str(self.yInd+1) + ',1], [1,' + str(len(y)) +']);'
+        xString = 'x = h5read(\'' + os.path.abspath(filename) + '\',\'' + internalTree + '\',' + '[' + str(self.xInd + 1) + ',1], [1,' + str(len(x)) + ']);'
+        yString = 'y = h5read(\'' + os.path.abspath(filename) + '\',\'' + internalTree + '\',' + '[' + str(self.yInd + 1) + ',1], [1,' + str(len(y)) + ']);'
         
         return x, y, headLine, xString, yString
            
@@ -299,12 +299,8 @@ class H5PlotSerie(QtGui.QMainWindow):
             
     def addPlot(self):
         x, y, headLine, xString, yString = self.createPlotData()
-        self.getCurrentTab().addPlot(x,y, headLine, xString, yString)
+        self.getCurrentTab().addPlot(x, y, headLine, xString, yString)
             
     def closePlot(self, i):
         self.plots.removeTab(i)
             
-app = QtGui.QApplication(sys.argv)
-h5plot = H5PlotSerie()
-h5plot.show()
-sys.exit(app.exec_())
