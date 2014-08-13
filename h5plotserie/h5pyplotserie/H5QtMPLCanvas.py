@@ -10,7 +10,7 @@ class Canvas(FigureCanvas):
     Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.).+
     copied from http://matplotlib.org/examples/user_interfaces/embedding_in_qt4.html on 23.06.2013
     """
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent=None, width=1, height=1, dpi=100):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         super(Canvas, self).__init__(self.fig)
         
@@ -26,14 +26,25 @@ class Canvas(FigureCanvas):
 #         self.mpl_connect('scroll_event', self.onMouseWheel)
 
         FigureCanvas.setSizePolicy(self, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
         
     def addPlot(self, x, y):
-        self.axes.plot(x, y)
+        def avoidNonZeroZeros(vec):
+            '''
+            In matplotlib there is a bug (at least in V1.3.1. that vectors that hold basically just zeros except that they are not zero (e.g. 1e-302) that the internal computations are not done correctly. Therefore these vectors are transformed here 
+            '''
+            # Check if the maximal as well as the minmal value are basicall< zero
+            if (1 / max(vec)) == (1 / min(vec)) == float('Inf'):
+                # Convert all values to zero
+                for i in xrange(len(vec)):
+                    vec[i] = 0
+            return vec
+                    
+        self.axes.plot(avoidNonZeroZeros(x), avoidNonZeroZeros(y))
         self.draw()
         
     def clear(self):
         self.axes.clear()
-        self.draw()
         
     def toggle_grid(self):
         self.axes.grid(color='black', linestyle=':', linewidth=0.5)
@@ -41,7 +52,7 @@ class Canvas(FigureCanvas):
         
     def onclick(self, event):
         self.axes.xaxis.pan(-100)
-        print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f'%(
+        print 'button=%d, x=%d, y=%d, xdata=%f, ydata=%f' % (
             event.button, event.x, event.y, event.xdata, event.ydata)
     
     
@@ -55,7 +66,7 @@ class PlotWindow(QtGui.QWidget):
         mainLayout = QtGui.QGridLayout()
         self.setLayout(mainLayout)
         
-        #List of added Plots
+        # List of added Plots
         panel = QtGui.QWidget()
         mainLayout.addWidget(panel, 1, 0)
         
@@ -80,7 +91,7 @@ class PlotWindow(QtGui.QWidget):
         mainLayout.addWidget(self.toolbar, 2, 0) 
 
         
-        #Add menu-bar
+        # Add menu-bar
         menu = QtGui.QMenuBar()
         
         menuPlot = menu.addMenu("&Plot")
@@ -102,7 +113,7 @@ class PlotWindow(QtGui.QWidget):
         exportAction.triggered.connect(self.export)
         menuPlot.addAction(exportAction)    
         
-        mainLayout.addWidget(menu, 0,0)
+        mainLayout.addWidget(menu, 0, 0)
         
      
         
@@ -110,7 +121,7 @@ class PlotWindow(QtGui.QWidget):
         userData = [xString, yString]
         self.plotsList.addItem(name, userData=userData)
         self.changeCurrentPlot()
-        self.Canvas.addPlot(x,y)
+        self.Canvas.addPlot(x, y)
         
     
     def clear(self):

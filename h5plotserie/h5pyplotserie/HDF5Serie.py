@@ -54,9 +54,9 @@ class HDF5Serie(h5py.File):
         '''
         Adds an attribute to the given parent
         '''
-        parent.attrs.create(attributeName, data=dat, dtype = h5py.special_dtype(vlen=str))
+        parent.attrs.create(attributeName, data=dat, dtype=h5py.special_dtype(vlen=str))
         
-    def walk(self, parent = None):
+    def walk(self, parent=None):
         '''
         searches the tree of a parent object
         '''
@@ -79,7 +79,7 @@ class HDF5Serie(h5py.File):
                  
         return retList
 
-    def findAllGroups(self, regexp, parent = None):
+    def findAllGroups(self, regexp, parent=None):
         '''
         Copied from http://stackoverflow.com/questions/4639506/os-walk-with-regex on 27.01.2014
         Generator yielding all files under `dirpath` whose absolute path
@@ -158,7 +158,7 @@ class HDF5Serie(h5py.File):
                 try:
                     labels = group['data'].attrs['Column Label']
                     ind = list(labels).index(identifier)
-                    return group['data'].value[:,ind]
+                    return group['data'].value[:, ind]
                 except:
                     return None
             else:   
@@ -183,8 +183,7 @@ class HDF5Serie(h5py.File):
         if group is None:
             group = self
             
-        if path.startswith('/'):
-            path = path[1:]
+        path = path.strip('/')
             
         for subgroup in path.split("/"):
             if subgroup in group:
@@ -203,11 +202,11 @@ class HDF5Serie(h5py.File):
         for group in parent:
             if group != "data":
                 print indent + group
-                self.printGroups(parent[group], indent+"    ")
+                self.printGroups(parent[group], indent + "    ")
                 
             else:
                 self.printLabels(parent, indent)
                 
     def printLabels(self, parent, indent):
         for item in parent['data'].attrs['Column Label']:
-            print indent + "-" +  item
+            print indent + "-" + item
