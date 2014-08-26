@@ -280,7 +280,8 @@ void printRow(Dataset *d, int row) {
   { \
     VectorSerie<CTYPE> *dd=dynamic_cast<VectorSerie<CTYPE>*>(d); \
     if(dd) { \
-      vector<CTYPE> vec=dd->getRow(row); \
+      vector<CTYPE> vec(dd->getColumns()); \
+      dd->getRow(row, vec); \
       for(size_t i=0; i<vec.size(); ++i) \
         cout<<(i==0?"":delim)<<quoteString(H5TYPE)<<vec[i]<<quoteString(H5TYPE); \
     } \

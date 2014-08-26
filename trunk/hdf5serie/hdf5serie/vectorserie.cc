@@ -111,8 +111,8 @@ namespace H5 {
   }
 
   template<class T>
-  void VectorSerie<T>::append(const vector<T> &data) {
-    if(data.size()!=dims[1]) throw Exception("dataset dimension does not match");
+  void VectorSerie<T>::append(const T data[], size_t size) {
+    if(size!=dims[1]) throw Exception("dataset dimension does not match");
     dims[0]++;
     H5Dset_extent(id, dims);
 
@@ -121,17 +121,20 @@ namespace H5 {
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
 
-    H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
+    H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, data);
   }
 
   template<class T>
-  vector<T> VectorSerie<T>::getRow(const int row) {
-    vector<T> data(dims[1], T());
+  void VectorSerie<T>::getRow(const int row, size_t size, T data[]) {
+    if(size!=dims[1])
+      throw Exception("Size of data does not match");
     int rows=getRows();
     if(row<0 || row>=rows) {
       msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
                <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
-      return data;
+      for(size_t i=0; i<size; ++i)
+         data[i]=T();
+      return;
     }
 
     hsize_t start[]={(hsize_t)row,0};
@@ -140,12 +143,14 @@ namespace H5 {
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
 
     H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
-    return data;
+    return;
   }
 
   template<class T>
-  vector<T> VectorSerie<T>::getColumn(const int column) {
+  void VectorSerie<T>::getColumn(const int column, size_t size, T data[]) {
     hsize_t rows=getRows();
+    if(size!=rows)
+      throw Exception("dataset dimension does not match");
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
@@ -153,9 +158,7 @@ namespace H5 {
 
     ScopedHID colDataSpaceID(H5Screate_simple(2, count, NULL), &H5Sclose);
 
-    vector<T> data(rows);
-    H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
-    return data;
+    H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, data);
   }
 
   template<class T>
@@ -183,8 +186,8 @@ namespace H5 {
   // explizit template spezialisations
 
   template<>
-  void VectorSerie<string>::append(const vector<string> &data) {
-    if(data.size()!=dims[1]) throw Exception("dataset dimension does not match");
+  void VectorSerie<string>::append(const string data[], size_t size) {
+    if(size!=dims[1]) throw Exception("dataset dimension does not match");
     dims[0]++;
     H5Dset_extent(id, dims);
   
@@ -202,13 +205,16 @@ namespace H5 {
   }
   
   template<>
-  vector<string> VectorSerie<string>::getRow(const int row) {
-    vector<string> data(dims[1], string());
+  void VectorSerie<string>::getRow(const int row, size_t size, string data[]) {
+    if(size!=dims[1])
+      throw Exception("Size of data does not match");
     int rows=getRows();
     if(row<0 || row>=rows) {
       msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
                <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
-      return data;
+      for(size_t i=0; i<size; ++i)
+         data[i]=string();
+      return;
     }
 
     hsize_t start[]={(hsize_t)row,0};
@@ -220,12 +226,14 @@ namespace H5 {
     H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);
     for(unsigned int i=0; i<dims[1]; i++)
       data[i]=dummy[i];
-    return data;
+    return;
   }
   
   template<>
-  vector<string> VectorSerie<string>::getColumn(const int column) {
+  void VectorSerie<string>::getColumn(const int column, size_t size, string data[]) {
     hsize_t rows=getRows();
+    if(size!=rows)
+      throw Exception("dataset dimension does not match");
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
@@ -235,10 +243,8 @@ namespace H5 {
   
     VecStr dummy(rows);
     H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);
-    vector<string> data(rows);
     for(unsigned int i=0; i<rows; i++)
       data[i]=dummy[i];
-    return data;
   }
 
 
