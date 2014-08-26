@@ -26,6 +26,7 @@
 #include <hdf5serie/simpleattribute.h>
 #include <hdf5serie/simpledataset.h>
 #include <iostream>
+#include <fmatvec/fmatvec.h>
 
 using namespace H5;
 using namespace std;
@@ -266,8 +267,11 @@ int main() {
   data.push_back(3.4);
   ts->append(data);
   ts->append(data);
+//  fmatvec::Vec v(3);
+//  ts->append(v);
   vector<double> out;
   out=ts->getRow(1);
+  ts->getRow(2, out);
   for(unsigned int i=0; i<out.size(); i++) cout<<out[i]<<endl;
   out=ts->getColumn(1);
   for(unsigned int i=0; i<out.size(); i++) cout<<out[i]<<endl;
@@ -275,6 +279,12 @@ int main() {
   vector<string> outhead;
   outhead=ts->getColumnLabel();
   for(unsigned int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
+  VectorSerie<string> *tsStr=file.createChildObject<VectorSerie<string> >("timeserieStr")(3);
+  vector<string> dataStr;
+  dataStr.push_back("a");
+  dataStr.push_back("b");
+  dataStr.push_back("c");
+  tsStr->append(dataStr);
   file.reopenAsSWMR();
   }
   {

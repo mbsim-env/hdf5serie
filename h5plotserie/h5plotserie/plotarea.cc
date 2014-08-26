@@ -88,16 +88,19 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
   boost::shared_ptr<H5::File> h5file=dataSelection->getH5File()[boost::filesystem::canonical(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString())];
 
   H5::VectorSerie<double> *vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
-  std::vector<double> xVal = vs->getColumn(pd.getValue("x-Index").toInt());
+  size_t rows=vs->getRows();
+  std::vector<double> xVal(rows);
+  vs->getColumn(pd.getValue("x-Index").toInt(), xVal);
 
   vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y-Path").toStdString());
-  std::vector<double> yVal = vs->getColumn(pd.getValue("y-Index").toInt());
+  std::vector<double> yVal(rows);
+  vs->getColumn(pd.getValue("y-Index").toInt(), yVal);
 
-  std::vector<double> y2Val;
+  std::vector<double> y2Val(rows);
   bool useY2=false;
   if (pd.getValue("y2-Path").length()>0) {
     vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y2-Path").toStdString());
-    y2Val = vs->getColumn(pd.getValue("y2-Index").toInt());
+    vs->getColumn(pd.getValue("y2-Index").toInt(), y2Val);
     useY2=true;
   }
 

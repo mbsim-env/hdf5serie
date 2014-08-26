@@ -87,7 +87,16 @@ namespace H5 {
        * Appends the data vector \a data at the end of the dataset.
        * The number of rows of the HDF5 array will be incremented by this operation.
        */
-      void append(const std::vector<T> &data);
+      void append(const T data[], size_t size);
+
+      /** Convinience append function.
+       * DataType must provide a "size_t size()" member function which returns the number of elements
+       * as well as a "T &operator[](int i)" member function which returns a reference to the i-te element.
+       * All elements must be lie in order in memory */
+      template<class DataType>
+      void append(const DataType &data){
+        append(&data[0], data.size());
+      }
 
       /** \brief Returns the number of rows in the dataset */
       inline int getRows();
@@ -96,16 +105,51 @@ namespace H5 {
       inline unsigned int getColumns();
 
       /** \brief Returns the data vector at row \a row
-       *
        * The first row is 0. The last avaliable row ist getRows()-1.
+       * \a data points to an array of \a size elements of type T.
        */
-      std::vector<T> getRow(const int row);
+      void getRow(const int row, size_t size, T data[]);
+
+      /** Convinience getRow function.
+       * DataType must provide a "size_t size()" member function which returns the number of elements
+       * as well as a "T &operator[](int i)" member function which returns a reference to the i-te element.
+       * The elements of DataType must be of Type T and must be stored sequencially in memory. */
+      template<class DataType>
+      void getRow(const int row, DataType &data) {
+        getRow(row, data.size(), &data[0]);
+      }
+
+      /** Convinience getRow function for backward compatiblity.
+       * Returns a copy in form of a std::vector<T>. */
+      std::vector<T> getRow(const int row) {
+        std::vector<T> data(dims[1]);
+        getRow(row, dims[1], &data[0]);
+        return data;
+      }
 
       /** \brief Returns the data vector at column \a column
        *
        * The first column is 0. The last avaliable column ist getColumns()-1.
        */
-      std::vector<T> getColumn(const int column);
+      void getColumn(const int column, size_t size, T data[]);
+
+      /** Convinience getRow function.
+       * DataType must provide a "size_t size()" member function which returns the number of elements
+       * as well as a "T &operator[](int i)" member function which returns a reference to the i-te element.
+       * The elements of DataType must be of Type T and must be stored sequencially in memory. */
+      template<class DataType>
+      void getColumn(const int column, DataType &data) {
+        getColumn(column, data.size(), &data[0]);
+      }
+
+      /** Convinience getColumn function for backward compatiblity.
+       * Returns a copy in form of a std::vector<T>. */
+      std::vector<T> getColumn(const int row) {
+        size_t rows=getRows();
+        std::vector<T> data(rows);
+        getColumn(row, rows, &data[0]);
+        return data;
+      }
 
       /** \brief Return the description for the dataset
        *
