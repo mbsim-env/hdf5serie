@@ -60,7 +60,7 @@ namespace H5 {
    * array is one struct.
   */
   template<class S>
-  class StructSerie : public fmatvec::Atom, public DataSet {
+  class StructSerie : virtual public fmatvec::Atom, public DataSet {
     private:
       CompType memDataType;
       DataSpace memDataSpace;
