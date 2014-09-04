@@ -80,7 +80,7 @@ namespace H5 {
     simpleAttributeMatrix
   };
 
-  class Element : public fmatvec::Atom {
+  class Element : virtual public fmatvec::Atom {
     friend class Container<Attribute, Object>;
     friend class Container<Object, GroupBase>;
     protected:

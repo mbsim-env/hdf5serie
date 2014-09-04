@@ -19,6 +19,7 @@
  *
  */
 
+#include <config.h>
 #include <iostream>
 #include <hdf5serie/file.h>
 #include <boost/filesystem.hpp>

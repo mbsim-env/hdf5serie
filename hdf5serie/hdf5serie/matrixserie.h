@@ -64,7 +64,7 @@ namespace H5 {
    * The same applies to a matrix-object for std::vector<std::vector<T> >.
   */
   template<class T>
-  class MatrixSerie : public DataSet, public fmatvec::Atom {
+  class MatrixSerie : public DataSet, virtual public fmatvec::Atom {
     private:
       DataType memDataType;
       DataSpace memDataSpace;
