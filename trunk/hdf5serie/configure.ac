@@ -53,6 +53,9 @@ AC_ARG_WITH(hdf5_prefix,
     LDFLAGS="$LDFLAGS -L$prefix/lib"
     LIBS="$LIBS -lhdf5"; hdf5_prefix=$prefix])
 CPPFLAGS="$CPPFLAGS $HDF5CPPFLAGS"
+if test "_$host_os" != "_mingw32" ; then
+  LIBS="$LIBS -lrt"
+fi
 AC_SUBST([HDF5CPPFLAGS])
 AC_SUBST([HDF5LDFLAGS])
 AC_SUBST([hdf5_prefix])
