@@ -27,6 +27,7 @@ class H5PlotSerie(QtGui.QMainWindow):
         self.currentTreeItem = None
         self.currentDir = os.curdir
         self.setAcceptDrops(True) 
+        self.showMaximized()
         
         self.xInd = 0
         self.yInd = 1
