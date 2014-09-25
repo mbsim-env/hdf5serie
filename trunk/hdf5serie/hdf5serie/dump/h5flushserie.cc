@@ -56,12 +56,9 @@ int main(int argc, char *argv[]) {
 
     return 0;
   }
-  catch(const Exception &ex) {
-    cout<<"HDF5 error: "<<ex.what()<<endl;
-    return 1;
-  }
   catch(const std::exception &ex) {
-    cout<<"Exception: "<<ex.what()<<endl;
+    cout<<"Exception:"<<endl
+        <<ex.what()<<endl;
     return 1;
   }
   catch(...) {
