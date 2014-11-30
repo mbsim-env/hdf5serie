@@ -85,7 +85,7 @@ File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.st
   static bool atExitRegistered=false;
   if(!atExitRegistered)
     if(atexit(hdf5SerieAtExit)!=0)
-      throw Exception("Internal error: can not register atexit.");
+      throw Exception(getPath(), "Internal error: can not register atexit.");
   if(type==write)
     addIPCRemove(interprocessName);
 }
@@ -115,9 +115,9 @@ File::~File() {
 
 void File::reopenAsSWMR() {
   if(type==read)
-    throw Exception("Can only reopen files opened for writing in SWMR mode");
+    throw Exception(getPath(), "Can only reopen files opened for writing in SWMR mode");
   if(isSWMR)
-    throw Exception("Can only ones reopen files in SWMR mode");
+    throw Exception(getPath(), "Can only ones reopen files in SWMR mode");
 
   isSWMR=true;
 
@@ -132,7 +132,7 @@ void File::reopenAllFilesAsSWMR() {
 
 void File::refresh() {
   if(type==write)
-    throw Exception("refresh() can only be called for reading files");
+    throw Exception(getPath(), "refresh() can only be called for reading files");
 
   // refresh file
 #ifdef HDF5_SWMR
@@ -145,7 +145,7 @@ void File::refresh() {
 
 void File::flush() {
   if(type==read)
-    throw Exception("flush() can only be called for writing files");
+    throw Exception(getPath(), "flush() can only be called for writing files");
 
 #ifdef HDF5_SWMR
   GroupBase::flush();
@@ -161,22 +161,22 @@ void File::close() {
   // check if all object are closed now: if not -> throw internal error (with details about the opened objects)
   ssize_t count=H5Fget_obj_count(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
   if(count<0)
-    throw Exception("Internal error: H5Fget_obj_count failed");
+    throw Exception(getPath(), "Internal error: H5Fget_obj_count failed");
   if(count>0) {
     vector<hid_t> obj(count, 0);
     ssize_t ret=H5Fget_obj_ids(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL, count, &obj[0]);
     if(ret<0)
-      throw Exception("Internal error: H5Fget_obj_ids failed");
+      throw Exception(getPath(), "Internal error: H5Fget_obj_ids failed");
     vector<char> name(1000+1);
     stringstream err;
     err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
     for(vector<hid_t>::iterator it=obj.begin(); it!=obj.end(); ++it) {
       size_t ret=H5Iget_name(*it, &name[0], 1000);
       if(ret<0)
-        throw Exception("Internal error: H5Iget_name");
+        throw Exception(getPath(), "Internal error: H5Iget_name");
       err<<"type="<<H5Iget_type(*it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
     }
-    throw Exception(err.str());
+    throw Exception(getPath(), err.str());
   }
 
   // now close also the file with is now the last opened identifier

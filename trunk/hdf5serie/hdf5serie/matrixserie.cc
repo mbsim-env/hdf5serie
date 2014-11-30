@@ -111,7 +111,7 @@ namespace H5 {
 
   template<class T>
   void MatrixSerie<T>::append(const vector<vector<T> > &matrix) {
-    if(matrix.size()!=dims[1]) throw Exception("the row dimension does not match");
+    if(matrix.size()!=dims[1]) throw Exception(getPath(), "the row dimension does not match");
     dims[0]++;
     DataSet::extend(dims);
 
@@ -122,7 +122,7 @@ namespace H5 {
 
     vector<T> data(dims[1]*dims[2]);
     for(unsigned int r=0; r<matrix.size(); r++) {
-      if(matrix[r].size()!=dims[2]) throw Exception("the column dimension does not match");
+      if(matrix[r].size()!=dims[2]) throw Exception(getPath(), "the column dimension does not match");
       memcpy(&data[r*dims[2]],&matrix[r][0],sizeof(double)*dims[2]);
     }
     write(&data[0], memDataType, memDataSpace, fileDataSpace);

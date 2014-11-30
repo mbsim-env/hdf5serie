@@ -17,7 +17,7 @@
     ) {
     std::pair<typename std::map<std::string, Child*>::iterator, bool> ret=childs.insert(std::pair<std::string, Child*>(name, NULL));
     if(!ret.second)
-      throw Exception("A element of name "+name+" already exists.");
+      throw Exception(self->getPath(), "A element of name "+name+" already exists.");
     try {
       T* r=new T(static_cast<Self*>(self), name
         #if BOOST_PP_ITERATION()>0

@@ -57,9 +57,11 @@ namespace H5 {
 
   class Exception : public std::exception {
     protected:
+      std::string path;
       std::string msg;
+      mutable std::string whatMsg;
     public:
-      explicit Exception(const std::string &msg_);
+      explicit Exception(const std::string &path_, const std::string &msg_);
       ~Exception() throw();
       const char* what() const throw();
   };
@@ -144,14 +146,14 @@ namespace H5 {
       template<class T>
       Creator<T> createChild(const std::string &name_) {
         if(name_.find_first_of('/')!=std::string::npos)
-          throw std::runtime_error("Internal error: must be a relative name, not absolute or a path");
+          throw Exception(static_cast<Self*>(this)->getPath(), "Internal error: must be a relative name, not absolute or a path");
         return Creator<T>(static_cast<Self*>(this), name_, childs);
       }
 
       template<class T>
       T* openChild(const std::string &name_) {
         if(name_.find_first_of('/')!=std::string::npos)
-          throw std::runtime_error("Internal error: must be a relative name, not absolute or a path");
+          throw Exception(static_cast<Self*>(this)->getPath(), "Internal error: must be a relative name, not absolute or a path");
         std::pair<typename std::map<std::string, Child*>::iterator, bool> ret=childs.insert(std::pair<std::string, Child*>(name_, NULL));
         if(!ret.second) {
           T *o=dynamic_cast<T*>(ret.first->second);
@@ -213,6 +215,7 @@ namespace H5 {
       bool hasChildAttribute(const std::string &name_);
       GroupBase *getParent() { return parent; }
       File *getFile() { return file; }
+      std::string getPath();
   };
 
   class Attribute : public Element {
@@ -229,6 +232,7 @@ namespace H5 {
     public:
       Object *getParent() { return parent; }
       File *getFile() { return file; }
+      std::string getPath();
   };
 
   class Dataset : public Object {
