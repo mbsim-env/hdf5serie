@@ -83,11 +83,11 @@ namespace H5 {
     id.reset(H5Dopen(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Dclose);
     ScopedHID sid(H5Dget_space(id), &H5Sclose);
     if(H5Sget_simple_extent_ndims(sid)!=2)
-      throw Exception("A VectorSerie dataset must have 2 dimensions.");
+      throw Exception(getPath(), "A VectorSerie dataset must have 2 dimensions.");
     hsize_t maxDims[2];
     H5Sget_simple_extent_dims(sid, dims, maxDims);
     if(maxDims[0]!=H5S_UNLIMITED)
-      throw Exception("A VectorSerie dataset must have unlimited dimension in the first dimension.");
+      throw Exception(getPath(), "A VectorSerie dataset must have unlimited dimension in the first dimension.");
     ScopedHID cpl(H5Dget_create_plist(id), &H5Pclose);
     H5Pget_chunk(cpl, 2, maxDims);
     ScopedHID apl(H5Dget_access_plist(id), &H5Pclose);
@@ -112,7 +112,7 @@ namespace H5 {
 
   template<class T>
   void VectorSerie<T>::append(const T data[], size_t size) {
-    if(size!=dims[1]) throw Exception("dataset dimension does not match");
+    if(size!=dims[1]) throw Exception(getPath(), "dataset dimension does not match");
     dims[0]++;
     H5Dset_extent(id, dims);
 
@@ -127,7 +127,7 @@ namespace H5 {
   template<class T>
   void VectorSerie<T>::getRow(const int row, size_t size, T data[]) {
     if(size!=dims[1])
-      throw Exception("Size of data does not match");
+      throw Exception(getPath(), "Size of data does not match");
     int rows=getRows();
     if(row<0 || row>=rows) {
       msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
@@ -150,7 +150,7 @@ namespace H5 {
   void VectorSerie<T>::getColumn(const int column, size_t size, T data[]) {
     hsize_t rows=getRows();
     if(size!=rows)
-      throw Exception("dataset dimension does not match");
+      throw Exception(getPath(), "dataset dimension does not match");
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
@@ -170,7 +170,7 @@ namespace H5 {
   template<class T>
   void VectorSerie<T>::setColumnLabel(const vector<string>& columnLabel) {
     if(dims[1]!=columnLabel.size())
-      throw Exception("Size of column labe does not match");
+      throw Exception(getPath(), "Size of column labe does not match");
     SimpleAttribute<vector<string> > *col=createChildAttribute<SimpleAttribute<vector<string> > >("Column Label")(columnLabel.size());
     col->write(columnLabel);
   }
@@ -187,7 +187,7 @@ namespace H5 {
 
   template<>
   void VectorSerie<string>::append(const string data[], size_t size) {
-    if(size!=dims[1]) throw Exception("dataset dimension does not match");
+    if(size!=dims[1]) throw Exception(getPath(), "dataset dimension does not match");
     dims[0]++;
     H5Dset_extent(id, dims);
   
@@ -207,7 +207,7 @@ namespace H5 {
   template<>
   void VectorSerie<string>::getRow(const int row, size_t size, string data[]) {
     if(size!=dims[1])
-      throw Exception("Size of data does not match");
+      throw Exception(getPath(), "Size of data does not match");
     int rows=getRows();
     if(row<0 || row>=rows) {
       msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
@@ -233,7 +233,7 @@ namespace H5 {
   void VectorSerie<string>::getColumn(const int column, size_t size, string data[]) {
     hsize_t rows=getRows();
     if(size!=rows)
-      throw Exception("dataset dimension does not match");
+      throw Exception(getPath(), "dataset dimension does not match");
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);

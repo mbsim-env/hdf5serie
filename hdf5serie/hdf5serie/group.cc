@@ -53,14 +53,14 @@ Object *GroupBase::openChildObject(const string &name_, ElementType *objectType,
   ScopedHID o(H5Oopen(id, name_.c_str(), H5P_DEFAULT), &H5Oclose);
   H5I_type_t t=H5Iget_type(o);
   if(t==H5I_BADID)
-    throw Exception("Can not get type");
+    throw Exception(getPath(), "Can not get type");
   switch(t) {
     case H5I_GROUP:
       return openChildObject<Group>(name_);
     case H5I_DATASET:
       return openChildDataset(name_, objectType, type);
     default:
-      throw Exception("internal error: unknown type");
+      throw Exception(getPath(), "internal error: unknown type");
   }
 }
 
@@ -82,7 +82,7 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
         return openChildObject<SimpleDataset<CTYPE> >(name_);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
-      throw Exception("unknown type of dataset");
+      throw Exception(getPath(), "unknown type of dataset");
     case 1:
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED) {
         if(objectType) *objectType=simpleDatasetVector;
@@ -91,9 +91,9 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
           return openChildObject<SimpleDataset<vector<CTYPE> > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
-        throw Exception("unknown type of dataset");
+        throw Exception(getPath(), "unknown type of dataset");
       }
-      throw Exception("unknown dimension of dataset");
+      throw Exception(getPath(), "unknown dimension of dataset");
     case 2:
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED &&
          dims[1]==maxDims[1] && dims[1]!=H5S_UNLIMITED) {
@@ -103,7 +103,7 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
           return openChildObject<SimpleDataset<vector<vector<CTYPE> > > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
-        throw Exception("unknown type of dataset");
+        throw Exception(getPath(), "unknown type of dataset");
       }
       if(maxDims[0]==H5S_UNLIMITED &&
          dims[1]==maxDims[1] && dims[1]!=H5S_UNLIMITED) {
@@ -113,11 +113,11 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
           return openChildObject<VectorSerie<CTYPE> >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
-        throw Exception("unknown type of dataset");
+        throw Exception(getPath(), "unknown type of dataset");
       }
-      throw Exception("unknown dimension of dataset");
+      throw Exception(getPath(), "unknown dimension of dataset");
     default:
-      throw Exception("unknown dimension of dataset");
+      throw Exception(getPath(), "unknown dimension of dataset");
   }
 }
 

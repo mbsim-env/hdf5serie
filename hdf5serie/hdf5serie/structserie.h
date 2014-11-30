@@ -208,7 +208,7 @@ serie.create(parent, "mystructserie");
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   template<class S> \
   void StructSerie<S>::registerMember(const S& s, const std::vector<CTYPE>& e, unsigned int N, const std::string name) { \
-    if(e.size()!=0 && e.size()!=N) throw Exception("wrong dimension"); \
+    if(e.size()!=0 && e.size()!=N) throw Exception(getPath(), "wrong dimension"); \
     int size; \
     if(!firstCall) size=memDataType.getSize(); else size=0; \
     CTYPE dummy; \
@@ -226,7 +226,7 @@ serie.create(parent, "mystructserie");
 
   template<class S>
   void StructSerie<S>::create(const CommonFG& parent, const std::string& name, int compression, int chunkSize) {
-    if(firstCall) throw Exception("wrong call sequence");
+    if(firstCall) throw Exception(getPath(), "wrong call sequence");
     dims[0]=0;
     hsize_t maxDims[]={H5S_UNLIMITED};
     DataSpace fileDataSpace(1, dims, maxDims);
@@ -242,7 +242,7 @@ serie.create(parent, "mystructserie");
   
   template<class S>
   void StructSerie<S>::open(const CommonFG& parent, const std::string& name) {
-    if(firstCall) throw Exception("wrong call sequence");
+    if(firstCall) throw Exception(getPath(), "wrong call sequence");
     DataSet dataSet=parent.openDataSet(name); // increments the refcount
     setId(dataSet.getId()); // increment the ref count (the ctor of dataset decrements it again)
   
@@ -319,7 +319,7 @@ serie.create(parent, "mystructserie");
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
         if(memDataType.getMemberDataType(i)==ArrayType(H5TYPE,1,dims)) { \
           std::vector<CTYPE>* vec=(std::vector<CTYPE>*)((char*)&data+structOffset[i]); \
-          if(vec->size()!=dims[0]) throw Exception("the dimension does not match"); \
+          if(vec->size()!=dims[0]) throw Exception(getPath(), "the dimension does not match"); \
           memcpy(&buf[0]+memDataType.getMemberOffset(i), &((*vec)[0]), dims[0]*sizeof(CTYPE)); \
         }
 #       include "knownpodtypes.def"
@@ -327,7 +327,7 @@ serie.create(parent, "mystructserie");
         if(memDataType.getMemberDataType(i)==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
           for(unsigned int j=0; j<dims[0]; j++) {
             std::vector<std::string>* vec=(std::vector<std::string>*)((char*)&data+structOffset[i]);
-            if(vec->size()!=dims[0]) throw Exception("the dimension does not match");
+            if(vec->size()!=dims[0]) throw Exception(getPath(), "the dimension does not match");
             charptr.push_back(std::vector<char>((*vec)[j].size()+1));
             char* str=&(*--charptr.end())[0];
             strcpy(str, (*vec)[j].c_str());

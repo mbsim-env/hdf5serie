@@ -46,18 +46,19 @@ namespace {
   herr_t errorHandler(hid_t estack, void *client_data) {
     stringstream str;
     H5Ewalk2(H5E_DEFAULT, H5E_WALK_UPWARD, &errorWalk, &str);
-    throw H5::Exception(str.str());
+    throw runtime_error(str.str());
   }
 }
 
 namespace H5 {
 
-Exception::Exception(const std::string &msg_) : msg(msg_) {}
+Exception::Exception(const std::string &path_, const std::string &msg_) : path(path_), msg(msg_) {}
 
 Exception::~Exception() throw() {}
 
 const char* Exception::what() const throw() {
-  return msg.c_str();
+  whatMsg="In element "+path+": "+msg;
+  return whatMsg.c_str();
 }
 
 Element::Element(const std::string &name_) : id(), name(name_) {
@@ -109,7 +110,7 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
         return openChildAttribute<SimpleAttribute<CTYPE> >(name_);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
-      throw Exception("unknown type of dataset");
+      throw Exception(getPath(), "unknown type of dataset");
     case 1:
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED) {
         if(attributeType) *attributeType=simpleAttributeVector;
@@ -118,9 +119,9 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
           return openChildAttribute<SimpleAttribute<vector<CTYPE> > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
-        throw Exception("unknown type of attribute");
+        throw Exception(getPath(), "unknown type of attribute");
       }
-      throw Exception("unknown dimension of attribute");
+      throw Exception(getPath(), "unknown dimension of attribute");
     case 2:
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED &&
          dims[1]==maxDims[1] && dims[1]!=H5S_UNLIMITED) {
@@ -130,11 +131,11 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
           return openChildAttribute<SimpleAttribute<vector<vector<CTYPE> > > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
-        throw Exception("unknown type of attribute");
+        throw Exception(getPath(), "unknown type of attribute");
       }
-      throw Exception("unknown dimension of attribute");
+      throw Exception(getPath(), "unknown dimension of attribute");
     default:
-      throw Exception("unknown dimension of attribute");
+      throw Exception(getPath(), "unknown dimension of attribute");
   }
 }
 
@@ -179,8 +180,12 @@ Object *Object::getFileAsObject() {
 Object *Object::getAttrParent(const string &path, size_t pos) {
   GroupBase *group=dynamic_cast<GroupBase*>(this);
   if(!group)
-    throw std::runtime_error("Got a path (including /) but this object is not a group");
+    throw Exception(getPath(), "Got a path (including /) but this object is not a group");
   return group->openChildObject(path.substr(0, pos));
+}
+
+string Object::getPath() {
+  return parent ? parent->getPath()+"/"+name : name;
 }
 
 
@@ -205,6 +210,10 @@ void Attribute::refresh() {
 
 void Attribute::flush() {
   Element::flush();
+}
+
+string Attribute::getPath() {
+  return parent ? parent->getPath()+"/"+name : name;
 }
 
 Dataset::Dataset(GroupBase *parent_, const std::string &name_) : Object(parent_, name_) {

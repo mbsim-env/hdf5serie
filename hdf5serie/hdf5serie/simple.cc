@@ -104,13 +104,13 @@ void HDF5SERIE_CLASS<vector<T> >::open() {
 template<class T>
 void HDF5SERIE_CLASS<vector<T> >::write(const vector<T> &data) {
   if(static_cast<int>(data.size())!=size)
-    throw Exception("Size mismatch in write.");
+    throw Exception(getPath(), "Size mismatch in write.");
   HDF5SERIE_H5XWRITE(&data[0]);
 }
 template<>
 void HDF5SERIE_CLASS<vector<string> >::write(const vector<string>& data) {
   if(static_cast<int>(data.size())!=size)
-    throw Exception("the dimension does not match");
+    throw Exception(getPath(), "the dimension does not match");
   VecStr buf(size);
   for(unsigned int i=0; i<static_cast<size_t>(size); i++) {
     buf[i]=(char*)malloc((data[i].size()+1)*sizeof(char));
@@ -187,7 +187,7 @@ void HDF5SERIE_CLASS<vector<vector<T> > >::open() {
 template<class T>
 void HDF5SERIE_CLASS<vector<vector<T> > >::write(const vector<vector<T> > &data) {
   if(static_cast<int>(data.size())!=rows || static_cast<int>(data[0].size())!=cols)
-    throw Exception("Size mismatch in write.");
+    throw Exception(getPath(), "Size mismatch in write.");
   vector<T> buf(rows*cols);
   int i=0;
   for(typename vector<vector<T> >::const_iterator ir=data.begin(); ir!=data.end(); ++ir)
@@ -198,7 +198,7 @@ void HDF5SERIE_CLASS<vector<vector<T> > >::write(const vector<vector<T> > &data)
 template<>
 void HDF5SERIE_CLASS<vector<vector<string> > >::write(const vector<vector<string> >& data) {
   if(static_cast<int>(data.size())!=rows || static_cast<int>(data[0].size())!=cols)
-    throw Exception("Size mismatch in write.");
+    throw Exception(getPath(), "Size mismatch in write.");
   VecStr buf(rows*cols);
   int i=0;
   for(typename vector<vector<string> >::const_iterator ir=data.begin(); ir!=data.end(); ++ir)

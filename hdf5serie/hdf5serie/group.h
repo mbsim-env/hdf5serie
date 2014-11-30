@@ -51,7 +51,7 @@ namespace H5 {
         // now its a relative path including at least one /
         GroupBase *group=dynamic_cast<GroupBase*>(openChildObject(path.substr(0, pos)));
         if(!group)
-          throw std::runtime_error("Got a path (including /) but this object is not a group");
+          throw Exception(getPath(), "Got a path (including /) but this object is not a group");
         return group->createChildObject<T>(path.substr(pos+1));
       }
 
@@ -67,7 +67,7 @@ namespace H5 {
         // now its a relative path including at least one /
         GroupBase *group=dynamic_cast<GroupBase*>(openChildObject(path.substr(0, pos)));
         if(!group)
-          throw std::runtime_error("Got a path (including /) but this object is not a group");
+          throw Exception(getPath(), "Got a path (including /) but this object is not a group");
         return group->openChildObject<T>(path.substr(pos+1));
       }
       Object *openChildObject(const std::string &name_, ElementType *objectType=NULL, hid_t *type=NULL);
