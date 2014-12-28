@@ -13,7 +13,7 @@ else
 endif
 hdf5serieincludedir = $(includedir)/hdf5serie
 libhdf5serie_la_CPPFLAGS = -I$(top_srcdir) $(FMATVEC_CFLAGS)
-libhdf5serie_la_LIBADD   = $(FMATVEC_LIBS) -l@BOOST_THREAD_LIB@ -l@BOOST_CHRONO_LIB@ -l@BOOST_FILESYSTEM_LIB@ -l@BOOST_SYSTEM_LIB@ $(MAYBE_LIBS)
+libhdf5serie_la_LIBADD   = $(FMATVEC_LIBS) -l@BOOST_FILESYSTEM_LIB@ -l@BOOST_SYSTEM_LIB@ $(MAYBE_LIBS)
 
 hdf5serieinclude_HEADERS = toh5type.h file.h group.h interface.h interface_creatoroperator_iter.h \
   simple.h \

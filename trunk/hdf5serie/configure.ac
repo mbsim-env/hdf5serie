@@ -83,14 +83,6 @@ AC_ARG_WITH([boost-system-lib],
   [  --with-boost-system-lib=LIBNAME  The library name of boost system excluding prefix/suffix (Default: boost_system).],
   [BOOST_SYSTEM_LIB="$withval"], [BOOST_SYSTEM_LIB="boost_system"])
 AC_SUBST([BOOST_SYSTEM_LIB])
-AC_ARG_WITH([boost-chrono-lib],
-  [  --with-boost-chrono-lib=LIBNAME  The library name of boost chrono excluding prefix/suffix (Default: boost_chrono).],
-  [BOOST_CHRONO_LIB="$withval"], [BOOST_CHRONO_LIB="boost_chrono"])
-AC_SUBST([BOOST_CHRONO_LIB])
-AC_ARG_WITH([boost-thread-lib],
-  [  --with-boost-thread-lib=LIBNAME  The library name of boost thread excluding prefix/suffix (Default: boost_thread).],
-  [BOOST_THREAD_LIB="$withval"], [BOOST_THREAD_LIB="boost_thread-mt"])
-AC_SUBST([BOOST_THREAD_LIB])
 
 AC_CONFIG_FILES([Makefile doc/Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc
