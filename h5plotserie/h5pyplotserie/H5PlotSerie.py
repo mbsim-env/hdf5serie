@@ -24,7 +24,6 @@ class H5PlotSerie(QtGui.QMainWindow):
         
         self.initUI()
         self.h5Files = {}
-        self.currentTreeItem = None
         self.currentDir = os.curdir
         self.setAcceptDrops(True) 
         self.showMaximized()
@@ -65,8 +64,6 @@ class H5PlotSerie(QtGui.QMainWindow):
         unloadFile = QtGui.QAction("Unload", self)
         self.treeGroups.addAction(unloadFile)
         self.connect(unloadFile, QtCore.SIGNAL("triggered()"), self.unloadCurrentFile)
-        
-
         
         #
         self.listData = MyQListWidget()
@@ -179,23 +176,28 @@ class H5PlotSerie(QtGui.QMainWindow):
         root.setToolTip(0, filename)
         data = QVariant(filename)
         root.setData(0, QtCore.Qt.UserRole, data)
-        self.treeGroups.addTopLevelItem(root)
+        self.treeGroups.addTopLevelItem(root)  
+        if len(subgroups) <= 3:
+            root.setExpanded(True)      
         self.addSelectedSubitems(root, file, subgroups)
         
         
     def addSelectedSubitems(self, parentTree, parentGroup, subgroups):
-        if len(subgroups) < 10:
-            parentTree.setExpanded(True)
-        for group in subgroups:
+        for groupname in sorted(subgroups):
             # Add only the tree of the selected subitem
-            s = group.split('/')
-            parent = parentTree
-            for part in s[1:]:
-                subItem = self.createSubitem(part, parent, parentGroup[group].attrs)          
-                parent.addChild(subItem)
-                parent = subItem
-                
-            self.addAllSubitems(parent, parentGroup[group])
+            subItem = self.createSubitem(parentTree, parentGroup, groupname)
+            parentTree.addChild(subItem)
+            try:
+                if len(subgroups[groupname]) <= 3:
+                    subItem.setExpanded(True)
+            except:
+                pass
+                        
+            self.addSelectedSubitems(subItem, parentGroup[groupname], subgroups[groupname])
+        
+        # If there are no subgroups found any more then add all the rest to the list
+        if len(subgroups) == 0:    
+            self.addAllSubitems(parentTree, parentGroup)
     
     def addAllSubitems(self, parentTree, parentGroup):
         '''
@@ -203,47 +205,50 @@ class H5PlotSerie(QtGui.QMainWindow):
         '''
         try:
             for group in parentGroup:
-                subItem = self.createSubitem(group, parentTree, parentGroup[group].attrs)
+                subItem = self.createSubitem(parentTree, parentGroup, group)
                 parentTree.addChild(subItem)
-                if not group.endswith('data'):
-                    self.addAllSubitems(subItem, parentGroup[group])
+                self.addAllSubitems(subItem, parentGroup[group])
         except:
             pass
         
-    def createSubitem(self, groupname, parentItem, attributes):
-        subItem = QtGui.QTreeWidgetItem()
-        subItem.setText(0, groupname)        
-        filenameData = QVariant(str(parentItem.data(0, QtCore.Qt.UserRole).toString()))
-        subgroupData = QVariant(str(parentItem.data(1, QtCore.Qt.UserRole).toString()) + '/' + groupname)
-        subItem.setData(0, QtCore.Qt.UserRole, filenameData)
-        subItem.setData(1, QtCore.Qt.UserRole, subgroupData)
-        
-        try:
-            subItem.setData(2, QtCore.Qt.UserRole, attributes)
-            if 'Description' in attributes:
-                subItem.setToolTip(0, attributes['Description'])
-        except:
-            pass
-                    
-        
-        return subItem
+    def createSubitem(self, parentItem, parentGroup, groupname):
+        if groupname != 'data':
+            attributes = parentGroup[groupname].attrs
+            subItem = QtGui.QTreeWidgetItem()
+            subItem.setText(0, groupname)        
+            filenameData = QVariant(str(parentItem.data(0, QtCore.Qt.UserRole).toString()))
+            if 'data' in parentGroup[groupname]:
+                subgroupData = QVariant(str(parentItem.data(1, QtCore.Qt.UserRole).toString()) + '/' + groupname + '/data')
+            else:
+                subgroupData = QVariant(str(parentItem.data(1, QtCore.Qt.UserRole).toString()) + '/' + groupname)
+            subItem.setData(0, QtCore.Qt.UserRole, filenameData)
+            subItem.setData(1, QtCore.Qt.UserRole, subgroupData)
+            subItem.setExpanded(True)
+            
+            try:
+                subItem.setData(2, QtCore.Qt.UserRole, attributes)
+                if 'Description' in attributes:
+                    subItem.setToolTip(0, attributes['Description'])
+            except:
+                pass
+                        
+            
+            return subItem
         
                 
-    def getCurrentItemData(self):
-        filename = self.currentTreeItem.data(0, QtCore.Qt.UserRole).toString()
-        internalTree = self.currentTreeItem.data(1, QtCore.Qt.UserRole).toString()
+    def getItemData(self, item = None):
+        if item == None:
+            selItems = self.treeGroups.selectedItems()
+            if len(selItems) == 0:
+                return
+        item = selItems[0]
+        filename = item.data(0, QtCore.Qt.UserRole).toString()
+        internalTree = item.data(1, QtCore.Qt.UserRole).toString()
         return str(filename), str(internalTree)
                 
     def loadData(self): 
-        selItems = self.treeGroups.selectedItems()
-        if len(selItems) == 0:
-            return
-        item = selItems[0]
-        if str(item.text(0)) == 'data':
-            self.currentTreeItem = item
-            
-            filename, internalTree = self.getCurrentItemData()
-                
+        filename, internalTree = self.getItemData()
+        if internalTree.endswith('/data'):
             labels = self.h5Files[filename].getColumnLabels(internalTree)
             
             self.listData.clear()
@@ -282,7 +287,7 @@ class H5PlotSerie(QtGui.QMainWindow):
         return newPlotWindow
             
     def createPlotData(self):
-        filename, internalTree = self.getCurrentItemData()
+        filename, internalTree = self.getItemData()
         data = self.h5Files[filename].getData(internalTree)
         x = data[:, self.xInd]
         y = data[:, self.yInd]
