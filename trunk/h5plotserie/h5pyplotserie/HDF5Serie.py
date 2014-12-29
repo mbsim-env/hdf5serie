@@ -88,15 +88,24 @@ class HDF5Serie(h5py.File):
         >>> for filename in iter_matching('/', r'/home.*\.bak'):
             ....    # do something
          '''
-        retList = []
+        retList = {}
+        abspath = ''
+        
+        def addToRetList():
+            curSubItem = retList
+            for item in abspath.split('/'):
+                if item != '':
+                    if item in curSubItem:
+                        curSubItem = curSubItem[item]
+                    else:
+                        curSubItem[item] = {}
+                        curSubItem = curSubItem[item]
+        
         for parentGroup, childGroups in self.walk(parent):
-            if parentGroup[:-1] in retList:
-                break
-            else:
-                for child in childGroups:
-                    abspath = ''.join([parentGroup, child])
-                    if re.search(regexp, child):
-                        retList.append(abspath)
+            for child in childGroups:
+                abspath = ''.join([parentGroup, child])
+                if re.search(regexp, child):
+                    addToRetList()
         return retList
                         
     def getNbCols(self, path, group=None):
