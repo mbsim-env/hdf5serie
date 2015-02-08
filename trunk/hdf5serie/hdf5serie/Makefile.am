@@ -7,13 +7,9 @@ libhdf5serie_la_SOURCES = toh5type.cc file.cc group.cc interface.cc \
   vectorserie.cc
 #  matrixserie.cc
 
-if COND_WIN32
-else
-  MAYBE_LIBS = -lrt
-endif
 hdf5serieincludedir = $(includedir)/hdf5serie
 libhdf5serie_la_CPPFLAGS = -I$(top_srcdir) $(FMATVEC_CFLAGS)
-libhdf5serie_la_LIBADD   = $(FMATVEC_LIBS) -l@BOOST_FILESYSTEM_LIB@ -l@BOOST_SYSTEM_LIB@ $(MAYBE_LIBS)
+libhdf5serie_la_LIBADD   = $(FMATVEC_LIBS) -l@BOOST_FILESYSTEM_LIB@ -l@BOOST_SYSTEM_LIB@ $(LIBS)
 
 hdf5serieinclude_HEADERS = toh5type.h file.h group.h interface.h interface_creatoroperator_iter.h \
   simple.h \
