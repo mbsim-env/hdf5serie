@@ -2,7 +2,7 @@ include $(top_srcdir)/qt.mk
 
 bin_PROGRAMS = h5plotserie
 h5plotserie_CPPFLAGS = -I$(top_srcdir) $(QT_CFLAGS) $(HDF5SERIE_CFLAGS) $(QWT_CFLAGS)
-h5plotserie_LDFLAGS  = -Wl,-rpath -Wl,\$$ORIGIN/../lib
+h5plotserie_LDFLAGS  = -Wl,--disable-new-dtags,-rpath,\$$ORIGIN/../lib
 h5plotserie_LDADD    = $(QT_LIBS) $(HDF5SERIE_LIBS) $(QWT_LIBS)
 h5plotserie_SOURCES = main.cc \
 											curves.cc \
