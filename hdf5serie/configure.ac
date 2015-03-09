@@ -72,6 +72,7 @@ AC_CHECK_LIB([hdf5], [H5Dflush], [AC_DEFINE([HDF5_SWMR], [1], [HDF5 SWMR branch 
 
 # from now on only libtool is used for linking
 LDFLAGS="$LDFLAGS -no-undefined -Wl,--no-undefined"
+test "_$host_os" != "_mingw32" && LDFLAGS="$LDFLAGS -Wl,--disable-new-dtags,-rpath,\\\$\$ORIGIN/../lib"
 
 # boost
 AC_CHECK_HEADERS([boost/filesystem.hpp],[],[AC_MSG_ERROR([Can not find boost/filesystem.hpp])])
