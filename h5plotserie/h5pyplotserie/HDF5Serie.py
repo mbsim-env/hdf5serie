@@ -149,10 +149,10 @@ class HDF5Serie(h5py.File):
         if group is None:
             return group
         else:
-            if path.endswith('data'):
-                return group.value
-            elif 'data' in group:
+            if 'data' in group:
                 return group['data'].value
+            elif path.endswith('data'):
+                return group.value
             else:   
                 return None
             

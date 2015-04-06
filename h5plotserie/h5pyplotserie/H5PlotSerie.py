@@ -5,6 +5,7 @@ from PyQt4.Qt import QVariant
 
 import HDF5Serie
 import H5QtMPLCanvas
+from xdg.Config import setWindowManager
 
 class MyQListWidget(QtGui.QListWidget):
     '''
@@ -19,25 +20,21 @@ class MyQListWidget(QtGui.QListWidget):
         super(MyQListWidget, self).mousePressEvent(event)
 
 class H5PlotSerie(QtGui.QMainWindow):
-    def __init__(self):
+    def __init__(self, args=[]):
         super(H5PlotSerie, self).__init__()
         
         self.initUI()
-        self.h5Files = {}
+        self.h5Files = []
         self.currentDir = os.curdir
         self.setAcceptDrops(True) 
         self.showMaximized()
         
         self.xInd = 0
         self.yInd = 1
-        
-        
-        if len(sys.argv) == 1:
-            for file in os.listdir(os.getcwd()):
-                self.addFile(str(file))
-        else:
-            for arg in sys.argv[1:]:
-                self.addFile(str(arg))
+
+        self.setWindowTitle('H5PyPlotSerie')
+        for arg in args[1:]:
+            self.addFile(str(arg))
         
     def initUI(self):
         centralW = QtGui.QWidget()
@@ -93,10 +90,17 @@ class H5PlotSerie(QtGui.QMainWindow):
         self.quitAction.setShortcut(QtGui.QKeySequence("Ctrl+Q"))
         file.addAction(self.quitAction)
         self.connect(self.quitAction, QtCore.SIGNAL("triggered()"), self.close)
+    
+    def getH5File(self, filename):
+        for item in self.h5Files:
+            if filename == item.filename:
+                return item
+        else:
+            return None
         
-    def searchItems(self, filename):
+    def searchItems(self, h5File):
         expr = str(self.searchEdit.text())        
-        return self.h5Files[filename].findAllGroups(expr)
+        return h5File.findAllGroups(expr)
         
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -106,7 +110,16 @@ class H5PlotSerie(QtGui.QMainWindow):
 
     def dropEvent(self, event):
         for url in event.mimeData().urls():
-            self.addFile(str(url.toLocalFile().toLocal8Bit().data()))
+            if url.isLocalFile():
+                path = url.toLocalFile()
+                path = str(path.toLocal8Bit().data())
+            else:
+                # Copied from http://askubuntu.com/questions/213638/how-to-find-a-samba-shares-gvfs-path on 2015-02-18
+                from gi.repository import Gio
+                gvfs = Gio.Vfs.get_default()
+                path = str(url.toString())
+                path = gvfs.get_file_for_uri(path).get_path()
+            self.addFile(path)
         
     def loadFile(self):
         filename = QtGui.QFileDialog.getOpenFileNameAndFilter(self, 'Load File', filter='*.h5', directory=self.currentDir)
@@ -122,8 +135,9 @@ class H5PlotSerie(QtGui.QMainWindow):
         try:
             if os.path.exists(filename):
                 if filename.endswith('mbsim.h5') or filename.endswith('ombv.h5'):
-                    self.h5Files[filename] = HDF5Serie.HDF5Serie(filename, 'r')
-                    self.currentDir = os.path.dirname(filename)
+                    if self.getH5File(filename) is None:
+                        self.h5Files.append(HDF5Serie.HDF5Serie(filename, 'r'))
+                        self.currentDir = os.path.dirname(filename)
         except:
             pass
         
@@ -133,9 +147,8 @@ class H5PlotSerie(QtGui.QMainWindow):
         '''
         Unloads the given filename from the list
         '''
-        if filename in self.h5Files:
-            del self.h5Files[filename]
-            self.updateTree()
+        self.h5Files.remove(self.getH5File(filename))
+        self.updateTree()
         
     def showAttributes(self):
         '''
@@ -165,12 +178,12 @@ class H5PlotSerie(QtGui.QMainWindow):
         '''
         self.listData.clear()
         self.treeGroups.clear()
-        for filename in self.h5Files:
-            self.addTree(filename, self.searchItems(filename))
+        for item in self.h5Files:
+            self.addTree(item, self.searchItems(item))
                 
-    def addTree(self, filename, subgroups):
-        file = self.h5Files[filename]
+    def addTree(self, h5File, subgroups):
         root = QtGui.QTreeWidgetItem()
+        filename = h5File.filename
         text = filename.split('/')[-1].split('\\')[-1]
         root.setText(0, text)
         root.setToolTip(0, filename)
@@ -179,7 +192,7 @@ class H5PlotSerie(QtGui.QMainWindow):
         self.treeGroups.addTopLevelItem(root)  
         if len(subgroups) <= 3:
             root.setExpanded(True)      
-        self.addSelectedSubitems(root, file, subgroups)
+        self.addSelectedSubitems(root, h5File, subgroups)
         
         
     def addSelectedSubitems(self, parentTree, parentGroup, subgroups):
@@ -217,10 +230,11 @@ class H5PlotSerie(QtGui.QMainWindow):
             subItem = QtGui.QTreeWidgetItem()
             subItem.setText(0, groupname)        
             filenameData = QVariant(str(parentItem.data(0, QtCore.Qt.UserRole).toString()))
+            parentPath = str(parentItem.data(1, QtCore.Qt.UserRole).toString()).replace('/data','') # The possible data has to be stripped!
             if 'data' in parentGroup[groupname]:
-                subgroupData = QVariant(str(parentItem.data(1, QtCore.Qt.UserRole).toString()) + '/' + groupname + '/data')
+                subgroupData = QVariant(parentPath + '/' + groupname + '/data')
             else:
-                subgroupData = QVariant(str(parentItem.data(1, QtCore.Qt.UserRole).toString()) + '/' + groupname)
+                subgroupData = QVariant(parentPath + '/' + groupname)
             subItem.setData(0, QtCore.Qt.UserRole, filenameData)
             subItem.setData(1, QtCore.Qt.UserRole, subgroupData)
             subItem.setExpanded(True)
@@ -249,7 +263,7 @@ class H5PlotSerie(QtGui.QMainWindow):
     def loadData(self): 
         filename, internalTree = self.getItemData()
         if internalTree.endswith('/data'):
-            labels = self.h5Files[filename].getColumnLabels(internalTree)
+            labels = self.getH5File(filename).getColumnLabels(internalTree)
             
             self.listData.clear()
             self.listData.addItems(labels)
@@ -288,11 +302,11 @@ class H5PlotSerie(QtGui.QMainWindow):
             
     def createPlotData(self):
         filename, internalTree = self.getItemData()
-        data = self.h5Files[filename].getData(internalTree)
+        data = self.getH5File(filename).getData(internalTree)
         x = data[:, self.xInd]
         y = data[:, self.yInd]
         
-        labels = self.h5Files[filename].getColumnLabels(internalTree)
+        labels = self.getH5File(filename).getColumnLabels(internalTree)
         headLine = str(labels[self.yInd]) + ' vs. ' + str(labels[self.xInd])
         xString = 'x = h5read(\'' + os.path.abspath(filename) + '\',\'' + internalTree + '\',' + '[' + str(self.xInd + 1) + ',1], [1,' + str(len(x)) + ']);'
         yString = 'y = h5read(\'' + os.path.abspath(filename) + '\',\'' + internalTree + '\',' + '[' + str(self.yInd + 1) + ',1], [1,' + str(len(y)) + ']);'
