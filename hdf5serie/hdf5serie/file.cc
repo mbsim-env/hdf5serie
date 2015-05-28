@@ -41,9 +41,15 @@ namespace {
   void openIPC(H5::File::IPC &ipc, const boost::filesystem::path &filename);
   bool waitForWriterFlush(H5::File::IPC &ipc, H5::File *me);
 
-  set<string> ipcRemove;
-  void hdf5SerieAtExit();
-  void addIPCRemove(const string &interprocessName);
+  class RunAtExit {
+    public:
+      RunAtExit() {}
+      ~RunAtExit();
+      void addIPCRemove(const string &interprocessName);
+    private:
+      set<string> ipcRemove;
+  };
+  RunAtExit runatexit;
 }
 
 namespace H5 {
@@ -74,20 +80,14 @@ File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.st
     ipc.flushVar=new(ptr) bool(false);              ptr+=sizeof(bool);
     ipc.mutex   =new(ptr) interprocess_mutex();     ptr+=sizeof(interprocess_mutex);
     ipc.cond    =new(ptr) interprocess_condition(); ptr+=sizeof(interprocess_condition);
+
+    runatexit.addIPCRemove(interprocessName);
   }
   else {
     readerFiles.insert(this);
     // try to open interprocess elements
     openIPC(ipc, filename);
   }
-
-  // register atExit
-  static bool atExitRegistered=false;
-  if(!atExitRegistered)
-    if(atexit(hdf5SerieAtExit)!=0)
-      throw Exception(getPath(), "Internal error: can not register atexit.");
-  if(type==write)
-    addIPCRemove(interprocessName);
 }
 
 
@@ -356,13 +356,12 @@ void openIPC(H5::File::IPC &ipc, const path &filename) {
   }
 }
 
-void hdf5SerieAtExit() {
+RunAtExit::~RunAtExit() {
   for(set<string>::iterator it=ipcRemove.begin(); it!=ipcRemove.end(); ++it)
     shared_memory_object::remove(it->c_str());
-  ipcRemove.clear();
 }
 
-void addIPCRemove(const string &interprocessName) {
+void RunAtExit::addIPCRemove(const string &interprocessName) {
   ipcRemove.insert(interprocessName);
 }
 
