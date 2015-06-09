@@ -1,0 +1,29 @@
+Installation
+====================
+
+This project plots graphs based on time series within HDF5. It needs HDF5 version >= 1.8.2 . You can download it from
+http://www.hdfgroup.org . Another requirement is libqwt5. The program will not work with libqwt6.
+
+After the installation proceed with the following steps.
+
+1. Checkout from git
+--------------------
+
+If not already done, checkout the git tree
+# git clone https://github.com/mbsim-env/hdf5serie.git
+
+
+2. Run AutoTools
+----------------
+
+# aclocal
+# autoheader
+# libtoolize -c --force
+# autoconf
+# automake -a -c --force
+
+
+3. Proceed with configure
+-------------------------
+
+See file INSTALL.

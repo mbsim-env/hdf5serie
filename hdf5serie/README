@@ -1,16 +1,15 @@
-Insallation from SVN
+Installation
 ====================
 
-This project needs HDF5 version >= 1.8.2 . You can download it from
-http://www.hdfgroup.org . After the installation of HDF5 proceed with the
-following steps.
+This project is a wrapper for time series within HDF5. It needs HDF5 version >= 1.8.2 . You can download it from
+http://www.hdfgroup.org . After the installation of HDF5 proceed with the following steps.
 
 
-1. Checkout from SVN
+1. Checkout from git
 --------------------
 
-If not already done, checkout the SVN tree
-# svn checkout svn checkout http://hdf5serie.googlecode.com/svn/trunk/ hdf5serie
+If not already done, checkout the git tree
+# git clone https://github.com/mbsim-env/hdf5serie.git
 
 
 2. Run AutoTools
