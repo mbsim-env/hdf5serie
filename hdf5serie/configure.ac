@@ -45,12 +45,12 @@ dnl Check for hdf5 library
 AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
   [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$withval/include"
-    HDF5LDFLAGS="-L$withval/lib"
-    LDFLAGS="$LDFLAGS -L$withval/lib"
+    HDF5LDFLAGS="$HDF5LDFLAGS -L$withval/lib"
+    LDFLAGS="$LDFLAGS $HDF5LDFLAGS"
     LIBS="$LIBS -lhdf5"; hdf5_prefix=$withval],
   [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$prefix/include"
-    HDF5LDFLAGS="-L$prefix/lib"
-    LDFLAGS="$LDFLAGS -L$prefix/lib"
+    HDF5LDFLAGS="$HDF5LDFLAGS -L$prefix/lib"
+    LDFLAGS="$LDFLAGS $HDF5LDFLAGS"
     LIBS="$LIBS -lhdf5"; hdf5_prefix=$prefix])
 CPPFLAGS="$CPPFLAGS $HDF5CPPFLAGS"
 if test "_$host_os" != "_mingw32" ; then
