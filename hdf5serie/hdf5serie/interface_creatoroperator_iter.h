@@ -1,3 +1,5 @@
+// replace this file (boost preprocessor iteration) with c++11 code if we use c++11
+
 // iteration for function "T* operator()(...)"
 #if BOOST_PP_ITERATION_DEPTH()==1
 
