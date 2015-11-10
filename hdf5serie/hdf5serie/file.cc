@@ -116,8 +116,10 @@ File::~File() {
 void File::reopenAsSWMR() {
   if(type==read)
     throw Exception(getPath(), "Can only reopen files opened for writing in SWMR mode");
-  if(isSWMR)
-    throw Exception(getPath(), "Can only ones reopen files in SWMR mode");
+  if(isSWMR) {
+    msg(Warn)<<"reopenAsSWMR called more than once for file "<<name<<". Skipping this call (must be reworked after the HDF5 1.10 release)"<<endl;
+    return;
+  }
 
   isSWMR=true;
 
