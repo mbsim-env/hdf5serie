@@ -155,8 +155,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
     while (penColor>pen.size()-1)
       penColor-=pen.size();
     c->setPen(pen[penColor]);
-    c->setData(&xVal[0], &yVal[0], xVal.size());
-    c->draw(0, xVal.size());
+    c->setSamples(&xVal[0], &yVal[0], xVal.size());
   }
   else {
     QMessageBox msgBox;
@@ -173,8 +172,8 @@ void PlotWindow::replotPlot() {
     QwtPlotGrid *grid = new QwtPlotGrid;
     grid->enableXMin(true);
     grid->enableYMin(true);
-    grid->setMajPen(QPen(Qt::black, 0, Qt::DotLine));
-    grid->setMinPen(QPen(Qt::gray, 0 , Qt::DotLine));
+    grid->setMajorPen(QPen(Qt::black, 0, Qt::DotLine));
+    grid->setMinorPen(QPen(Qt::gray, 0 , Qt::DotLine));
     grid->attach(plot);
   }
 

@@ -27,7 +27,7 @@ AC_SUBST([RCC])
 dnl HDF5Serie
 PKG_CHECK_MODULES(HDF5SERIE, hdf5serie)
 
-dnl qwt >= 5
+dnl qwt >= 6
 AC_ARG_WITH(qwt_inc_prefix,
   [  --with-qwt-inc-prefix=PFX  Prefix where qwt headers are installed],
   [QWT_CFLAGS="-I$withval"],
@@ -42,13 +42,12 @@ AC_ARG_WITH(qwt_lib_prefix,
   [QWT_LIBS="-L$prefix/lib -l$QWT_LIBNAME"])
 OLDCPPFLAGS=$CPPFLAGS; CPPFLAGS="$CPPFLAGS $QWT_CFLAGS $QT_CFLAGS"
 OLDLIBS=$LIBS; LIBS="$LIBS $QWT_LIBS $QT_LIBS"
-AC_CHECK_HEADERS([qwt_wheel.h], [],
-  [AC_MSG_ERROR([Can not find qwt >= 5!])])
+AC_CHECK_HEADERS([qwt_system_clock.h], [], [AC_MSG_ERROR([Can not find qwt_system_clock.h! Maybe a qwt5 header is used!])])
 AC_TRY_LINK(
-  [#include <qwt_plot_grid.h>],
-  [new QwtPlotGrid;],
+  [#include <qwt_system_clock.h>],
+  [new QwtSystemClock;],
   [],
-  [AC_MSG_ERROR([Can not link with qwt >= 5!])])
+  [AC_MSG_ERROR([Can not link with qwt >= 6])])
 CPPFLAGS=$OLDCPPFLAGS
 LIBS=$OLDLIBS
 AC_SUBST([QWT_CFLAGS])
