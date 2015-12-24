@@ -92,7 +92,7 @@ fi
 
 AC_CONFIG_FILES([Makefile doc/Makefile hdf5serie/Makefile hdf5serie/check/Makefile
   hdf5serie/dump/Makefile hdf5serie.pc
-  doc/Doxyfile hdf5serie/dump/h5dumpserie.m hdf5serie/dump/hdf5serieappenddataset.m])
+  doc/doxyfile hdf5serie/dump/h5dumpserie.m hdf5serie/dump/hdf5serieappenddataset.m])
 AC_CONFIG_FILES([hdf5serie/check/testlib.sh],[chmod +x hdf5serie/check/testlib.sh])
 AC_CONFIG_FILES([hdf5serie/check/testdump.sh],[chmod +x hdf5serie/check/testdump.sh])
 
