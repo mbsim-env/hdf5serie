@@ -1,6 +1,4 @@
 #! /bin/sh
 
-#../dump/h5lsserie@EXEEXT@ testcompound.h5/serie1d || exit
-#../dump/h5dumpserie@EXEEXT@ testcompound.h5/serie1d || exit
-../dump/h5lsserie@EXEEXT@ test2d.h5 || exit
-../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserie || exit
+@XC_EXEC_PREFIX@ ../dump/h5lsserie@EXEEXT@ test2d.h5 || exit
+@XC_EXEC_PREFIX@ ../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserie || exit

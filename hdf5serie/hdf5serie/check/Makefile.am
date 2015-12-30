@@ -4,10 +4,9 @@ else
 endif
 
 check_PROGRAMS = testlib
-check_SCRIPTS = testdump.sh $(MAYBE_VALGRIND_TESTS)
 
 TEST_EXTENSIONS=.sh
-TESTS = testlib testdump.sh $(MAYBE_VALGRIND_TESTS)
+TESTS = testlib.sh testdump.sh $(MAYBE_VALGRIND_TESTS)
 testdump.log: testlib.log
 valgrindtestlib.log: testlib.log
 valgrindtestdump.log: valgrindtestlib.log
