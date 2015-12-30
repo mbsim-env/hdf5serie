@@ -29,7 +29,11 @@
 
 namespace boost {
   namespace interprocess {
+#ifdef _WIN32
+    class windows_shared_memory;
+#else
     class shared_memory_object;
+#endif
     class mapped_region;
     class interprocess_mutex;
     class interprocess_condition;
@@ -73,7 +77,11 @@ namespace H5 {
       struct IPC {
         boost::filesystem::path filename; // the filename of this IPC
         std::string interprocessName; // the name of this IPC
+#ifdef _WIN32
+        boost::shared_ptr<boost::interprocess::windows_shared_memory> shm; // shared memory used for this IPC
+#else
         boost::shared_ptr<boost::interprocess::shared_memory_object> shm; // shared memory used for this IPC
+#endif
         boost::shared_ptr<boost::interprocess::mapped_region> shmmap; // mapping of shared memory to real memory
         bool *flushVar; // true if flush by the writer is requested (lies in shared memory)
         boost::interprocess::interprocess_mutex *mutex; // mutex for access of flushVar and cond (lies in shared memory)

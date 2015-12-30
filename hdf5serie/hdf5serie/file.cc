@@ -24,7 +24,11 @@
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
+#ifdef _WIN32
+  #include <boost/interprocess/windows_shared_memory.hpp>
+#else
+  #include <boost/interprocess/shared_memory_object.hpp>
+#endif
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
@@ -70,11 +74,17 @@ File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.st
   if(type==write) {
     writerFiles.insert(this);
     // remove interprocess elements
+#ifndef _WIN32
     shared_memory_object::remove(interprocessName.c_str());
+#endif
     // create interprocess elements
     ipc.filename=filename;
+#ifdef _WIN32
+    ipc.shm=boost::make_shared<windows_shared_memory>(create_only, interprocessName.c_str(), read_write, sizeof(bool)+sizeof(interprocess_mutex)+sizeof(interprocess_condition));
+#else
     ipc.shm=boost::make_shared<shared_memory_object>(create_only, interprocessName.c_str(), read_write);
     ipc.shm->truncate(sizeof(bool)+sizeof(interprocess_mutex)+sizeof(interprocess_condition));
+#endif
     ipc.shmmap=boost::make_shared<mapped_region>(*ipc.shm, read_write);
     char *ptr=static_cast<char*>(ipc.shmmap->get_address());
     ipc.flushVar=new(ptr) bool(false);              ptr+=sizeof(bool);
@@ -101,13 +111,17 @@ File::~File() {
   // remove interprocess elements
   ipc.shmmap.reset();
   ipc.shm.reset();
+#ifndef _WIN32
   if(type==write)
     shared_memory_object::remove(interprocessName.c_str());
+#endif
   for(vector<IPC>::iterator it=ipcAdd.begin(); it!=ipcAdd.end(); ++it) {
     it->shmmap.reset();
     it->shm.reset();
+#ifndef _WIN32
     if(type==write)
       shared_memory_object::remove(it->interprocessName.c_str());
+#endif
   }
 
   close();
@@ -345,7 +359,11 @@ void openIPC(H5::File::IPC &ipc, const path &filename) {
   try {
     ipc.filename=filename;
     ipc.interprocessName=interprocessName;
+#ifdef _WIN32
+    ipc.shm=boost::make_shared<windows_shared_memory>(open_only, interprocessName.c_str(), read_write);
+#else
     ipc.shm=boost::make_shared<shared_memory_object>(open_only, interprocessName.c_str(), read_write);
+#endif
     ipc.shmmap=boost::make_shared<mapped_region>(*ipc.shm, read_write);
     char *ptr=static_cast<char*>(ipc.shmmap->get_address());
     ipc.flushVar=reinterpret_cast<bool*>                  (ptr); ptr+=sizeof(bool);
@@ -359,8 +377,10 @@ void openIPC(H5::File::IPC &ipc, const path &filename) {
 }
 
 RunAtExit::~RunAtExit() {
+#ifndef _WIN32
   for(set<string>::iterator it=ipcRemove.begin(); it!=ipcRemove.end(); ++it)
     shared_memory_object::remove(it->c_str());
+#endif
 }
 
 void RunAtExit::addIPCRemove(const string &interprocessName) {
