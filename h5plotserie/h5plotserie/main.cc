@@ -30,6 +30,7 @@ using namespace std;
 
 int main(int argc, char** argv) {
 
+  QCoreApplication::setLibraryPaths(QStringList()); // do not load plugins from buildin defaults
   QApplication app(argc, argv);
   app.setOrganizationName("AM");
   app.setApplicationName("h5Plotseries Improved");
