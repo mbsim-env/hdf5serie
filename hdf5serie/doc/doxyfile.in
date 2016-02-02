@@ -2,5 +2,7 @@ PROJECT_BRIEF          = "HDF5 Serie"
 INPUT                  = @top_srcdir@/hdf5serie
 PROJECT_NAME           = @PACKAGE@
 PROJECT_NUMBER         = @VERSION@
+GENERATE_TAGFILE       = html/hdf5serie.tag
+TAGFILES               = @prefix@/share/doc/fmatvec/fmatvec.tag=../fmatvec
 
 @INCLUDE = @prefix@/share/fmatvec/doxy_template/doxyfile_common
