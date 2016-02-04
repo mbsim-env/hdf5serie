@@ -36,11 +36,6 @@
  * templates structure of this project (of course only for the provided
  * functionality).
  *
- * \section install Download/Installation
- *
- * The source code of this project is only avaliable via svn. See
- * http://code.google.com/p/openmbv for more informations.
- *
  * For installation instructions see the README file of the "checkout" from svn.
  *
  * \section license License

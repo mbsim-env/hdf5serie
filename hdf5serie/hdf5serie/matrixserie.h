@@ -55,13 +55,12 @@ namespace H5 {
    *
    * The data is stored as a 3D array in the HDF5 file. The first dimension is the serie.
    *
-   * A Note when using a vector-matrix-library:
-   * It is likly that the data in calculated by using a vector-matrix-library. If so,
-   * and the vector object (of type T) of the library (e.g. fmatvec from http://code.google.com/p/fmatvec/) has a cast-operator
-   * to std::vector<T> and a constructor with a single parameter of type
-   * std::vector<T>, then you can use the vector-object wherever a object of type
-   * std::vector<T> is needed.
-   * The same applies to a matrix-object for std::vector<std::vector<T> >.
+   * A note when using a vector-matrix-library:
+   * It is likly that the data is calculated by a vector-matrix-library. If so,
+   * and the matric object (of type T) of the library (e.g. fmatvec) has a cast-operator
+   * to std::vector<std::vector<T> > and a constructor with a single parameter of type
+   * std::vector<std::vector<T> >, then you can use the matrix-object wherever a object of type
+   * std::vector<std::vector<T> > is needed.
   */
   template<class T>
   class MatrixSerie : public DataSet, virtual public fmatvec::Atom {
