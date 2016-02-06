@@ -24,7 +24,7 @@ function hdf5serieappenddataset(hdf5filename, path, data, chunk, h5import)
 %Full Valid OpenMBV XML-File: (TS.ombv.xml)
 %
 %<?xml version="1.0" encoding="UTF-8"?>
-%<Group name="TS" expand="true" enable="true" xmlns="http://openmbv.berlios.de/OpenMBV">
+%<Group name="TS" expand="true" enable="true" xmlns="http://www.mbsim-env.de/OpenMBV">
 %  <Group name="Hauptgruppe1" expand="true" enable="true">
 %    <Cuboid name="Box1" enable="true">
 %      <minimalColorValue>0</minimalColorValue>
