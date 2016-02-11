@@ -79,6 +79,7 @@ MainWindow::MainWindow() : QMainWindow() {
   curvesDW->setFeatures(QDockWidget::NoDockWidgetFeatures);
 
   setWindowTitle(tr("h5Plotserie Improved"));
+  setWindowIcon(QIcon(":/h5plotserie.svg"));
 }
 
 MainWindow::~MainWindow() {

@@ -22,7 +22,10 @@ test -z $RCC && { RCC=$(dirname $(which $MOC))/rcc || RCC=rcc; }
 AC_SUBST([MOC])
 AC_SUBST([UIC])
 AC_SUBST([RCC])
+test -d "$QTLIBDIR" || QTLIBDIR=$(pkg-config --variable libdir QtCore)
+AC_SUBST([QTLIBDIR])
 
+AM_CONDITIONAL([COND_WIN32], [test "_$WIN32" = "_yes"])
 
 dnl HDF5Serie
 PKG_CHECK_MODULES(HDF5SERIE, hdf5serie)
