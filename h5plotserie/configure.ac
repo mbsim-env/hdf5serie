@@ -22,8 +22,11 @@ test -z $RCC && { RCC=$(dirname $(which $MOC))/rcc || RCC=rcc; }
 AC_SUBST([MOC])
 AC_SUBST([UIC])
 AC_SUBST([RCC])
-test -d "$QTLIBDIR" || QTLIBDIR=$(pkg-config --variable libdir QtCore)
-AC_SUBST([QTLIBDIR])
+
+AC_ARG_WITH(qmake, [  --with-qmake=PATH qmake program],
+  [QMAKE="$withval"], [QMAKE="qmake"])
+QT_PLUGINS=$($QMAKE -query QT_INSTALL_PLUGINS)
+AC_SUBST([QT_PLUGINS])
 
 AM_CONDITIONAL([COND_WIN32], [test "_$WIN32" = "_yes"])
 

@@ -30,7 +30,7 @@ noinst_HEADERS = h5plotserie.qrc curves.h \
 
 # plugins
 pluginsiconenginesdir = @bindir@/iconengines
-pluginsiconengines_DATA = @QTLIBDIR@/plugins/iconengines/*qsvgicon.*
+pluginsiconengines_DATA = @QT_PLUGINS@/iconengines/*qsvgicon*
 
 # some dependencies for h5plotserie.qrc.cc
 h5plotserie.qrc.cc: h5plotserie.qrc h5plotserie.svg
