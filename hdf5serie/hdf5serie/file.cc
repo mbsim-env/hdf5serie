@@ -151,7 +151,7 @@ void File::refresh() {
     throw Exception(getPath(), "refresh() can only be called for reading files");
 
   // refresh file
-#ifdef HDF5_SWMR
+#if H5_VERSION_GE(1, 10, 0)
   GroupBase::refresh();
 #else
   close();
@@ -163,7 +163,7 @@ void File::flush() {
   if(type==read)
     throw Exception(getPath(), "flush() can only be called for writing files");
 
-#ifdef HDF5_SWMR
+#if H5_VERSION_GE(1, 10, 0)
   GroupBase::flush();
 #else
   H5Fflush(id, H5F_SCOPE_GLOBAL);
@@ -203,14 +203,11 @@ void File::open() {
   if(type==write) {
     if(!isSWMR) {
       ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
-#ifdef HDF5_SWMR
-      H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST); // We ALWAYS select the latest file format for SWMR
-#endif
       id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, faid), &H5Fclose);
     }
     else {
       unsigned int flag=H5F_ACC_RDWR;
-#ifdef HDF5_SWMR
+#if H5_VERSION_GE(1, 10, 0)
       flag|=H5F_ACC_SWMR_WRITE;
 #endif
       id.reset(H5Fopen(name.c_str(), flag, H5P_DEFAULT), &H5Fclose);
@@ -218,7 +215,7 @@ void File::open() {
   }
   else {
     unsigned int flag=H5F_ACC_RDONLY;
-#ifdef HDF5_SWMR
+#if H5_VERSION_GE(1, 10, 0)
     flag|=H5F_ACC_SWMR_READ;
 #endif
     id.reset(H5Fopen(name.c_str(), flag, H5P_DEFAULT), &H5Fclose);

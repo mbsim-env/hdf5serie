@@ -66,9 +66,6 @@ AC_CHECK_HEADERS([hdf5.h], [],
 AC_MSG_CHECKING([for hdf5 c library])
 AC_TRY_LINK([#include <hdf5.h>],[H5Fopen("dummy", H5F_ACC_RDWR, H5P_DEFAULT)],[AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no]); AC_MSG_ERROR([Can not link with hdf5 c library])])
-dnl check for swmr branch
-AC_CHECK_LIB([hdf5], [H5Dflush], [AC_DEFINE([HDF5_SWMR], [1], [HDF5 SWMR branch detected])],
-  [AC_MSG_NOTICE([To use SWMR features please use the HDF5 branch from svn: http://svn.hdfgroup.uiuc.edu/hdf5/branches/revise_chunks])])
 
 # from now on only libtool is used for linking
 LDFLAGS="$LDFLAGS -no-undefined -Wl,--no-undefined"
