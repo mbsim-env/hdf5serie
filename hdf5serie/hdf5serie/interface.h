@@ -27,7 +27,6 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <boost/preprocessor/iteration/iterate.hpp>
 
 namespace H5 {
 
@@ -139,9 +138,21 @@ namespace H5 {
           Creator(Self *self_, const std::string &name_, std::map<std::string, Child*> &childs_) :
             self(self_), name(name_), childs(childs_) {}
 
-          // call iteration for function "T* operator()(P1 p1, P2 p2, ...)"
-          #define BOOST_PP_ITERATION_PARAMS_1 (3, (0, HDF5SERIE_MAXCTORPARAMETERS, "hdf5serie/interface_creatoroperator_iter.h"))
-          #include BOOST_PP_ITERATE()
+          template<typename... Args>
+          T* operator()(Args&&... args) {
+            auto ret=childs.insert(std::pair<std::string, Child*>(name, NULL));
+            if(!ret.second)
+              throw Exception(self->getPath(), "A element of name "+name+" already exists.");
+            try {
+              T* r=new T(static_cast<Self*>(self), name, std::forward<Args>(args)...);
+              ret.first->second=r;
+              return r;
+            }
+            catch(...) {
+              childs.erase(name);
+              throw;
+            }
+          }
       };
       template<class T>
       Creator<T> createChild(const std::string &name_) {

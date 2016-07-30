@@ -11,7 +11,7 @@ hdf5serieincludedir = $(includedir)/hdf5serie
 libhdf5serie_la_CPPFLAGS = -I$(top_srcdir) $(FMATVEC_CFLAGS)
 libhdf5serie_la_LIBADD   = $(FMATVEC_LIBS) -l@BOOST_FILESYSTEM_LIB@ -l@BOOST_SYSTEM_LIB@ $(LIBS)
 
-hdf5serieinclude_HEADERS = toh5type.h file.h group.h interface.h interface_creatoroperator_iter.h \
+hdf5serieinclude_HEADERS = toh5type.h file.h group.h interface.h \
   simple.h \
   simpleattribute.h \
   simpledataset.h\
