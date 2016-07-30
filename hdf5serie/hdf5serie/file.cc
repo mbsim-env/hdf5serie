@@ -21,8 +21,6 @@
 
 #include <config.h>
 #include <hdf5serie/file.h>
-#include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #ifdef _WIN32
   #include <boost/interprocess/windows_shared_memory.hpp>
 #else
@@ -32,7 +30,7 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
-#include <boost/functional/hash.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
 using namespace boost::interprocess;
@@ -68,7 +66,7 @@ File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.st
   open();
 
   interprocessName=canonical(filename).string();
-  interprocessName="hdf5serie_"+boost::lexical_cast<string>(boost::hash<string>()(interprocessName));
+  interprocessName="hdf5serie_"+to_string(hash<string>()(interprocessName));
 
   if(type==write) {
     writerFiles.insert(this);
@@ -351,7 +349,7 @@ bool waitForWriterFlush(H5::File::IPC &ipc, H5::File *me) {
 
 void openIPC(H5::File::IPC &ipc, const path &filename) {
   string interprocessName=canonical(filename).string();
-  interprocessName="hdf5serie_"+boost::lexical_cast<string>(boost::hash<string>()(interprocessName));
+  interprocessName="hdf5serie_"+to_string(hash<string>()(interprocessName));
   try {
     ipc.filename=filename;
     ipc.interprocessName=interprocessName;

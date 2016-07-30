@@ -25,7 +25,6 @@
 #include <hdf5serie/vectorserie.h>
 #include <hdf5serie/toh5type.h>
 #include <vector>
-#include <boost/scope_exit.hpp>
 
 using namespace std;
 using namespace boost::filesystem;
