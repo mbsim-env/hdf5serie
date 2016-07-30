@@ -22,7 +22,6 @@
 #include <config.h>
 #include <hdf5serie/file.h>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/lexical_cast.hpp>
 #ifdef _WIN32
   #include <boost/interprocess/windows_shared_memory.hpp>
@@ -80,12 +79,12 @@ File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.st
     // create interprocess elements
     ipc.filename=filename;
 #ifdef _WIN32
-    ipc.shm=boost::make_shared<windows_shared_memory>(create_only, interprocessName.c_str(), read_write, sizeof(bool)+sizeof(interprocess_mutex)+sizeof(interprocess_condition));
+    ipc.shm=std::make_shared<windows_shared_memory>(create_only, interprocessName.c_str(), read_write, sizeof(bool)+sizeof(interprocess_mutex)+sizeof(interprocess_condition));
 #else
-    ipc.shm=boost::make_shared<shared_memory_object>(create_only, interprocessName.c_str(), read_write);
+    ipc.shm=std::make_shared<shared_memory_object>(create_only, interprocessName.c_str(), read_write);
     ipc.shm->truncate(sizeof(bool)+sizeof(interprocess_mutex)+sizeof(interprocess_condition));
 #endif
-    ipc.shmmap=boost::make_shared<mapped_region>(*ipc.shm, read_write);
+    ipc.shmmap=std::make_shared<mapped_region>(*ipc.shm, read_write);
     char *ptr=static_cast<char*>(ipc.shmmap->get_address());
     ipc.flushVar=new(ptr) bool(false);              ptr+=sizeof(bool);
     ipc.mutex   =new(ptr) interprocess_mutex();     ptr+=sizeof(interprocess_mutex);
@@ -357,11 +356,11 @@ void openIPC(H5::File::IPC &ipc, const path &filename) {
     ipc.filename=filename;
     ipc.interprocessName=interprocessName;
 #ifdef _WIN32
-    ipc.shm=boost::make_shared<windows_shared_memory>(open_only, interprocessName.c_str(), read_write);
+    ipc.shm=std::make_shared<windows_shared_memory>(open_only, interprocessName.c_str(), read_write);
 #else
-    ipc.shm=boost::make_shared<shared_memory_object>(open_only, interprocessName.c_str(), read_write);
+    ipc.shm=std::make_shared<shared_memory_object>(open_only, interprocessName.c_str(), read_write);
 #endif
-    ipc.shmmap=boost::make_shared<mapped_region>(*ipc.shm, read_write);
+    ipc.shmmap=std::make_shared<mapped_region>(*ipc.shm, read_write);
     char *ptr=static_cast<char*>(ipc.shmmap->get_address());
     ipc.flushVar=reinterpret_cast<bool*>                  (ptr); ptr+=sizeof(bool);
     ipc.mutex   =reinterpret_cast<interprocess_mutex*>    (ptr); ptr+=sizeof(interprocess_mutex);

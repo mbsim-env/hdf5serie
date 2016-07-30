@@ -5,6 +5,9 @@ AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 AC_LANG([C++])
 
+# enable C++11
+CXXFLAGS="$CXXFLAGS -std=c++11"
+
 LT_INIT([win32-dll])
 AC_PROG_CXX
 
@@ -17,7 +20,6 @@ AC_TYPE_PID_T
 dnl force strict standard conformance
 CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors -Wno-long-long"
 CFLAGS="$CFLAGS -std=iso9899:1990"
-CXXFLAGS="$CXXFLAGS -std=c++98"
 
 dnl Check for MinGW
 AC_CANONICAL_HOST

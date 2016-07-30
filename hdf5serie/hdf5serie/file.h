@@ -25,7 +25,6 @@
 #include <hdf5serie/group.h>
 #include <boost/filesystem.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace boost {
   namespace interprocess {
@@ -78,11 +77,11 @@ namespace H5 {
         boost::filesystem::path filename; // the filename of this IPC
         std::string interprocessName; // the name of this IPC
 #ifdef _WIN32
-        boost::shared_ptr<boost::interprocess::windows_shared_memory> shm; // shared memory used for this IPC
+        std::shared_ptr<boost::interprocess::windows_shared_memory> shm; // shared memory used for this IPC
 #else
-        boost::shared_ptr<boost::interprocess::shared_memory_object> shm; // shared memory used for this IPC
+        std::shared_ptr<boost::interprocess::shared_memory_object> shm; // shared memory used for this IPC
 #endif
-        boost::shared_ptr<boost::interprocess::mapped_region> shmmap; // mapping of shared memory to real memory
+        std::shared_ptr<boost::interprocess::mapped_region> shmmap; // mapping of shared memory to real memory
         bool *flushVar; // true if flush by the writer is requested (lies in shared memory)
         boost::interprocess::interprocess_mutex *mutex; // mutex for access of flushVar and cond (lies in shared memory)
         boost::interprocess::interprocess_condition *cond; // condition to notify readers (lies in shared memory)

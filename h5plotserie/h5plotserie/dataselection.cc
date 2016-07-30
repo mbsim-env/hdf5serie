@@ -25,7 +25,6 @@
 #include "QListWidget"
 #include "QFileInfo"
 #include "dataselection.h"
-#include "boost/make_shared.hpp"
 
 #include <hdf5serie/vectorserie.h>
 
@@ -86,8 +85,8 @@ DataSelection::~DataSelection() {
 }
 
 void DataSelection::addFile(const QString &name) {
-  pair<map<boost::filesystem::path, boost::shared_ptr<H5::File> >::iterator, bool> ret=
-    getH5File().insert(make_pair(boost::filesystem::canonical(name.toStdString()), boost::shared_ptr<H5::File>()));
+  pair<map<boost::filesystem::path, std::shared_ptr<H5::File> >::iterator, bool> ret=
+    getH5File().insert(make_pair(boost::filesystem::canonical(name.toStdString()), std::shared_ptr<H5::File>()));
   if(!ret.second) {
     ret.first->second->refreshAfterWriterFlush();
     return;
@@ -95,8 +94,8 @@ void DataSelection::addFile(const QString &name) {
 
   fileInfo.append(name);
   file.append(name);
-  boost::shared_ptr<H5::File> h5file;
-  ret.first->second=h5file=boost::make_shared<H5::File>(file.back().toStdString(), H5::File::read);
+  std::shared_ptr<H5::File> h5file;
+  ret.first->second=h5file=std::make_shared<H5::File>(file.back().toStdString(), H5::File::read);
 
   TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileInfo.back().fileName()));
   fileBrowser->addTopLevelItem(topitem);
@@ -142,7 +141,7 @@ void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
   if( item->text(col) == "data") {
     QString path = static_cast<TreeWidgetItem*>(item)->getPath();
     int j = getTopLevelIndex(item);
-    boost::shared_ptr<H5::File> h5file=getH5File()[boost::filesystem::canonical(file[j].toStdString())];
+    std::shared_ptr<H5::File> h5file=getH5File()[boost::filesystem::canonical(file[j].toStdString())];
     H5::VectorSerie<double> *vs=h5file->openChildObject<H5::VectorSerie<double> >(path.toStdString());
     QStringList sl;
     for(unsigned int i=0; i<vs->getColumns(); i++)
@@ -163,7 +162,7 @@ void DataSelection::selectFromCurrentData(QListWidgetItem* item) {
   QString path = static_cast<TreeWidgetItem*>(fileBrowser->currentItem())->getPath();
   int col = currentData->row(item);
   int j = getTopLevelIndex(fileBrowser->currentItem());
-  boost::shared_ptr<H5::File> h5file=getH5File()[boost::filesystem::canonical(file[j].toStdString())];
+  std::shared_ptr<H5::File> h5file=getH5File()[boost::filesystem::canonical(file[j].toStdString())];
   H5::VectorSerie<double> *vs=h5file->openChildObject<H5::VectorSerie<double> >(path.toStdString());
 
   PlotData pd;

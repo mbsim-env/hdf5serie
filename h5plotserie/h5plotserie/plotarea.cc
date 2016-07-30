@@ -85,7 +85,7 @@ void PlotWindow::detachPlot() {
 
 void PlotWindow::plotDataSet(PlotData pd, int penColor) {
   DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent()->parent())->getDataSelection();
-  boost::shared_ptr<H5::File> h5file=dataSelection->getH5File()[boost::filesystem::canonical(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString())];
+  std::shared_ptr<H5::File> h5file=dataSelection->getH5File()[boost::filesystem::canonical(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString())];
 
   H5::VectorSerie<double> *vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
   size_t rows=vs->getRows();

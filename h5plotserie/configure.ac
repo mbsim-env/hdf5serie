@@ -9,6 +9,9 @@ AC_PROG_CXX
 AC_PROG_CXXCPP
 AC_LANG([C++])
 
+# enable C++11
+CXXFLAGS="$CXXFLAGS -std=c++11"
+
 dnl By autoscan
 AC_C_CONST
 AC_HEADER_STDBOOL

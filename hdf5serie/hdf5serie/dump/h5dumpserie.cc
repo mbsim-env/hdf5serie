@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
   unsigned int maxrows=0;
   vector<vector<int> > column(arg.size());
   vector<Dataset*> dataSet(arg.size());
-  vector<boost::shared_ptr<File> > file(arg.size());
+  vector<std::shared_ptr<File> > file(arg.size());
   int col=1;
   for(unsigned int k=0; k<arg.size(); k++) {
     string para=arg[k];

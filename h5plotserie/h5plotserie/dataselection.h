@@ -21,7 +21,6 @@
 #define DATASELECTION_H
 
 #include <QSplitter>
-#include <boost/shared_ptr.hpp>
 #include <boost/filesystem.hpp>
 #include <map>
 
@@ -50,7 +49,7 @@ class DataSelection : public QSplitter {
     
     void addFile(const QString &fileName);
     QList<QFileInfo> * getFileInfo() {return &fileInfo; }
-    std::map<boost::filesystem::path, boost::shared_ptr<H5::File> > &getH5File() { return h5File; }
+    std::map<boost::filesystem::path, std::shared_ptr<H5::File> > &getH5File() { return h5File; }
 
   //public slots:
 
@@ -74,7 +73,7 @@ class DataSelection : public QSplitter {
     QList<QString> file;
     QList<QFileInfo> fileInfo;
 
-    std::map<boost::filesystem::path, boost::shared_ptr<H5::File> > h5File;
+    std::map<boost::filesystem::path, std::shared_ptr<H5::File> > h5File;
 };
 
 #endif // DATASELECTION_H

@@ -23,11 +23,9 @@
 #include <iostream>
 #include <hdf5serie/file.h>
 #include <boost/filesystem.hpp>
-#include <boost/shared_ptr.hpp>
 
 using namespace std;
 using namespace H5;
-using namespace boost;
 using namespace boost::filesystem;
 
 int main(int argc, char *argv[]) {
