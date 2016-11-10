@@ -11,6 +11,10 @@ HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::s
   T dummy;
   memDataTypeID=toH5Type(dummy);
   memDataSpaceID.reset(H5Screate(H5S_SCALAR), &H5Sclose);
+  #ifdef HDF5SERIE_DATASETTYPE
+    ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
+    H5Pset_attr_phase_change(propID, 0, 0);
+  #endif
   id.reset(HDF5SERIE_H5XCREATE, &HDF5SERIE_H5XCLOSE);
 }
 
@@ -77,6 +81,10 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
   hsize_t dims[1];
   dims[0]=size;
   memDataSpaceID.reset(H5Screate_simple(1, dims, NULL), &H5Sclose);
+  #ifdef HDF5SERIE_DATASETTYPE
+    ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
+    H5Pset_attr_phase_change(propID, 0, 0);
+  #endif
   id.reset(HDF5SERIE_H5XCREATE, &HDF5SERIE_H5XCLOSE);
 }
 
@@ -159,6 +167,10 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
   dims[0]=rows;
   dims[1]=cols;
   memDataSpaceID.reset(H5Screate_simple(2, dims, NULL), &H5Sclose);
+  #ifdef HDF5SERIE_DATASETTYPE
+    ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
+    H5Pset_attr_phase_change(propID, 0, 0);
+  #endif
   id.reset(HDF5SERIE_H5XCREATE, &HDF5SERIE_H5XCLOSE);
 }
 

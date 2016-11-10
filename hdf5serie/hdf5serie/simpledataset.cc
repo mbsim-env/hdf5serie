@@ -35,7 +35,7 @@ namespace H5 {
   #define HDF5SERIE_BASECLASS Dataset
   #define HDF5SERIE_CONTAINERBASECLASS Object
   #define HDF5SERIE_PARENTCLASS GroupBase
-  #define HDF5SERIE_H5XCREATE H5Dcreate2(parent->getID(), name.c_str(), memDataTypeID, memDataSpaceID, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)
+  #define HDF5SERIE_H5XCREATE H5Dcreate2(parent->getID(), name.c_str(), memDataTypeID, memDataSpaceID, H5P_DEFAULT, propID, H5P_DEFAULT)
   #define HDF5SERIE_H5XCLOSE H5Dclose
   #define HDF5SERIE_H5XOPEN H5Dopen(parent->getID(), name.c_str(), H5P_DEFAULT)
   #define HDF5SERIE_H5XWRITE(buf) H5Dwrite(id, memDataTypeID, memDataSpaceID, memDataSpaceID, H5P_DEFAULT, buf)

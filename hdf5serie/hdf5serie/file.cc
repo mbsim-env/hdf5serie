@@ -200,6 +200,7 @@ void File::open() {
   if(type==write) {
     if(!isSWMR) {
       ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
+      H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
       id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, faid), &H5Fclose);
     }
     else {

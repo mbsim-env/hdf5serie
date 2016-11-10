@@ -52,6 +52,7 @@ namespace H5 {
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
     ScopedHID fileDataSpaceID(H5Screate_simple(2, dims, maxDims), &H5Sclose);
     ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
+    H5Pset_attr_phase_change(propID, 0, 0);
     hsize_t chunkDims[]={(hsize_t)chunkSize, (hsize_t)(dims[1])};
     H5Pset_chunk(propID, 2, chunkDims);
     if(compression>0) H5Pset_deflate(propID, compression);

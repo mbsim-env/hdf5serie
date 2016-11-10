@@ -207,12 +207,15 @@ int main() {
   File file("test.h5", File::write);
   SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
 
-  SimpleAttribute<vector<double> > *dsd=data->createChildAttribute<SimpleAttribute<vector<double> > >("dsd")(2);
-  vector<double> d; d.push_back(5.67); d.push_back(7.34);
+  constexpr int size=10000;
+  SimpleAttribute<vector<double> > *dsd=data->createChildAttribute<SimpleAttribute<vector<double> > >("dsd")(size);
+  vector<double> d;
+  for(int i=0; i<size; ++i)
+    d.push_back(2*i);
   dsd->write(d);
   vector<double> dout;
   dout=dsd->read();
-  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<min(dout.size(), 20ul); i++) cout<<dout[i]<<endl;
   file.reopenAsSWMR();
   }
   {
@@ -221,7 +224,7 @@ int main() {
   SimpleAttribute<vector<double> > *dsd=data->openChildAttribute<SimpleAttribute<vector<double> > >("dsd");
   vector<double> dout;
   dout=dsd->read();
-  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<min(dout.size(), 20ul); i++) cout<<dout[i]<<endl;
   }
   
 
@@ -231,12 +234,16 @@ int main() {
   File file("test.h5", File::write);
   SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
 
-  SimpleAttribute<vector<string> > *dsd=data->createChildAttribute<SimpleAttribute<vector<string> > >("dsd")(2);
-  vector<string> d; d.push_back("sdlkfj"); d.push_back("owiuer");
+  // test a large attribute (>64K). This should automatically switch to dense attribute storge
+  constexpr int size=5000;
+  SimpleAttribute<vector<string> > *dsd=data->createChildAttribute<SimpleAttribute<vector<string> > >("dsd")(size);
+  vector<string> d;
+  for(int i=0; i<size; ++i)
+    d.push_back("large attribute test "+to_string(i));
   dsd->write(d);
   vector<string> dout;
   dout=dsd->read();
-  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<min(dout.size(), 20ul); i++) cout<<dout[i]<<endl;
   file.reopenAsSWMR();
   }
   {
@@ -245,7 +252,7 @@ int main() {
   SimpleAttribute<vector<string> > *dsd=data->openChildAttribute<SimpleAttribute<vector<string> > >("dsd");
   vector<string> dout;
   dout=dsd->read();
-  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<min(dout.size(), 20ul); i++) cout<<dout[i]<<endl;
   }
 
 
