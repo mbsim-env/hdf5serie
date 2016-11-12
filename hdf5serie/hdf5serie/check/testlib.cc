@@ -215,7 +215,7 @@ int main() {
   dsd->write(d);
   vector<double> dout;
   dout=dsd->read();
-  for(unsigned int i=0; i<min(dout.size(), 20ul); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
   file.reopenAsSWMR();
   }
   {
@@ -224,7 +224,7 @@ int main() {
   SimpleAttribute<vector<double> > *dsd=data->openChildAttribute<SimpleAttribute<vector<double> > >("dsd");
   vector<double> dout;
   dout=dsd->read();
-  for(unsigned int i=0; i<min(dout.size(), 20ul); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
   }
   
 
@@ -243,7 +243,7 @@ int main() {
   dsd->write(d);
   vector<string> dout;
   dout=dsd->read();
-  for(unsigned int i=0; i<min(dout.size(), 20ul); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
   file.reopenAsSWMR();
   }
   {
@@ -252,7 +252,7 @@ int main() {
   SimpleAttribute<vector<string> > *dsd=data->openChildAttribute<SimpleAttribute<vector<string> > >("dsd");
   vector<string> dout;
   dout=dsd->read();
-  for(unsigned int i=0; i<min(dout.size(), 20ul); i++) cout<<dout[i]<<endl;
+  for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
   }
 
 
