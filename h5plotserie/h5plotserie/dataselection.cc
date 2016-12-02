@@ -86,7 +86,7 @@ DataSelection::~DataSelection() {
 
 void DataSelection::addFile(const QString &name) {
   pair<map<boost::filesystem::path, std::shared_ptr<H5::File> >::iterator, bool> ret=
-    getH5File().insert(make_pair(boost::filesystem::canonical(name.toStdString()), std::shared_ptr<H5::File>()));
+    h5File.insert(make_pair(boost::filesystem::canonical(name.toStdString()), std::shared_ptr<H5::File>()));
   if(!ret.second) {
     ret.first->second->refreshAfterWriterFlush();
     return;
@@ -94,20 +94,20 @@ void DataSelection::addFile(const QString &name) {
 
   fileInfo.append(name);
   file.append(name);
-  std::shared_ptr<H5::File> h5file;
-  ret.first->second=h5file=std::make_shared<H5::File>(file.back().toStdString(), H5::File::read);
+  std::shared_ptr<H5::File> h5f;
+  ret.first->second=h5f=std::make_shared<H5::File>(file.back().toStdString(), H5::File::read);
 
   TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileInfo.back().fileName()));
   fileBrowser->addTopLevelItem(topitem);
   QList<QTreeWidgetItem *> items;
-  set<string> names=h5file->getChildObjectNames();
+  set<string> names=h5f->getChildObjectNames();
   for(set<string>::iterator name=names.begin(); name!=names.end(); ++name) {
     QTreeWidgetItem *item = new TreeWidgetItem(QStringList(name->c_str()));
-    H5::Group *grp = h5file->openChildObject<H5::Group>(*name);
+    H5::Group *grp = h5f->openChildObject<H5::Group>(*name);
     insertChildInTree(grp, item);
     topitem->addChild(item);
   }
-  h5file->refreshAfterWriterFlush();
+  h5f->refreshAfterWriterFlush();
 }
 
 void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
@@ -141,8 +141,8 @@ void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
   if( item->text(col) == "data") {
     QString path = static_cast<TreeWidgetItem*>(item)->getPath();
     int j = getTopLevelIndex(item);
-    std::shared_ptr<H5::File> h5file=getH5File()[boost::filesystem::canonical(file[j].toStdString())];
-    H5::VectorSerie<double> *vs=h5file->openChildObject<H5::VectorSerie<double> >(path.toStdString());
+    std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
+    H5::VectorSerie<double> *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
     QStringList sl;
     for(unsigned int i=0; i<vs->getColumns(); i++)
       sl << vs->getColumnLabel()[i].c_str();
@@ -162,8 +162,8 @@ void DataSelection::selectFromCurrentData(QListWidgetItem* item) {
   QString path = static_cast<TreeWidgetItem*>(fileBrowser->currentItem())->getPath();
   int col = currentData->row(item);
   int j = getTopLevelIndex(fileBrowser->currentItem());
-  std::shared_ptr<H5::File> h5file=getH5File()[boost::filesystem::canonical(file[j].toStdString())];
-  H5::VectorSerie<double> *vs=h5file->openChildObject<H5::VectorSerie<double> >(path.toStdString());
+  std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
+  H5::VectorSerie<double> *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
 
   PlotData pd;
   pd.setValue("Filepath", fileInfo[j].absolutePath());

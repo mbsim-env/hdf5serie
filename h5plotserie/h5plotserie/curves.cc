@@ -104,7 +104,7 @@ void Curves::collectFilesToRefresh(std::set<H5::File*> &filesToRefresh) {
     for (int j=0; j<pd.numberOfItems(); j++)
       pd.setValue(j, plotDataTable->item(i, j)->text());
     filesToRefresh.insert(
-      dataSelection->getH5File()[boost::filesystem::canonical(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString())].get()
+      dataSelection->getH5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString()).get()
     );
   }
 }
