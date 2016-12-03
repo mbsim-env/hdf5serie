@@ -22,7 +22,7 @@
 
 #include <QSplitter>
 #include <boost/filesystem.hpp>
-#include <map>
+#include <list>
 
 namespace H5 {
   class H5File;
@@ -49,9 +49,7 @@ class DataSelection : public QSplitter {
     
     void addFile(const QString &fileName);
     QList<QFileInfo> * getFileInfo() {return &fileInfo; }
-    std::shared_ptr<H5::File> getH5File(const boost::filesystem::path &p) const {
-      return h5File.at(boost::filesystem::canonical(p));
-    }
+    std::shared_ptr<H5::File> getH5File(const boost::filesystem::path &p) const;
 
   //public slots:
 
@@ -75,7 +73,7 @@ class DataSelection : public QSplitter {
     QList<QString> file;
     QList<QFileInfo> fileInfo;
 
-    std::map<boost::filesystem::path, std::shared_ptr<H5::File> > h5File;
+    std::list<std::pair<boost::filesystem::path, std::shared_ptr<H5::File>>> h5File;
 };
 
 #endif // DATASELECTION_H

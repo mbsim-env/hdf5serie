@@ -85,17 +85,19 @@ DataSelection::~DataSelection() {
 }
 
 void DataSelection::addFile(const QString &name) {
-  pair<map<boost::filesystem::path, std::shared_ptr<H5::File> >::iterator, bool> ret=
-    h5File.insert(make_pair(boost::filesystem::canonical(name.toStdString()), std::shared_ptr<H5::File>()));
-  if(!ret.second) {
-    ret.first->second->refreshAfterWriterFlush();
+  auto it=find_if(h5File.begin(), h5File.end(), [&name](const decltype(h5File)::value_type& a){
+    return boost::filesystem::equivalent(a.first, name.toStdString());
+  });
+  if(it!=h5File.end()) {
+    it->second->refreshAfterWriterFlush();
     return;
   }
 
   fileInfo.append(name);
   file.append(name);
   std::shared_ptr<H5::File> h5f;
-  ret.first->second=h5f=std::make_shared<H5::File>(file.back().toStdString(), H5::File::read);
+  h5f=std::make_shared<H5::File>(file.back().toStdString(), H5::File::read);
+  h5File.emplace_back(name.toStdString(), h5f);
 
   TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileInfo.back().fileName()));
   fileBrowser->addTopLevelItem(topitem);
@@ -108,6 +110,15 @@ void DataSelection::addFile(const QString &name) {
     topitem->addChild(item);
   }
   h5f->refreshAfterWriterFlush();
+}
+
+shared_ptr<H5::File> DataSelection::getH5File(const boost::filesystem::path &p) const {
+  auto it=find_if(h5File.begin(), h5File.end(), [&p](const decltype(h5File)::value_type& a){
+    return boost::filesystem::equivalent(a.first, p);
+  });
+  if(it==h5File.end())
+    throw runtime_error("Cannot find "+p.string()+" in h5File.");
+  return it->second;
 }
 
 void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
