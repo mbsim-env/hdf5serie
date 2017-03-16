@@ -46,14 +46,18 @@ PKG_CHECK_MODULES(FMATVEC, fmatvec)
 dnl Check for hdf5 library
 AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
-  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$withval/include"
-    HDF5LDFLAGS="$HDF5LDFLAGS -L$withval/lib"
-    LDFLAGS="$LDFLAGS $HDF5LDFLAGS"
-    LIBS="$LIBS -lhdf5"; hdf5_prefix=$withval],
-  [HDF5CPPFLAGS="$HDF5CPPFLAGS -I$prefix/include"
-    HDF5LDFLAGS="$HDF5LDFLAGS -L$prefix/lib"
-    LDFLAGS="$LDFLAGS $HDF5LDFLAGS"
-    LIBS="$LIBS -lhdf5"; hdf5_prefix=$prefix])
+  [HDF5CPPFLAGS="-I$withval/include"
+   HDF5LDFLAGS="-L$withval/lib"
+   hdf5_prefix=$withval],
+  [HDF5CPPFLAGS="-I$prefix/include"
+   HDF5LDFLAGS="-L$prefix/lib"
+   hdf5_prefix=$prefix])
+LDFLAGS="$LDFLAGS $HDF5LDFLAGS"
+if [ ls $hdf5_prefix/lib/*hdf5-shared.* &> /dev/null ]; then # try the cmake generated shared name first
+  LIBS="$LIBS -lhdf5-shared"
+else # if not found use the "standard" name
+  LIBS="$LIBS -lhdf5"
+fi
 CPPFLAGS="$CPPFLAGS $HDF5CPPFLAGS"
 if test "_$host_os" != "_mingw32" ; then
   LIBS="$LIBS -lrt -lm" # libs required by libhdf5
