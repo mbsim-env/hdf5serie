@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 
   for(int i=1; i<argc; i++) {
     string filename=argv[i];
-    ifstream f(filename.c_str());
+    std::ifstream f(filename.c_str());
     bool good=f.good();
     f.close();
     if(good)
