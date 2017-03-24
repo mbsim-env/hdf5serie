@@ -84,9 +84,9 @@ File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.st
 #endif
     ipc.shmmap=std::make_shared<mapped_region>(*ipc.shm, read_write);
     char *ptr=static_cast<char*>(ipc.shmmap->get_address());
-    ipc.flushVar=new(ptr) bool(false);              ptr+=sizeof(bool);
-    ipc.mutex   =new(ptr) interprocess_mutex();     ptr+=sizeof(interprocess_mutex);
-    ipc.cond    =new(ptr) interprocess_condition(); ptr+=sizeof(interprocess_condition);
+    ipc.flushVar=new(ptr) bool(false);               ptr+=sizeof(bool);
+    ipc.mutex   =new(ptr) interprocess_mutex();      ptr+=sizeof(interprocess_mutex);
+    ipc.cond    =new(ptr) interprocess_condition();//ptr+=sizeof(interprocess_condition);
 
     runatexit.addIPCRemove(interprocessName);
   }
@@ -361,9 +361,9 @@ void openIPC(H5::File::IPC &ipc, const path &filename) {
 #endif
     ipc.shmmap=std::make_shared<mapped_region>(*ipc.shm, read_write);
     char *ptr=static_cast<char*>(ipc.shmmap->get_address());
-    ipc.flushVar=reinterpret_cast<bool*>                  (ptr); ptr+=sizeof(bool);
-    ipc.mutex   =reinterpret_cast<interprocess_mutex*>    (ptr); ptr+=sizeof(interprocess_mutex);
-    ipc.cond    =reinterpret_cast<interprocess_condition*>(ptr); ptr+=sizeof(interprocess_condition);
+    ipc.flushVar=reinterpret_cast<bool*>                  (ptr);  ptr+=sizeof(bool);
+    ipc.mutex   =reinterpret_cast<interprocess_mutex*>    (ptr);  ptr+=sizeof(interprocess_mutex);
+    ipc.cond    =reinterpret_cast<interprocess_condition*>(ptr);//ptr+=sizeof(interprocess_condition);
   }
   catch(const interprocess_exception &ex) {
     ipc.shm.reset();
