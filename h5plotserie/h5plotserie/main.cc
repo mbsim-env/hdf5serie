@@ -52,7 +52,8 @@ int main(int argc, char** argv) {
         << "" << endl
         << "Usage:" << endl
         << "  h5plotserie <file.mbsim.h5 | file.h5Layout.xml>" << endl
-        << "    -h, --help: Show this help" << endl;
+        << "    -h, --help: Show this help" << endl
+        << "     --fullscreen: Start in full screen mode" << endl;
       return 0;
     }
 
@@ -70,6 +71,7 @@ int main(int argc, char** argv) {
   MainWindow mainWindow;
   mainWindow.resize(1024, 768);
   mainWindow.show();
+  if(arg.contains("--fullscreen")) mainWindow.showFullScreen(); // must be done after mainWindow.show()
 
   for(int i=0; i<arg.size(); i++)
     if(arg[i].contains(".mbsim.h5", Qt::CaseSensitive))
