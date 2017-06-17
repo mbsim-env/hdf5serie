@@ -42,7 +42,7 @@ void PlotArea::addPlotWindow(const QString &windowTitle) {
   q->setObjectName(windowTitle);
   q->setWindowTitle(windowTitle);
   q->setAttribute(Qt::WA_DeleteOnClose);
-  q->show();
+  q->showMaximized();
 }
 
 PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent), plot(0), zoom(0), xMinValue(0), yMinValue(0), xMaxValue(0), yMaxValue(0), plotGrid(true) {
