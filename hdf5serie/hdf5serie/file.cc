@@ -332,7 +332,7 @@ bool waitForWriterFlush(H5::File::IPC &ipc, H5::File *me) {
   {
     scoped_lock<interprocess_mutex> lock(*ipc.mutex);
     if(*ipc.flushVar) {
-      flushReady=ipc.cond->timed_wait(lock, ipc.flushRequestTime+milliseconds(msec));
+      flushReady=ipc.cond->timed_wait(lock, ipc.flushRequestTime+milliseconds(msec));//MFMF not working; never timeout out
     }
   }
   // print message
