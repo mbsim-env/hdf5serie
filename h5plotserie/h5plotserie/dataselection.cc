@@ -100,6 +100,7 @@ void DataSelection::addFile(const QString &name) {
   h5File.emplace_back(name.toStdString(), h5f);
 
   TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileInfo.back().fileName()));
+  topitem->setToolTip(0, fileInfo.back().absoluteFilePath());
   fileBrowser->addTopLevelItem(topitem);
   QList<QTreeWidgetItem *> items;
   set<string> names=h5f->getChildObjectNames();
