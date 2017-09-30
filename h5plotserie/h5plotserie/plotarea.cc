@@ -107,7 +107,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
   if (xVal.size()==yVal.size()) {
 
     for (unsigned int i=0; i<xVal.size(); i++)
-      if (!isNaN(xVal[i])) { // xValue
+      if (!std::isnan(xVal[i])) { // xValue
         if (xVal[i]<xMinValue)
           xMinValue=xVal[i];
         if (xVal[i]>xMaxValue)
@@ -119,7 +119,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
         const double y2offset=pd.getValue("y2offset").toDouble();
         const double y2gain=pd.getValue("y2gain").toDouble();
         for (unsigned int i=0; i<y2Val.size(); i++)
-          if (!isNaN(y2Val[i])) // y2Value
+          if (!std::isnan(y2Val[i])) // y2Value
             y2Val[i]=y2gain*(y2Val[i]+y2offset);
       }
       else {
@@ -133,7 +133,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
     const double offset=pd.getValue("offset").toDouble();
     const double gain=pd.getValue("gain").toDouble();
     for (unsigned int i=0; i<yVal.size(); i++)
-      if (!isNaN(yVal[i])) { // yValue
+      if (!std::isnan(yVal[i])) { // yValue
         yVal[i]=gain*(yVal[i]+offset);
         if (useY2)
           yVal[i]+=y2Val[i];
@@ -144,9 +144,9 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
       }
 
     for (unsigned int i=0; i<xVal.size(); i++) {
-      if (isNaN(xVal[i]))
+      if (std::isnan(xVal[i]))
         xVal[i]=.5*(xMinValue+xMaxValue);
-      if (isNaN(yVal[i]))
+      if (std::isnan(yVal[i]))
         yVal[i]=.5*(yMinValue+yMaxValue);
     }
 

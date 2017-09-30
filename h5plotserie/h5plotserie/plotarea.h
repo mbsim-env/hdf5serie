@@ -68,8 +68,6 @@ class PlotWindow : public QMdiSubWindow {
     QwtPlotZoomer * zoom;
     double xMinValue, yMinValue, xMaxValue, yMaxValue;
     bool plotGrid;
-
-    static bool isNaN(double v) { return v != v; }
 };
 
 #endif // PLOTAREA_H
