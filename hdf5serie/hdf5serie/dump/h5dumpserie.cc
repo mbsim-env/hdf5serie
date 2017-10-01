@@ -20,6 +20,8 @@
  */
 
 #include <config.h>
+#include <cassert>
+#include <cfenv>
 #include <string>
 #include <hdf5serie/vectorserie.h>
 #include <hdf5serie/simpledataset.h>
@@ -62,6 +64,10 @@ int precision=numeric_limits<double>::digits10+1;
 void printRow(Dataset *d, int row);
 
 int main(int argc, char* argv[]) {
+#ifndef _WIN32
+  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
+#endif
+
   vector<string> arg;
   for(int i=1; i<argc; i++)
     arg.push_back(argv[i]);

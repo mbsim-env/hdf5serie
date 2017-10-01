@@ -20,6 +20,8 @@
  */
 
 #include <config.h>
+#include <cassert>
+#include <cfenv>
 #include <iostream>
 #include <cstring>
 #include <fstream>
@@ -39,6 +41,10 @@ void printLabel(string indent, Dataset *d);
 bool d=false, l=false, f=false, h=false;
 
 int main(int argc, char *argv[]) {
+#ifndef _WIN32
+  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
+#endif
+
   for(int i=1; i<argc; i++) {
     if(strcmp(argv[i], "-d")==0) d=true;
     if(strcmp(argv[i], "-l")==0) l=true;

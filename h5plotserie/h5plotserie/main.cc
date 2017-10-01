@@ -18,6 +18,8 @@
    */
 
 #include <config.h>
+#include <cassert>
+#include <cfenv>
 #include <QtGui/QApplication>
 #include <QDir>
 #include "mainwindow.h"
@@ -29,6 +31,9 @@
 using namespace std;
 
 int main(int argc, char** argv) {
+#ifndef _WIN32
+//MISSING Qt seems to generate some FPE, hence disabled  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
+#endif
 
   QCoreApplication::setLibraryPaths(QStringList()); // do not load plugins from buildin defaults
   QApplication app(argc, argv);

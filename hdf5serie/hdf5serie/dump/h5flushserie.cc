@@ -20,6 +20,8 @@
  */
 
 #include <config.h>
+#include <cassert>
+#include <cfenv>
 #include <iostream>
 #include <hdf5serie/file.h>
 #include <boost/filesystem.hpp>
@@ -29,6 +31,10 @@ using namespace H5;
 using namespace boost::filesystem;
 
 int main(int argc, char *argv[]) {
+#ifndef _WIN32
+  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
+#endif
+
   try {
     if(argc==1 || (argc==2 && argv[1]==string("-h"))) {
       cout<<"Usage: "<<argv[0]<<" [-h| <file> ...]"<<endl;

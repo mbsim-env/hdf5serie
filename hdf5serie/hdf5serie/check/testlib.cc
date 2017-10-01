@@ -20,6 +20,8 @@
  */
 
 #include <config.h>
+#include <cassert>
+#include <cfenv>
 #include <hdf5serie/vectorserie.h>
 //#include <hdf5serie/matrixserie.h>
 //#include <hdf5serie/structserie.h>
@@ -41,6 +43,9 @@ using namespace std;
 //};
 
 int main() {
+#ifndef _WIN32
+  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
+#endif
 
 
   /***** SimpleDataset *****/
