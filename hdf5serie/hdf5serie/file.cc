@@ -183,7 +183,7 @@ void File::close() {
     vector<char> name(1000+1);
     stringstream err;
     err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
-    for(long & it : obj) {
+    for(auto it : obj) {
       size_t ret=H5Iget_name(it, &name[0], 1000);
       if(ret<0)
         throw Exception(getPath(), "Internal error: H5Iget_name");
