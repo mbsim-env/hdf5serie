@@ -48,10 +48,10 @@ class HDF5SERIE_CLASS : public HDF5SERIE_BASECLASS {
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
     HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
 
-    ~HDF5SERIE_CLASS();
+    ~HDF5SERIE_CLASS() override;
 
-    void close();
-    void open();
+    void close() override;
+    void open() override;
 
   public:
     /** \brief Write data
@@ -72,7 +72,7 @@ class HDF5SERIE_CLASS : public HDF5SERIE_BASECLASS {
         a->write(desc);
       }
       std::string getDescription() {
-        SimpleAttribute<std::string> *a=openChildAttribute<SimpleAttribute<std::string> >("Description");
+        auto *a=openChildAttribute<SimpleAttribute<std::string> >("Description");
         return a->read();
       }
     #endif
@@ -88,9 +88,9 @@ class HDF5SERIE_CLASS<std::vector<T> > : public HDF5SERIE_BASECLASS {
   protected:
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
     HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_);
-    ~HDF5SERIE_CLASS();
-    void close();
-    void open();
+    ~HDF5SERIE_CLASS() override;
+    void close() override;
+    void open() override;
   public:
     void write(const std::vector<T>& data);
     std::vector<T> read();
@@ -100,7 +100,7 @@ class HDF5SERIE_CLASS<std::vector<T> > : public HDF5SERIE_BASECLASS {
         a->write(desc);
       }
       std::string getDescription() {
-        SimpleAttribute<std::string> *a=openChildAttribute<SimpleAttribute<std::string> >("Description");
+        auto *a=openChildAttribute<SimpleAttribute<std::string> >("Description");
         return a->read();
       }
     #endif
@@ -117,9 +117,9 @@ class HDF5SERIE_CLASS<std::vector<std::vector<T> > > : public HDF5SERIE_BASECLAS
   protected:
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
     HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_);
-    ~HDF5SERIE_CLASS();
-    void close();
-    void open();
+    ~HDF5SERIE_CLASS() override;
+    void close() override;
+    void open() override;
   public:
     void write(const std::vector<std::vector<T> >& data);
     std::vector<std::vector<T> > read();
@@ -129,7 +129,7 @@ class HDF5SERIE_CLASS<std::vector<std::vector<T> > > : public HDF5SERIE_BASECLAS
         a->write(desc);
       }
       std::string getDescription() {
-        SimpleAttribute<std::string> *a=openChildAttribute<SimpleAttribute<std::string> >("Description");
+        auto *a=openChildAttribute<SimpleAttribute<std::string> >("Description");
         return a->read();
       }
     #endif

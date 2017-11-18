@@ -26,6 +26,7 @@
 #include <hdf5.h>
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 
 namespace H5 {
@@ -35,10 +36,10 @@ namespace H5 {
   class ScopedHID {
     protected:
       typedef herr_t (*CloseFunc)(hid_t id);
-      hid_t id;
-      CloseFunc closeFunc;
+      hid_t id{-1};
+      CloseFunc closeFunc{nullptr};
     public:
-      ScopedHID() : id(-1), closeFunc(NULL) {}
+      ScopedHID()   = default;
       ScopedHID(hid_t id_, CloseFunc closeFunc_) : id(id_), closeFunc(closeFunc_) {}
       ~ScopedHID() {
         reset();
@@ -46,7 +47,7 @@ namespace H5 {
       operator hid_t() {
         return id;
       }
-      void reset(hid_t id_=-1, CloseFunc closeFunc_=NULL) {
+      void reset(hid_t id_=-1, CloseFunc closeFunc_=nullptr) {
         if(id>=0)
           closeFunc(id);
         id=id_;
@@ -60,9 +61,9 @@ namespace H5 {
       std::string msg;
       mutable std::string whatMsg;
     public:
-      explicit Exception(const std::string &path_, const std::string &msg_);
-      ~Exception() throw();
-      const char* what() const throw();
+      explicit Exception(std::string path_, std::string msg_);
+      ~Exception() noexcept override;
+      const char* what() const noexcept override;
   };
 
   class File;
@@ -87,8 +88,8 @@ namespace H5 {
     protected:
       ScopedHID id;
       std::string name;
-      Element(const std::string &name_);
-      virtual ~Element();
+      Element(std::string name_);
+      ~Element() override;
       virtual void close();
       virtual void open();
       virtual void refresh();
@@ -103,26 +104,25 @@ namespace H5 {
   template<class Child, class Self>
   class Container {
     protected:
-      Container() {
-      }
+      Container() = default;
       ~Container() {
-        for(typename std::map<std::string, Child*>::iterator it=childs.begin(); it!=childs.end(); ++it)
+        for(auto it=childs.begin(); it!=childs.end(); ++it)
           delete it->second;
       }
       void close() {
-        for(typename std::map<std::string, Child*>::iterator it=childs.begin(); it!=childs.end(); ++it)
+        for(auto it=childs.begin(); it!=childs.end(); ++it)
           it->second->close();
       }
       void open() {
-        for(typename std::map<std::string, Child*>::iterator it=childs.begin(); it!=childs.end(); ++it)
+        for(auto it=childs.begin(); it!=childs.end(); ++it)
           it->second->open();
       }
       void refresh() {
-        for(typename std::map<std::string, Child*>::iterator it=childs.begin(); it!=childs.end(); ++it)
+        for(auto it=childs.begin(); it!=childs.end(); ++it)
           it->second->refresh();
       }
       void flush() {
-        for(typename std::map<std::string, Child*>::iterator it=childs.begin(); it!=childs.end(); ++it)
+        for(auto it=childs.begin(); it!=childs.end(); ++it)
           it->second->flush();
       }
       std::map<std::string, Child*> childs;
@@ -135,8 +135,8 @@ namespace H5 {
           std::string name;
           std::map<std::string, Child*> &childs;
         public:
-          Creator(Self *self_, const std::string &name_, std::map<std::string, Child*> &childs_) :
-            self(self_), name(name_), childs(childs_) {}
+          Creator(Self *self_, std::string name_, std::map<std::string, Child*> &childs_) :
+            self(self_), name(std::move(name_)), childs(childs_) {}
 
           template<typename... Args>
           T* operator()(Args&&... args) {
@@ -144,7 +144,7 @@ namespace H5 {
             if(!ret.second)
               throw Exception(self->getPath(), "A element of name "+name+" already exists.");
             try {
-              T* r=new T(static_cast<Self*>(self), name, std::forward<Args>(args)...);
+              auto* r=new T(static_cast<Self*>(self), name, std::forward<Args>(args)...);
               ret.first->second=r;
               return r;
             }
@@ -167,13 +167,13 @@ namespace H5 {
           throw Exception(static_cast<Self*>(this)->getPath(), "Internal error: must be a relative name, not absolute or a path");
         std::pair<typename std::map<std::string, Child*>::iterator, bool> ret=childs.insert(std::pair<std::string, Child*>(name_, NULL));
         if(!ret.second) {
-          T *o=dynamic_cast<T*>(ret.first->second);
+          auto *o=dynamic_cast<T*>(ret.first->second);
           if(!o)
             std::runtime_error("The element "+name_+" if of other type.");
           return o;
         }
         try {
-          T* r=new T(0, static_cast<Self*>(this), name_);
+          auto* r=new T(0, static_cast<Self*>(this), name_);
           ret.first->second=r;
           return r;
         }
@@ -188,11 +188,11 @@ namespace H5 {
     friend class Container<Object, GroupBase>;
     protected:
       Object(GroupBase *parent_, const std::string &name_);
-      ~Object();
-      void close();
-      void open();
-      void refresh();
-      void flush();
+      ~Object() override;
+      void close() override;
+      void open() override;
+      void refresh() override;
+      void flush() override;
       GroupBase *parent;
       File *file;
       Object *getFileAsObject(); // helper function used in openChildAttribute
@@ -221,7 +221,7 @@ namespace H5 {
         // now its a relative path including at least one /
         return getAttrParent(path, pos)->openChild<T>(path.substr(pos+1));
       }
-      Attribute *openChildAttribute(const std::string &name_, ElementType *objectType=NULL, hid_t *type=NULL);
+      Attribute *openChildAttribute(const std::string &name_, ElementType *objectType=nullptr, hid_t *type=nullptr);
       std::set<std::string> getChildAttributeNames();
       bool hasChildAttribute(const std::string &name_);
       GroupBase *getParent() { return parent; }
@@ -233,13 +233,13 @@ namespace H5 {
     friend class Container<Attribute, Object>;
     protected:
       Attribute(Object *parent_, const std::string &name_);
-      ~Attribute();
+      ~Attribute() override;
       Object *parent;
       File *file;
-      void close();
-      void open();
-      void refresh();
-      void flush();
+      void close() override;
+      void open() override;
+      void refresh() override;
+      void flush() override;
     public:
       Object *getParent() { return parent; }
       File *getFile() { return file; }
@@ -250,11 +250,11 @@ namespace H5 {
     protected:
       Dataset(GroupBase *parent_, const std::string &name_);
       Dataset(int dummy, GroupBase *parent_, const std::string &name_);
-      ~Dataset();
-      void close();
-      void open();
-      void refresh();
-      void flush();
+      ~Dataset() override;
+      void close() override;
+      void open() override;
+      void refresh() override;
+      void flush() override;
     public:
       std::vector<hsize_t> getExtentDims();
   };

@@ -32,7 +32,7 @@ class MainWindow : public QMainWindow {
 
   public:
     MainWindow();
-    ~MainWindow();
+    ~MainWindow() override;
 
     Curves * getCurves() {return curves; }
     PlotArea * getPlotArea() {return plotArea; }

@@ -44,7 +44,7 @@ namespace {
 
   class RunAtExit {
     public:
-      RunAtExit() {}
+      RunAtExit() = default;
       ~RunAtExit();
       void addIPCRemove(const string &interprocessName);
     private:
@@ -61,7 +61,7 @@ int File::defaultChunkSize=100;
 set<File*> File::writerFiles;
 set<File*> File::readerFiles;
 
-File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.string()), type(type_), isSWMR(false) {
+File::File(const path &filename, FileAccess type_) : GroupBase(nullptr, filename.string()), type(type_), isSWMR(false) {
   file=this;
   open();
 
@@ -83,7 +83,7 @@ File::File(const path &filename, FileAccess type_) : GroupBase(NULL, filename.st
     ipc.shm->truncate(sizeof(bool)+sizeof(interprocess_mutex)+sizeof(interprocess_condition));
 #endif
     ipc.shmmap=std::make_shared<mapped_region>(*ipc.shm, read_write);
-    char *ptr=static_cast<char*>(ipc.shmmap->get_address());
+    auto *ptr=static_cast<char*>(ipc.shmmap->get_address());
     ipc.flushVar=new(ptr) bool(false);               ptr+=sizeof(bool);
     ipc.mutex   =new(ptr) interprocess_mutex();      ptr+=sizeof(interprocess_mutex);
     ipc.cond    =new(ptr) interprocess_condition();//ptr+=sizeof(interprocess_condition);
@@ -112,12 +112,12 @@ File::~File() {
   if(type==write)
     shared_memory_object::remove(interprocessName.c_str());
 #endif
-  for(vector<IPC>::iterator it=ipcAdd.begin(); it!=ipcAdd.end(); ++it) {
-    it->shmmap.reset();
-    it->shm.reset();
+  for(auto & it : ipcAdd) {
+    it.shmmap.reset();
+    it.shm.reset();
 #ifndef _WIN32
     if(type==write)
-      shared_memory_object::remove(it->interprocessName.c_str());
+      shared_memory_object::remove(it.interprocessName.c_str());
 #endif
   }
 
@@ -139,8 +139,8 @@ void File::reopenAsSWMR() {
 }
 
 void File::reopenAllFilesAsSWMR() {
-  for(set<File*>::iterator it=writerFiles.begin(); it!=writerFiles.end(); ++it)
-    (*it)->reopenAsSWMR();
+  for(auto writerFile : writerFiles)
+    writerFile->reopenAsSWMR();
 }
 
 void File::refresh() {
@@ -183,11 +183,11 @@ void File::close() {
     vector<char> name(1000+1);
     stringstream err;
     err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
-    for(vector<hid_t>::iterator it=obj.begin(); it!=obj.end(); ++it) {
-      size_t ret=H5Iget_name(*it, &name[0], 1000);
+    for(long & it : obj) {
+      size_t ret=H5Iget_name(it, &name[0], 1000);
       if(ret<0)
         throw Exception(getPath(), "Internal error: H5Iget_name");
-      err<<"type="<<H5Iget_type(*it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
+      err<<"type="<<H5Iget_type(it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
     }
     throw Exception(getPath(), err.str());
   }
@@ -240,13 +240,13 @@ void File::flushIfRequested() {
 }
 
 void File::flushAllFiles() {
-  for(set<File*>::iterator it=writerFiles.begin(); it!=writerFiles.end(); ++it)
-    (*it)->flush();
+  for(auto writerFile : writerFiles)
+    writerFile->flush();
 }
 
 void File::flushAllFilesIfRequested() {
-  for(set<File*>::iterator it=writerFiles.begin(); it!=writerFiles.end(); ++it)
-    (*it)->flushIfRequested();
+  for(auto writerFile : writerFiles)
+    writerFile->flushIfRequested();
 }
 
 void File::refreshAfterWriterFlush() {
@@ -256,19 +256,19 @@ void File::refreshAfterWriterFlush() {
 }
 
 void File::refreshAllFiles() {
-  for(set<File*>::iterator it=readerFiles.begin(); it!=readerFiles.end(); ++it)
-    (*it)->refresh();
+  for(auto readerFile : readerFiles)
+    readerFile->refresh();
 }
 
 void File::refreshFilesAfterWriterFlush(const std::set<File*> &files) {
-  for(set<File*>::iterator it=files.begin(); it!=files.end(); ++it)
-    (*it)->requestWriterFlush();
+  for(auto file : files)
+    file->requestWriterFlush();
   vector<bool> refreshNeeded;
   refreshNeeded.reserve(files.size());
-  for(set<File*>::iterator it=files.begin(); it!=files.end(); ++it)
-    refreshNeeded.push_back((*it)->waitForWriterFlush());
-  vector<bool>::iterator nit=refreshNeeded.begin();
-  for(set<File*>::iterator it=files.begin(); it!=files.end(); ++it, ++nit)
+  for(auto file : files)
+    refreshNeeded.push_back(file->waitForWriterFlush());
+  auto nit=refreshNeeded.begin();
+  for(auto it=files.begin(); it!=files.end(); ++it, ++nit)
     if(*nit)
       (*it)->refresh();
 }
@@ -280,15 +280,15 @@ void File::refreshAllFilesAfterWriterFlush() {
 void File::requestWriterFlush() {
   ::requestWriterFlush(ipc, this);
   // post also files with are linked by this file
-  for(vector<IPC>::iterator it=ipcAdd.begin(); it!=ipcAdd.end(); ++it)
-    ::requestWriterFlush(*it, this);
+  for(auto & it : ipcAdd)
+    ::requestWriterFlush(it, this);
 }
 
 bool File::waitForWriterFlush() {
   bool ret=::waitForWriterFlush(ipc, this);
   // wait also for files with are linked by this file
-  for(vector<IPC>::iterator it=ipcAdd.begin(); it!=ipcAdd.end(); ++it)
-    if(::waitForWriterFlush(*it, this))
+  for(auto & it : ipcAdd)
+    if(::waitForWriterFlush(it, this))
       ret=true;
   return ret;
 }
@@ -360,7 +360,7 @@ void openIPC(H5::File::IPC &ipc, const path &filename) {
     ipc.shm=std::make_shared<shared_memory_object>(open_only, interprocessName.c_str(), read_write);
 #endif
     ipc.shmmap=std::make_shared<mapped_region>(*ipc.shm, read_write);
-    char *ptr=static_cast<char*>(ipc.shmmap->get_address());
+    auto *ptr=static_cast<char*>(ipc.shmmap->get_address());
     ipc.flushVar=reinterpret_cast<bool*>                  (ptr);  ptr+=sizeof(bool);
     ipc.mutex   =reinterpret_cast<interprocess_mutex*>    (ptr);  ptr+=sizeof(interprocess_mutex);
     ipc.cond    =reinterpret_cast<interprocess_condition*>(ptr);//ptr+=sizeof(interprocess_condition);
@@ -373,8 +373,8 @@ void openIPC(H5::File::IPC &ipc, const path &filename) {
 
 RunAtExit::~RunAtExit() {
 #ifndef _WIN32
-  for(set<string>::iterator it=ipcRemove.begin(); it!=ipcRemove.end(); ++it)
-    shared_memory_object::remove(it->c_str());
+  for(const auto & it : ipcRemove)
+    shared_memory_object::remove(it.c_str());
 #endif
 }
 

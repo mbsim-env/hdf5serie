@@ -62,14 +62,13 @@ namespace H5 {
                        fileDataSpaceID, H5P_DEFAULT, propID, apl), &H5Dclose);
 
     hsize_t memDims[]={1, dims[1]};
-    memDataSpaceID.reset(H5Screate_simple(2, memDims, NULL), &H5Sclose);
+    memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
     msg(Debug)<<"HDF5:\n"
               <<"Created object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
   }
 
   template<class T>
-  VectorSerie<T>::~VectorSerie() {
-  }
+  VectorSerie<T>::~VectorSerie() = default;
 
   template<class T>
   void VectorSerie<T>::close() {
@@ -99,7 +98,7 @@ namespace H5 {
 
     // create mem space
     hsize_t memDims[]={1, dims[1]};
-    memDataSpaceID.reset(H5Screate_simple(2, memDims, NULL), &H5Sclose);
+    memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
     msg(Debug)<<"HDF5:\n"
               <<"Opened object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
     Dataset::open();
@@ -120,7 +119,7 @@ namespace H5 {
     hsize_t start[]={dims[0]-1,0};
     hsize_t count[]={1, dims[1]};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
-    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
 
     H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, data);
   }
@@ -141,7 +140,7 @@ namespace H5 {
     hsize_t start[]={(hsize_t)row,0};
     hsize_t count[]={1, dims[1]};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
-    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
 
     H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
     return;
@@ -155,16 +154,16 @@ namespace H5 {
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
-    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
 
-    ScopedHID colDataSpaceID(H5Screate_simple(2, count, NULL), &H5Sclose);
+    ScopedHID colDataSpaceID(H5Screate_simple(2, count, nullptr), &H5Sclose);
 
     H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, data);
   }
 
   template<class T>
   string VectorSerie<T>::getDescription() {
-    SimpleAttribute<string> *desc=openChildAttribute<SimpleAttribute<string> >("Description");
+    auto *desc=openChildAttribute<SimpleAttribute<string> >("Description");
     return desc->read();
   }
 
@@ -178,7 +177,7 @@ namespace H5 {
 
   template<class T>
   vector<string> VectorSerie<T>::getColumnLabel() {
-    SimpleAttribute<vector<string> > *col=openChildAttribute<SimpleAttribute<vector<string> > >("Column Label");
+    auto *col=openChildAttribute<SimpleAttribute<vector<string> > >("Column Label");
     return col->read();
   }
 
@@ -195,7 +194,7 @@ namespace H5 {
     hsize_t start[]={dims[0]-1,0};
     hsize_t count[]={1, dims[1]};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
-    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
   
     VecStr dummy(dims[1]);
     for(unsigned int i=0; i<dims[1]; i++) {
@@ -221,7 +220,7 @@ namespace H5 {
     hsize_t start[]={(hsize_t)row,0};
     hsize_t count[]={1, dims[1]};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
-    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
   
     VecStr dummy(dims[1]);
     H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);
@@ -238,9 +237,9 @@ namespace H5 {
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
     ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
-    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, NULL, count, NULL);
+    H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
   
-    ScopedHID colDataSpaceID(H5Screate_simple(2, count, NULL), &H5Sclose);
+    ScopedHID colDataSpaceID(H5Screate_simple(2, count, nullptr), &H5Sclose);
   
     VecStr dummy(rows);
     H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);

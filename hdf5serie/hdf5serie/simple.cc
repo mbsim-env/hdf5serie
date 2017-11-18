@@ -19,8 +19,7 @@ HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::s
 }
 
 template<class T>
-HDF5SERIE_CLASS<T>::~HDF5SERIE_CLASS() {
-}
+HDF5SERIE_CLASS<T>::~HDF5SERIE_CLASS() = default;
 
 template<class T>
 void HDF5SERIE_CLASS<T>::close() {
@@ -80,7 +79,7 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
   memDataTypeID=toH5Type(dummy);
   hsize_t dims[1];
   dims[0]=size;
-  memDataSpaceID.reset(H5Screate_simple(1, dims, NULL), &H5Sclose);
+  memDataSpaceID.reset(H5Screate_simple(1, dims, nullptr), &H5Sclose);
   #ifdef HDF5SERIE_DATASETTYPE
     ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
     H5Pset_attr_phase_change(propID, 0, 0);
@@ -89,8 +88,7 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
 }
 
 template<class T>
-HDF5SERIE_CLASS<vector<T> >::~HDF5SERIE_CLASS() {
-}
+HDF5SERIE_CLASS<vector<T> >::~HDF5SERIE_CLASS() = default;
 
 template<class T>
 void HDF5SERIE_CLASS<vector<T> >::close() {
@@ -104,7 +102,7 @@ void HDF5SERIE_CLASS<vector<T> >::open() {
   id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
   memDataSpaceID.reset(HDF5SERIE_H5XGET_SPACE, &H5Sclose);
   hsize_t dims[1];
-  H5Sget_simple_extent_dims(memDataSpaceID, dims, NULL);
+  H5Sget_simple_extent_dims(memDataSpaceID, dims, nullptr);
   size=dims[0];
   HDF5SERIE_BASECLASS::open();
 }
@@ -139,7 +137,7 @@ vector<string> HDF5SERIE_CLASS<vector<string> >::read() {
   HDF5SERIE_H5XREAD(&buf[0]);
   vector<string> data;
   for(unsigned int i=0; i<static_cast<size_t>(size); i++)
-    data.push_back(buf[i]);
+    data.emplace_back(buf[i]);
   return data;
 }
 
@@ -166,7 +164,7 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
   hsize_t dims[2];
   dims[0]=rows;
   dims[1]=cols;
-  memDataSpaceID.reset(H5Screate_simple(2, dims, NULL), &H5Sclose);
+  memDataSpaceID.reset(H5Screate_simple(2, dims, nullptr), &H5Sclose);
   #ifdef HDF5SERIE_DATASETTYPE
     ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
     H5Pset_attr_phase_change(propID, 0, 0);
@@ -175,8 +173,7 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
 }
 
 template<class T>
-HDF5SERIE_CLASS<vector<vector<T> > >::~HDF5SERIE_CLASS() {
-}
+HDF5SERIE_CLASS<vector<vector<T> > >::~HDF5SERIE_CLASS() = default;
 
 template<class T>
 void HDF5SERIE_CLASS<vector<vector<T> > >::close() {
@@ -190,7 +187,7 @@ void HDF5SERIE_CLASS<vector<vector<T> > >::open() {
   id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
   memDataSpaceID.reset(HDF5SERIE_H5XGET_SPACE, &H5Sclose);
   hsize_t dims[2];
-  H5Sget_simple_extent_dims(memDataSpaceID, dims, NULL);
+  H5Sget_simple_extent_dims(memDataSpaceID, dims, nullptr);
   rows=dims[0];
   cols=dims[1];
   HDF5SERIE_BASECLASS::open();
@@ -202,8 +199,8 @@ void HDF5SERIE_CLASS<vector<vector<T> > >::write(const vector<vector<T> > &data)
     throw Exception(getPath(), "Size mismatch in write.");
   vector<T> buf(rows*cols);
   int i=0;
-  for(typename vector<vector<T> >::const_iterator ir=data.begin(); ir!=data.end(); ++ir)
-    for(typename vector<T>::const_iterator ic=ir->begin(); ic!=ir->end(); ++ic, ++i)
+  for(auto ir=data.begin(); ir!=data.end(); ++ir)
+    for(auto ic=ir->begin(); ic!=ir->end(); ++ic, ++i)
       buf[i]=*ic;
   HDF5SERIE_H5XWRITE(&buf[0]);
 }
@@ -213,8 +210,8 @@ void HDF5SERIE_CLASS<vector<vector<string> > >::write(const vector<vector<string
     throw Exception(getPath(), "Size mismatch in write.");
   VecStr buf(rows*cols);
   int i=0;
-  for(typename vector<vector<string> >::const_iterator ir=data.begin(); ir!=data.end(); ++ir)
-    for(typename vector<string>::const_iterator ic=ir->begin(); ic!=ir->end(); ++ic, ++i) {
+  for(const auto & ir : data)
+    for(auto ic=ir.begin(); ic!=ir.end(); ++ic, ++i) {
       buf[i]=(char*)malloc((ic->size()+1)*sizeof(char));
       strcpy(buf[i], ic->c_str());
     }
@@ -227,10 +224,10 @@ vector<vector<T> > HDF5SERIE_CLASS<vector<vector<T> > >::read() {
   HDF5SERIE_H5XREAD(&buf[0]);
   vector<vector<T> > ret(rows);
   int r=0, c;
-  for(typename vector<vector<T> >::iterator ir=ret.begin(); ir!=ret.end(); ++ir, ++r) {
+  for(auto ir=ret.begin(); ir!=ret.end(); ++ir, ++r) {
     ir->resize(cols);
     c=0;
-    for(typename vector<T>::iterator ic=ir->begin(); ic!=ir->end(); ++ic, ++c)
+    for(auto ic=ir->begin(); ic!=ir->end(); ++ic, ++c)
       *ic=buf[r*cols+c];
   }
   return ret;
@@ -241,10 +238,10 @@ vector<vector<string> > HDF5SERIE_CLASS<vector<vector<string> > >::read() {
   HDF5SERIE_H5XREAD(&buf[0]);
   vector<vector<string> > ret(rows);
   int r=0, c;
-  for(typename vector<vector<string> >::iterator ir=ret.begin(); ir!=ret.end(); ++ir, ++r) {
+  for(auto ir=ret.begin(); ir!=ret.end(); ++ir, ++r) {
     ir->resize(cols);
     c=0;
-    for(typename vector<string>::iterator ic=ir->begin(); ic!=ir->end(); ++ic, ++c)
+    for(auto ic=ir->begin(); ic!=ir->end(); ++ic, ++c)
       *ic=buf[r*cols+c];
   }
   return ret;

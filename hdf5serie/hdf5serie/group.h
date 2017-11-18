@@ -31,11 +31,11 @@ namespace H5 {
     protected:
       GroupBase(int dummy, GroupBase *parent_, const std::string &name_);
       GroupBase(GroupBase *parent_, const std::string &name_);
-      ~GroupBase();
-      void close();
-      void open();
-      void refresh();
-      void flush();
+      ~GroupBase() override;
+      void close() override;
+      void open() override;
+      void refresh() override;
+      void flush() override;
       Dataset *openChildDataset(const std::string &name_, ElementType *objectType, hid_t *type);
       void handleExternalLink(const std::string &name_);
       GroupBase *getFileAsGroup();
@@ -70,7 +70,7 @@ namespace H5 {
           throw Exception(getPath(), "Got a path (including /) but this object is not a group");
         return group->openChildObject<T>(path.substr(pos+1));
       }
-      Object *openChildObject(const std::string &name_, ElementType *objectType=NULL, hid_t *type=NULL);
+      Object *openChildObject(const std::string &name_, ElementType *objectType=nullptr, hid_t *type=nullptr);
       std::set<std::string> getChildObjectNames();
       bool hasChildObject(const std::string &name_);
 
@@ -85,11 +85,11 @@ namespace H5 {
     protected:
       Group(int dummy, GroupBase *parent_, const std::string &name_);
       Group(GroupBase *parent_, const std::string &name_);
-      ~Group();
-      void close();
-      void open();
-      void refresh();
-      void flush();
+      ~Group() override;
+      void close() override;
+      void open() override;
+      void refresh() override;
+      void flush() override;
   };
 
 }

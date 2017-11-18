@@ -52,15 +52,15 @@ namespace H5 {
         write
       };
       File(const boost::filesystem::path &filename, FileAccess type_);
-      ~File();
+      ~File() override;
       void reopenAsSWMR();
       static void reopenAllFilesAsSWMR();
       static int getDefaultCompression() { return defaultCompression; }
       static void setDefaultCompression(int comp) { defaultCompression=comp; }
       static int getDefaultChunkSize() { return defaultChunkSize; }
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
-      void refresh();
-      void flush();
+      void refresh() override;
+      void flush() override;
 
       void requestWriterFlush();
       bool waitForWriterFlush();
@@ -90,8 +90,8 @@ namespace H5 {
     protected:
       FileAccess type;
       bool isSWMR;
-      void close();
-      void open();
+      void close() override;
+      void open() override;
       static int defaultCompression;
       static int defaultChunkSize;
 

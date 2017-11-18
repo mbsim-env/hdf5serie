@@ -26,6 +26,7 @@
 #include <hdf5serie/simpleattribute.h>
 #include <hdf5serie/toh5type.h>
 #include <sstream>
+#include <utility>
 
 using namespace std;
 
@@ -52,26 +53,25 @@ namespace {
 
 namespace H5 {
 
-Exception::Exception(const std::string &path_, const std::string &msg_) : path(path_), msg(msg_) {}
+Exception::Exception(std::string path_, std::string msg_) : path(std::move(path_)), msg(std::move(msg_)) {}
 
-Exception::~Exception() throw() {}
+Exception::~Exception() noexcept = default;
 
-const char* Exception::what() const throw() {
+const char* Exception::what() const noexcept {
   whatMsg="In element "+path+": "+msg;
   return whatMsg.c_str();
 }
 
-Element::Element(const std::string &name_) : id(), name(name_) {
+Element::Element(std::string name_) : id(), name(std::move(name_)) {
   // print errors as exceptions
   static bool firstCall=true;
   if(firstCall) {
-    H5Eset_auto2(H5E_DEFAULT, &errorHandler, NULL);
+    H5Eset_auto2(H5E_DEFAULT, &errorHandler, nullptr);
     firstCall=false;
   }
 }
 
-Element::~Element() {
-}
+Element::~Element() = default;
 
 void Element::close() {
 }
@@ -86,11 +86,10 @@ void Element::flush() {
 }
 
 Object::Object(GroupBase *parent_, const std::string &name_) : Element(name_), Container<Attribute, Object>(),
-  parent(parent_), file(parent?parent->file:NULL) { // parent is NULL only for File which sets file by itself
+  parent(parent_), file(parent?parent->file:nullptr) { // parent is NULL only for File which sets file by itself
 }
 
-Object::~Object() {
-}
+Object::~Object() = default;
 
 Attribute *Object::openChildAttribute(const std::string &name_, ElementType *attributeType, hid_t *type) {
   ScopedHID d(H5Aopen(id, name_.c_str(), H5P_DEFAULT), &H5Dclose);
@@ -178,7 +177,7 @@ Object *Object::getFileAsObject() {
 }
 
 Object *Object::getAttrParent(const string &path, size_t pos) {
-  GroupBase *group=dynamic_cast<GroupBase*>(this);
+  auto *group=dynamic_cast<GroupBase*>(this);
   if(!group)
     throw Exception(getPath(), "Got a path (including /) but this object is not a group");
   return group->openChildObject(path.substr(0, pos));
@@ -193,8 +192,7 @@ string Object::getPath() {
 Attribute::Attribute(Object *parent_, const std::string &name_) : Element(name_), parent(parent_), file(parent->getFile()) {
 }
 
-Attribute::~Attribute() {
-}
+Attribute::~Attribute() = default;
 
 void Attribute::close() {
   Element::close();
@@ -219,8 +217,7 @@ string Attribute::getPath() {
 Dataset::Dataset(GroupBase *parent_, const std::string &name_) : Object(parent_, name_) {
 }
 
-Dataset::~Dataset() {
-}
+Dataset::~Dataset() = default;
 
 void Dataset::open() {
   Object::open();

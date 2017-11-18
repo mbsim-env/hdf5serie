@@ -51,12 +51,12 @@ int main(int argc, char *argv[]) {
     for(int i=1; i<argc; ++i)
       h5File.push_back(make_shared<File>(argv[i], File::read));
 
-    for(vector<shared_ptr<File> >::iterator it=h5File.begin(); it!=h5File.end(); ++it)
-      (*it)->requestWriterFlush();
+    for(auto & it : h5File)
+      it->requestWriterFlush();
     vector<bool> refreshNeeded;
     refreshNeeded.reserve(h5File.size());
-    for(vector<shared_ptr<File> >::iterator it=h5File.begin(); it!=h5File.end(); ++it)
-      cout<<(*it)->waitForWriterFlush()<<endl;
+    for(auto & it : h5File)
+      cout<<it->waitForWriterFlush()<<endl;
 
     return 0;
   }

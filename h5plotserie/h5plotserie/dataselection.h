@@ -44,8 +44,8 @@ class DataSelection : public QSplitter {
   Q_OBJECT
 
   public:
-    DataSelection(QWidget * parent = 0);
-    ~DataSelection();
+    DataSelection(QWidget * parent = nullptr);
+    ~DataSelection() override;
     
     void addFile(const QString &fileName);
     QList<QFileInfo> * getFileInfo() {return &fileInfo; }

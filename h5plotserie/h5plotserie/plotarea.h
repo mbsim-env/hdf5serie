@@ -37,7 +37,7 @@ class PlotArea : public QMdiArea {
   Q_OBJECT
 
   public:
-    PlotArea(QWidget * parent = 0);
+    PlotArea(QWidget * parent = nullptr);
 
     void addPlotWindow(const QString &windowTitle);
 
@@ -51,7 +51,7 @@ class PlotWindow : public QMdiSubWindow {
   Q_OBJECT
 
   public:
-    PlotWindow(QWidget * parent = 0);
+    PlotWindow(QWidget * parent = nullptr);
 
     void detachPlot();
     void plotDataSet(PlotData pd, int penColor);
@@ -60,14 +60,14 @@ class PlotWindow : public QMdiSubWindow {
     void setPlotGrid(bool grid_=true) {plotGrid=grid_; }
 
   protected:
-    void closeEvent(QCloseEvent * event);
+    void closeEvent(QCloseEvent * event) override;
   
   private:
-    QwtPlot * plot;
+    QwtPlot * plot{0};
     QVector<QPen> pen;
-    QwtPlotZoomer * zoom;
-    double xMinValue, yMinValue, xMaxValue, yMaxValue;
-    bool plotGrid;
+    QwtPlotZoomer * zoom{0};
+    double xMinValue{0}, yMinValue{0}, xMaxValue{0}, yMaxValue{0};
+    bool plotGrid{true};
 };
 
 #endif // PLOTAREA_H

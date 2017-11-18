@@ -74,8 +74,7 @@ int main(int argc, char *argv[]) {
 
 void walkH5(const string &indent, const path &filename, const string &path, GroupBase *obj) {
   set<string> names=obj->getChildObjectNames();
-  for(set<string>::iterator it=names.begin(); it!=names.end(); ++it) {
-    string name=*it;
+  for(auto name : names) {
     if(obj->isExternalLink(name) && !f) {
       pair<boost::filesystem::path, string> link=obj->getExternalLink(name);
       cout<<indent<<"* "<<name<<" (External Link: \""<<link.first.string()<<link.second<<"\")"<<endl;
@@ -84,7 +83,7 @@ void walkH5(const string &indent, const path &filename, const string &path, Grou
 
     Object *child=obj->openChildObject(name);
 
-    Group *g=dynamic_cast<Group*>(child);
+    auto *g=dynamic_cast<Group*>(child);
     if(g) {
       // print and walk
       cout<<indent<<"+ "<<name<<endl;
@@ -93,7 +92,7 @@ void walkH5(const string &indent, const path &filename, const string &path, Grou
       continue;
     }
 
-    Dataset *d=dynamic_cast<Dataset*>(child);
+    auto *d=dynamic_cast<Dataset*>(child);
     if(d) {
       // print
       cout<<indent<<"- "<<name<<" (Path: \""<<filename.string()<<path<<"/"<<name<<"\")"<<endl;

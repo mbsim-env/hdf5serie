@@ -38,7 +38,7 @@ class Curves : public QTabWidget {
   Q_OBJECT
 
   public:
-    Curves(QWidget * parent = 0);
+    Curves(QWidget * parent = nullptr);
 
     void modifyPlotData(PlotData pd, const QString &mode);
     QString saveCurves();
@@ -53,7 +53,7 @@ class Curves : public QTabWidget {
 
   private:
 
-    int numberOfWindows;
+    int numberOfWindows{0};
 };
 
 class PlotDataTable : public QTableWidget {
@@ -61,7 +61,7 @@ class PlotDataTable : public QTableWidget {
   Q_OBJECT
 
   public:
-    PlotDataTable(QWidget * parent = 0, const QString &name = "");
+    PlotDataTable(QWidget * parent = nullptr, const QString &name = "");
     
     void clearTable();
     void addDataSet(PlotData pd);

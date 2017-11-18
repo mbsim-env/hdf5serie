@@ -40,7 +40,7 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   QWidget* dummy=new QWidget(this);
   addWidget(dummy);
 
-  QGridLayout * fileSelection=new QGridLayout(this);
+  auto * fileSelection=new QGridLayout(this);
   dummy->setLayout(fileSelection);
 
   QLabel * filterLabel=new QLabel("Filter:");
@@ -72,15 +72,15 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
 DataSelection::~DataSelection() {
   if (fileBrowser) {
     delete fileBrowser;
-    fileBrowser=NULL;
+    fileBrowser=nullptr;
   }
   if (filter) {
     delete filter;
-    filter=NULL;
+    filter=nullptr;
   }
   if (path) {
     delete path;
-    path=NULL;
+    path=nullptr;
   }
 }
 
@@ -104,9 +104,9 @@ void DataSelection::addFile(const QString &name) {
   fileBrowser->addTopLevelItem(topitem);
   QList<QTreeWidgetItem *> items;
   set<string> names=h5f->getChildObjectNames();
-  for(set<string>::iterator name=names.begin(); name!=names.end(); ++name) {
-    QTreeWidgetItem *item = new TreeWidgetItem(QStringList(name->c_str()));
-    H5::Group *grp = h5f->openChildObject<H5::Group>(*name);
+  for(const auto & name : names) {
+    QTreeWidgetItem *item = new TreeWidgetItem(QStringList(name.c_str()));
+    auto *grp = h5f->openChildObject<H5::Group>(name);
     insertChildInTree(grp, item);
     topitem->addChild(item);
   }
@@ -124,14 +124,14 @@ shared_ptr<H5::File> DataSelection::getH5File(const boost::filesystem::path &p) 
 
 void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
   set<string> names=grp->getChildObjectNames();
-  for(set<string>::iterator name=names.begin(); name!=names.end(); ++name) {
-    QTreeWidgetItem *child = new TreeWidgetItem(QStringList(name->c_str()));
+  for(const auto & name : names) {
+    QTreeWidgetItem *child = new TreeWidgetItem(QStringList(name.c_str()));
     item->addChild(child);
-    H5::Group *g=dynamic_cast<H5::Group*>(grp->openChildObject(*name));
+    auto *g=dynamic_cast<H5::Group*>(grp->openChildObject(name));
     if(g)
       insertChildInTree(g, child);
     else {
-      if(*name == "data") {
+      if(name == "data") {
         QString path; 
         getPath(item,path,0);
         path += "/data";
@@ -154,7 +154,7 @@ void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
     QString path = static_cast<TreeWidgetItem*>(item)->getPath();
     int j = getTopLevelIndex(item);
     std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
-    H5::VectorSerie<double> *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
+    auto *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
     QStringList sl;
     for(unsigned int i=0; i<vs->getColumns(); i++)
       sl << vs->getColumnLabel()[i].c_str();
@@ -175,7 +175,7 @@ void DataSelection::selectFromCurrentData(QListWidgetItem* item) {
   int col = currentData->row(item);
   int j = getTopLevelIndex(fileBrowser->currentItem());
   std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
-  H5::VectorSerie<double> *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
+  auto *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
 
   PlotData pd;
   pd.setValue("Filepath", fileInfo[j].absolutePath());
@@ -225,7 +225,7 @@ void DataSelection::searchObjectList(QTreeWidgetItem *item, const QRegExp& filte
           item->child(i)->isExpanded()==false) ||
         (item->child(i)->childCount()==0 && !(((TreeWidgetItem*)(item->child(i)))->getSearchMatched()))) {
       bool hide=true;
-      for(QTreeWidgetItem *it=item; it!=0; it=it->parent())
+      for(QTreeWidgetItem *it=item; it!=nullptr; it=it->parent())
         if(filterRegExp.indexIn(it->text(0))>=0) { hide=false; break; }
       item->child(i)->setHidden(hide);
     }
@@ -234,7 +234,7 @@ void DataSelection::searchObjectList(QTreeWidgetItem *item, const QRegExp& filte
 
 void DataSelection::updatePath(QTreeWidgetItem *cur) {
   QString str=cur->text(0);
-  for (QTreeWidgetItem *item=cur->parent(); item!=0; item=item->parent())
+  for (QTreeWidgetItem *item=cur->parent(); item!=nullptr; item=item->parent())
     str=item->text(0)+"/"+str;
   path->setText(str);
 };

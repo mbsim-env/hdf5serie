@@ -28,7 +28,7 @@
 #include "mainwindow.h"
 #include "dataselection.h"
 
-Curves::Curves(QWidget * parent) : QTabWidget(parent), numberOfWindows(0) {
+Curves::Curves(QWidget * parent) : QTabWidget(parent) {
   setUsesScrollButtons(true);
 
   QString windowTitle = QString("Plot %1").arg(++numberOfWindows);
@@ -98,7 +98,7 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
 
 void Curves::collectFilesToRefresh(std::set<H5::File*> &filesToRefresh) {
   DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent())->getDataSelection();
-  PlotDataTable *plotDataTable=static_cast<PlotDataTable*>(currentWidget());
+  auto *plotDataTable=static_cast<PlotDataTable*>(currentWidget());
   for(int i=0; i<plotDataTable->rowCount(); i++) {
     PlotData pd;
     for (int j=0; j<pd.numberOfItems(); j++)
@@ -121,10 +121,10 @@ void Curves::refreshAllTabs() {
 
 void Curves::plotCurrentTab() {
   const QString tabName = tabText(currentIndex());
-  PlotWindow * plotWindow = static_cast<MainWindow*>(parent()->parent())->getPlotArea()->findChild<PlotWindow*>(tabName);
+  auto * plotWindow = static_cast<MainWindow*>(parent()->parent())->getPlotArea()->findChild<PlotWindow*>(tabName);
 
   plotWindow->detachPlot();
-  PlotDataTable * plotDataTable = static_cast<PlotDataTable*>(currentWidget());
+  auto * plotDataTable = static_cast<PlotDataTable*>(currentWidget());
   for (int i=0; i<plotDataTable->rowCount(); i++) {
     PlotData pd;
     for (int j=0; j<pd.numberOfItems(); j++)

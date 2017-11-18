@@ -45,8 +45,7 @@ GroupBase::GroupBase(int dummy, GroupBase *parent_, const string &name_) : Objec
 GroupBase::GroupBase(GroupBase *parent_, const string &name_) : Object(parent_, name_), Container<Object, GroupBase>() {
 }
 
-GroupBase::~GroupBase() {
-}
+GroupBase::~GroupBase() = default;
 
 Object *GroupBase::openChildObject(const string &name_, ElementType *objectType, hid_t *type) {
   ScopedHID o(H5Oopen(id, name_.c_str(), H5P_DEFAULT), &H5Oclose);
@@ -167,7 +166,7 @@ pair<path, string> GroupBase::getExternalLink(const string &name_) {
   H5Lget_val(id, name_.c_str(), &buff[0], link_buff.u.val_size, H5P_DEFAULT);
   const char *linkFilename;
   const char *obj_path;
-  H5Lunpack_elink_val(&buff[0], link_buff.u.val_size, NULL, &linkFilename, &obj_path);
+  H5Lunpack_elink_val(&buff[0], link_buff.u.val_size, nullptr, &linkFilename, &obj_path);
   return make_pair(absolute(linkFilename, path(getFile()->getName()).parent_path()), obj_path);
   //MFMF use same algo for retrun.first as in doc of H5Lcreate_external
 }

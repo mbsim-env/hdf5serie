@@ -85,15 +85,15 @@ MainWindow::MainWindow() : QMainWindow() {
 MainWindow::~MainWindow() {
   if (plotArea) {
     delete plotArea;
-    plotArea=NULL;
+    plotArea=nullptr;
   }
   if (dataSelection) {
     delete dataSelection;
-    dataSelection=NULL;
+    dataSelection=nullptr;
   }
   if(curves) {
     delete curves;
-    curves=NULL;
+    curves=nullptr;
   }
 }
 
@@ -144,7 +144,7 @@ void MainWindow::addH5FileDialog() {
 }
 
 void MainWindow::saveAllPlotWindows() {
-  QString fileName=QFileDialog::getSaveFileName(0, "Save plow windows", ".", "xml Files (*.h5Layout.xml)");
+  QString fileName=QFileDialog::getSaveFileName(nullptr, "Save plow windows", ".", "xml Files (*.h5Layout.xml)");
 
   QFile file(fileName+".h5Layout.xml");
   file.open(QIODevice::WriteOnly | QIODevice::Text);

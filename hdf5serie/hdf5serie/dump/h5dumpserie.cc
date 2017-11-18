@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
 
   vector<string> arg;
   for(int i=1; i<argc; i++)
-    arg.push_back(argv[i]);
+    arg.emplace_back(argv[i]);
 
   if(arg.size()==0 ||
      find(arg.begin(), arg.end(), "-h")!=arg.end() ||
@@ -203,8 +203,8 @@ int main(int argc, char* argv[]) {
         if(dataSet[k]->hasChildAttribute("Column Label")) {
           vector<string> cols=dataSet[k]->openChildAttribute<SimpleAttribute<vector<string> > >("Column Label")->read();
           cout<<comment<<"   Column Label:"<<endl;
-          for(unsigned int j=0; j<column[k].size(); j++)
-            cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<cols[column[k][j]-1]<<endl;
+          for(int j : column[k])
+            cout<<comment<<"     "<<setfill('0')<<setw(4)<<col++<<": "<<cols[j-1]<<endl;
         }
         else
           cout<<comment<<"   Column labels are not avaliable."<<endl;

@@ -45,7 +45,7 @@ void PlotArea::addPlotWindow(const QString &windowTitle) {
   q->showMaximized();
 }
 
-PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent), plot(0), zoom(0), xMinValue(0), yMinValue(0), xMaxValue(0), yMaxValue(0), plotGrid(true) {
+PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent) {
 
   plot = new QwtPlot();
   setWidget(plot);
@@ -74,8 +74,8 @@ PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent), plot(0), zoom(
 
 void PlotWindow::detachPlot() {
   QwtPlotItemList il = plot->itemList();
-  for(int i=0; i<il.size(); i++)
-    il[i]->detach();
+  for(auto & i : il)
+    i->detach();
   plot->replot();
   xMinValue=99e99;
   xMaxValue=-99e99;
@@ -87,7 +87,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
   DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent()->parent())->getDataSelection();
   std::shared_ptr<H5::File> h5file=dataSelection->getH5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString());
 
-  H5::VectorSerie<double> *vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
+  auto *vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
   size_t rows=vs->getRows();
   std::vector<double> xVal(rows);
   vs->getColumn(pd.getValue("x-Index").toInt(), xVal);
@@ -106,21 +106,21 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
 
   if (xVal.size()==yVal.size()) {
 
-    for (unsigned int i=0; i<xVal.size(); i++)
-      if (!std::isnan(xVal[i])) { // xValue
-        if (xVal[i]<xMinValue)
-          xMinValue=xVal[i];
-        if (xVal[i]>xMaxValue)
-          xMaxValue=xVal[i];
+    for (double i : xVal)
+      if (!std::isnan(i)) { // xValue
+        if (i<xMinValue)
+          xMinValue=i;
+        if (i>xMaxValue)
+          xMaxValue=i;
       }
 
     if (useY2) {
       if ((yVal.size()==y2Val.size())) {
         const double y2offset=pd.getValue("y2offset").toDouble();
         const double y2gain=pd.getValue("y2gain").toDouble();
-        for (unsigned int i=0; i<y2Val.size(); i++)
-          if (!std::isnan(y2Val[i])) // y2Value
-            y2Val[i]=y2gain*(y2Val[i]+y2offset);
+        for (double & i : y2Val)
+          if (!std::isnan(i)) // y2Value
+            i=y2gain*(i+y2offset);
       }
       else {
         useY2=false;
@@ -169,7 +169,7 @@ void PlotWindow::replotPlot() {
   plot->setAxisAutoScale(QwtPlot::yLeft);
 
   if (plotGrid) {
-    QwtPlotGrid *grid = new QwtPlotGrid;
+    auto *grid = new QwtPlotGrid;
     grid->enableXMin(true);
     grid->enableYMin(true);
     grid->setMajorPen(QPen(Qt::black, 0, Qt::DotLine));
@@ -184,7 +184,7 @@ void PlotWindow::replotPlot() {
 
 void PlotWindow::closeEvent(QCloseEvent *) {
   Curves * c = (static_cast<MainWindow*>(parent()->parent()->parent()))->getCurves();
-  PlotDataTable * pd=c->findChild<PlotDataTable*>(windowTitle());
+  auto * pd=c->findChild<PlotDataTable*>(windowTitle());
   if (pd) {
     int index=c->indexOf(pd);
     pd->close();

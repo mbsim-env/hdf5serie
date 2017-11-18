@@ -70,9 +70,9 @@ namespace H5 {
       VectorSerie(int dummy, GroupBase *parent_, const std::string &name_);
       VectorSerie(GroupBase *parent_, const std::string &name_, int cols,
         int compression=File::getDefaultCompression(), int chunkSize=File::getDefaultChunkSize());
-      ~VectorSerie();
-      void close();
-      void open();
+      ~VectorSerie() override;
+      void close() override;
+      void open() override;
 
     public:
       /** \brief Sets a description for the dataset
@@ -173,7 +173,7 @@ namespace H5 {
   template<class T>
   int VectorSerie<T>::getRows() {
     ScopedHID fileSpaceID(H5Dget_space(id), &H5Sclose);
-    H5Sget_simple_extent_dims(fileSpaceID, dims, NULL);
+    H5Sget_simple_extent_dims(fileSpaceID, dims, nullptr);
     return dims[0];
   }
 
