@@ -35,8 +35,8 @@ using namespace boost::filesystem;
 
 void walkH5(const string &indent, const path &filename, const string &path, GroupBase *obj);
 void printhelp();
-void printDesc(string indent, Object *obj);
-void printLabel(string indent, Dataset *d);
+void printDesc(const string& indent, Object *obj);
+void printLabel(const string& indent, Dataset *d);
 
 bool d=false, l=false, f=false, h=false;
 
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
 
 void walkH5(const string &indent, const path &filename, const string &path, GroupBase *obj) {
   set<string> names=obj->getChildObjectNames();
-  for(auto name : names) {
+  for(const auto& name : names) {
     if(obj->isExternalLink(name) && !f) {
       pair<boost::filesystem::path, string> link=obj->getExternalLink(name);
       cout<<indent<<"* "<<name<<" (External Link: \""<<link.first.string()<<link.second<<"\")"<<endl;
@@ -123,7 +123,7 @@ cout<<
 "    -f:         Follow external links"<<endl;
 }
 
-void printDesc(string indent, Object *obj) {
+void printDesc(const string& indent, Object *obj) {
   if(d==false) return;
 
   if(obj->hasChildAttribute("Description")) {
@@ -132,7 +132,7 @@ void printDesc(string indent, Object *obj) {
   }
 }
 
-void printLabel(string indent, Dataset *d) {
+void printLabel(const string& indent, Dataset *d) {
   if(l==false) return;
 
   if(d->hasChildAttribute("Column Label")) {

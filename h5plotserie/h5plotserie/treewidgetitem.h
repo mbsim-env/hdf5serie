@@ -32,7 +32,7 @@ class TreeWidgetItem : public QTreeWidgetItem {
     bool searchMatched;
   public:
     TreeWidgetItem ( const QStringList & strings) : QTreeWidgetItem(strings), searchMatched(true) {}
-    void setPath(QString p) {path = p;}
+    void setPath(const QString& p) {path = p;}
     void setStringList(QStringList &list_) {list = list_;}
     QStringList& getStringList() {return list;}
     const QString& getPath() const {return path;}

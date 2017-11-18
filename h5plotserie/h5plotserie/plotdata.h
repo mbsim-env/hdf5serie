@@ -115,10 +115,10 @@ class PlotData {
     QString string(int i) {return plotdata[i].string; }
     QString xmlString(int i) {return plotdata[i].xmlString; }
     
-    void setValue(QString property, QString v) {plotdata[searchIndex(property)].value=v; }
-    void setValue(int i, QString v) {plotdata[i].value=v; }
+    void setValue(const QString& property, const QString& v) {plotdata[searchIndex(property)].value=v; }
+    void setValue(int i, const QString& v) {plotdata[i].value=v; }
     
-    QString getValue(QString property) {return plotdata[searchIndex(property)].value; }
+    QString getValue(const QString& property) {return plotdata[searchIndex(property)].value; }
     QString getValue(int i) {return plotdata[i].value; }
 
     void showValues() {
@@ -131,7 +131,7 @@ class PlotData {
   private:
     std::vector<dataset> plotdata;
 
-    int searchIndex(QString property) {
+    int searchIndex(const QString& property) {
       int i=0;
       while (QString::compare(property, plotdata[i].string, Qt::CaseSensitive)!=0 && i<numberOfItems())
         i++;
