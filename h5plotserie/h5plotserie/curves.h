@@ -42,7 +42,7 @@ class Curves : public QTabWidget {
 
     void modifyPlotData(PlotData pd, const QString &mode);
     QString saveCurves();
-    void initLoadCurve(const QString &file);
+    void initLoadCurve(const QString &fileName);
     void loadCurve(QDomDocument * doc);
 
     void collectFilesToRefresh(std::set<H5::File*> &filesToRefresh);

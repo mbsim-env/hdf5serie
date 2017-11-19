@@ -37,7 +37,7 @@
 
 using namespace std;
 
-MainWindow::MainWindow() : QMainWindow() {
+MainWindow::MainWindow()  {
 
   QMenu * fileMenu = menuBar()->addMenu(tr("&File"));
   fileMenu->addAction("add h5-File", this, SLOT(addH5FileDialog()));

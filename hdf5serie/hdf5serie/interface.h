@@ -221,7 +221,7 @@ namespace H5 {
         // now its a relative path including at least one /
         return getAttrParent(path, pos)->openChild<T>(path.substr(pos+1));
       }
-      Attribute *openChildAttribute(const std::string &name_, ElementType *objectType=nullptr, hid_t *type=nullptr);
+      Attribute *openChildAttribute(const std::string &name_, ElementType *attributeType=nullptr, hid_t *type=nullptr);
       std::set<std::string> getChildAttributeNames();
       bool hasChildAttribute(const std::string &name_);
       GroupBase *getParent() { return parent; }

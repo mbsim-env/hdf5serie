@@ -124,7 +124,7 @@ cout<<
 }
 
 void printDesc(const string& indent, Object *obj) {
-  if(d==false) return;
+  if(!d) return;
 
   if(obj->hasChildAttribute("Description")) {
     string ret=obj->openChildAttribute<SimpleAttribute<string> >("Description")->read();
@@ -133,7 +133,7 @@ void printDesc(const string& indent, Object *obj) {
 }
 
 void printLabel(const string& indent, Dataset *d) {
-  if(l==false) return;
+  if(!l) return;
 
   if(d->hasChildAttribute("Column Label")) {
     vector<string> ret=d->openChildAttribute<SimpleAttribute<vector<string> > >("Column Label")->read();

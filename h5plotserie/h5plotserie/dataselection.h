@@ -47,7 +47,7 @@ class DataSelection : public QSplitter {
     DataSelection(QWidget * parent = nullptr);
     ~DataSelection() override;
     
-    void addFile(const QString &fileName);
+    void addFile(const QString &name);
     QList<QFileInfo> * getFileInfo() {return &fileInfo; }
     std::shared_ptr<H5::File> getH5File(const boost::filesystem::path &p) const;
 

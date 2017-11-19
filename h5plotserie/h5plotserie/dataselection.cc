@@ -215,14 +215,14 @@ void DataSelection::searchObjectList(QTreeWidgetItem *item, const QRegExp& filte
     int count=0;
     for(int j=0; j<item->child(i)->childCount(); j++)
       if((item->child(i)->child(j)->childCount()!=0 && !(((TreeWidgetItem*)(item->child(i)->child(j)))->getSearchMatched()) && 
-            item->child(i)->child(j)->isExpanded()==false) ||
+            !item->child(i)->child(j)->isExpanded()) ||
           (item->child(i)->child(j)->childCount()==0 && !(((TreeWidgetItem*)(item->child(i)->child(j)))->getSearchMatched())))
         count++;
     item->child(i)->setExpanded(count!=item->child(i)->childCount());
     // hide
     item->child(i)->setHidden(false);
     if((item->child(i)->childCount()!=0 && !(((TreeWidgetItem*)(item->child(i)))->getSearchMatched()) && 
-          item->child(i)->isExpanded()==false) ||
+          !item->child(i)->isExpanded()) ||
         (item->child(i)->childCount()==0 && !(((TreeWidgetItem*)(item->child(i)))->getSearchMatched()))) {
       bool hide=true;
       for(QTreeWidgetItem *it=item; it!=nullptr; it=it->parent())

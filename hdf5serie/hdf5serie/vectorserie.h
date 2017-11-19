@@ -79,7 +79,7 @@ namespace H5 {
        *
        * The value of \a desc is stored as an string attribute named \p Description in the dataset.
        */
-      void setDescription(const std::string& desc);
+      void setDescription(const std::string& description);
 
       /** \brief Append a data vector
        *
@@ -107,7 +107,7 @@ namespace H5 {
        * The first row is 0. The last avaliable row ist getRows()-1.
        * \a data points to an array of \a size elements of type T.
        */
-      void getRow(const int row, size_t size, T data[]);
+      void getRow(int row, size_t size, T data[]);
 
       /** Convinience getRow function.
        * DataType must provide a "size_t size()" member function which returns the number of elements
@@ -130,7 +130,7 @@ namespace H5 {
        *
        * The first column is 0. The last avaliable column ist getColumns()-1.
        */
-      void getColumn(const int column, size_t size, T data[]);
+      void getColumn(int column, size_t size, T data[]);
 
       /** Convinience getRow function.
        * DataType must provide a "size_t size()" member function which returns the number of elements

@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
   for(int i=1; i<argc; i++)
     arg.emplace_back(argv[i]);
 
-  if(arg.size()==0 ||
+  if(arg.empty() ||
      find(arg.begin(), arg.end(), "-h")!=arg.end() ||
      find(arg.begin(), arg.end(), "--help")!=arg.end() ) {
      cout<<
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
 
     dataSet[k]=dynamic_cast<Dataset*>(file[k]->openChildObject(datasetname));
     vector<hsize_t> dims=dataSet[k]->getExtentDims();
-    if(dims.size()==0)
+    if(dims.empty())
       continue;
     int columns=0;
     if(dims.size()==1)
@@ -163,8 +163,8 @@ int main(int argc, char* argv[]) {
         column[k].push_back(boost::lexical_cast<int>(columnstr));
       else {
         int begin, end;
-        if(columnstr.substr(0,i)=="") begin=1; else begin=boost::lexical_cast<int>(columnstr.substr(0,i));
-        if(columnstr.substr(i+1)=="") end=columns; else end=boost::lexical_cast<int>(columnstr.substr(i+1));
+        if(columnstr.substr(0,i).empty()) begin=1; else begin=boost::lexical_cast<int>(columnstr.substr(0,i));
+        if(columnstr.substr(i+1).empty()) end=columns; else end=boost::lexical_cast<int>(columnstr.substr(i+1));
         if(end>=begin)
           for(int j=begin; j<=end; j++)
             column[k].push_back(j);

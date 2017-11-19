@@ -39,10 +39,10 @@ namespace {
 
 namespace H5 {
 
-GroupBase::GroupBase(int dummy, GroupBase *parent_, const string &name_) : Object(parent_, name_), Container<Object, GroupBase>() {
+GroupBase::GroupBase(int dummy, GroupBase *parent_, const string &name_) : Object(parent_, name_) {
 }
 
-GroupBase::GroupBase(GroupBase *parent_, const string &name_) : Object(parent_, name_), Container<Object, GroupBase>() {
+GroupBase::GroupBase(GroupBase *parent_, const string &name_) : Object(parent_, name_) {
 }
 
 GroupBase::~GroupBase() = default;
@@ -128,9 +128,7 @@ set<string> GroupBase::getChildObjectNames() {
 
 bool GroupBase::hasChildObject(const string &name_) {
    set<string> names=getChildObjectNames();
-   if(names.find(name_)!=names.end())
-     return true;
-   return false;
+   return names.find(name_)!=names.end();
 }
 
 void GroupBase::close() {

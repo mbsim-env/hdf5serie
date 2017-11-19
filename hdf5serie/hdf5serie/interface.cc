@@ -62,7 +62,7 @@ const char* Exception::what() const noexcept {
   return whatMsg.c_str();
 }
 
-Element::Element(std::string name_) : id(), name(std::move(name_)) {
+Element::Element(std::string name_) :  name(std::move(name_)) {
   // print errors as exceptions
   static bool firstCall=true;
   if(firstCall) {
@@ -85,7 +85,7 @@ void Element::refresh() {
 void Element::flush() {
 }
 
-Object::Object(GroupBase *parent_, const std::string &name_) : Element(name_), Container<Attribute, Object>(),
+Object::Object(GroupBase *parent_, const std::string &name_) : Element(name_), 
   parent(parent_), file(parent?parent->file:nullptr) { // parent is NULL only for File which sets file by itself
 }
 
@@ -147,9 +147,7 @@ set<string> Object::getChildAttributeNames() {
 
 bool Object::hasChildAttribute(const std::string &name_) {
    set<string> names=getChildAttributeNames();
-   if(names.find(name_)!=names.end())
-     return true;
-   return false;
+   return names.find(name_)!=names.end();
 }
 
 void Object::open() {

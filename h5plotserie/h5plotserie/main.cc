@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
       return 0;
     }
 
-  if(arg.size() == 0) {
+  if(arg.empty()) {
     QDir dir;
     QRegExp filterRE1(".+\\.mbsim\\.h5");
     dir.setFilter(QDir::Files);

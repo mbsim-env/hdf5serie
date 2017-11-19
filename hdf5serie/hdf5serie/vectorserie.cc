@@ -143,8 +143,7 @@ namespace H5 {
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
 
     H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
-    return;
-  }
+ }
 
   template<class T>
   void VectorSerie<T>::getColumn(const int column, size_t size, T data[]) {
@@ -226,8 +225,7 @@ namespace H5 {
     H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);
     for(unsigned int i=0; i<dims[1]; i++)
       data[i]=dummy[i];
-    return;
-  }
+ }
   
   template<>
   void VectorSerie<string>::getColumn(const int column, size_t size, string data[]) {

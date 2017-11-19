@@ -176,7 +176,7 @@ void Curves::loadCurve(QDomDocument * doc) {
       QList<QFileInfo> * loadedFiles=static_cast<MainWindow*>(parent()->parent())->getDataSelection()->getFileInfo();
       bool alreadyLoaded=false;
       int i=0;
-      while (i<loadedFiles->size() && (alreadyLoaded==false)) {
+      while (i<loadedFiles->size() && (!alreadyLoaded)) {
         if (QString::compare(pd.getValue("Filename"), (loadedFiles->at(i)).fileName(), Qt::CaseSensitive)==0)
           alreadyLoaded=true;
         i++;
