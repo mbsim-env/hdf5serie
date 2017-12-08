@@ -185,7 +185,7 @@ void File::close() {
     err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
     for(auto it : obj) {
       size_t ret=H5Iget_name(it, &name[0], 1000);
-      if(ret<0)
+      if(ret<=0)
         throw Exception(getPath(), "Internal error: H5Iget_name");
       err<<"type="<<H5Iget_type(it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
     }
