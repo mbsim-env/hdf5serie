@@ -212,7 +212,7 @@ PlotDataTable::PlotDataTable(QWidget * parent, const QString &name) : QTableWidg
 
   QObject::connect(this, SIGNAL(currentItemChanged(QTableWidgetItem *, QTableWidgetItem *)), parent, SLOT(plotCurrentTab()));
 
-  horizontalHeader()->setClickable(true);
+  horizontalHeader()->setSectionsClickable(true);
   horizontalHeader()->installEventFilter(this);
 }
 

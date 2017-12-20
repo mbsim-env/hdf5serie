@@ -20,7 +20,7 @@
 #include <config.h>
 #include <cassert>
 #include <cfenv>
-#include <QtGui/QApplication>
+#include <QApplication>
 #include <QDir>
 #include "mainwindow.h"
 #include "dataselection.h"
