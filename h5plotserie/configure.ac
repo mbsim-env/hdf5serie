@@ -10,8 +10,7 @@ AC_PROG_CXXCPP
 AC_LANG([C++])
 
 # enable C++11
-# CXXFLAGS="$CXXFLAGS -fPIC -std=c++11"
-CPPFLAGS="$CPPFLAGS -fPIC -std=c++11"
+CXXFLAGS="$CXXFLAGS -std=c++11"
 
 dnl By autoscan
 AC_C_CONST
@@ -21,9 +20,9 @@ dnl Qt
 PKG_CHECK_MODULES(QT, [Qt5Core >= 5.7 Qt5Gui >= 5.7 Qt5Widgets >= 5.7 Qt5Xml >=
 5.7])
 dnl get moc, uic and rcc
-test -z $MOC && { MOC=$(pkg-config --variable moc_location QtCore) || MOC=moc; }
-test -z $UIC && { UIC=$(pkg-config --variable uic_location QtCore) || UIC=uic; }
-test -z $RCC && { RCC=$(dirname $(which $MOC))/rcc || RCC=rcc; }
+test -z $MOC && { MOC=$(pkg-config --variable=host_bins Qt5Core)/moc || MOC=moc; }
+test -z $UIC && { UIC=$(pkg-config --variable=host_bins Qt5Core)/uic || UIC=uic; }
+test -z $RCC && { RCC=$(pkg-config --variable=host_bins Qt5Core)/rcc || RCC=rcc; }
 AC_SUBST([MOC])
 AC_SUBST([UIC])
 AC_SUBST([RCC])
@@ -34,6 +33,11 @@ QT_PLUGINS=$($QMAKE -query QT_INSTALL_PLUGINS)
 AC_SUBST([QT_PLUGINS])
 
 AM_CONDITIONAL([COND_WIN32], [test "_$WIN32" = "_yes"])
+
+AC_SUBST([HOST_OS],[$host_os])
+if test "_$host_os" != "_mingw32"; then
+  CPPFLAGS="$CPPFLAGS -fPIC"
+fi
 
 dnl HDF5Serie
 PKG_CHECK_MODULES(HDF5SERIE, hdf5serie)
@@ -51,7 +55,7 @@ AC_ARG_WITH(qwt_lib_prefix,
   [  --with-qwt-lib-prefix=PFX  Prefix where qwt library is installed],
   [QWT_LIBS="-L$withval -l$QWT_LIBNAME"],
   [QWT_LIBS="-L$prefix/lib -l$QWT_LIBNAME"])
-OLDCPPFLAGS=$CPPFLAGS; CPPFLAGS="$CPPFLAGS $QWT_CFLAGS $QT_CFLAGS"
+OLDCPPFLAGS=$CPPFLAGS; CPPFLAGS="$CPPFLAGS $QWT_CFLAGS $QT_CFLAGS -std=c++11"
 OLDLIBS=$LIBS; LIBS="$LIBS $QWT_LIBS $QT_LIBS"
 AC_CHECK_HEADERS([qwt_system_clock.h], [], [AC_MSG_ERROR([Can not find qwt_system_clock.h! Maybe a qwt5 header is used!])])
 AC_TRY_LINK(
