@@ -48,12 +48,21 @@ AC_ARG_WITH(hdf5_prefix,
   [  --with-hdf5-prefix=PFX  Prefix where hdf5 is installed],
   [HDF5CPPFLAGS="-I$withval/include"
    HDF5LDFLAGS="-L$withval/lib"
-   hdf5_prefix=$withval],
+   hdf5_lib="$withval/lib"],
   [HDF5CPPFLAGS="-I$prefix/include"
    HDF5LDFLAGS="-L$prefix/lib"
-   hdf5_prefix=$prefix])
+   hdf5_lib="$prefix/lib"])
+AC_ARG_WITH(hdf5_inc,
+  [  --with-hdf5-inc=PFX  Include dir of hdf5],
+  [HDF5CPPFLAGS="-I$withval"],
+  [])
+AC_ARG_WITH(hdf5_lib,
+  [  --with-hdf5-lib=PFX  Library dir of hdf5],
+  [HDF5LDFLAGS="-L$withval/lib"
+   hdf5_lib="$withval"],
+  [])
 LDFLAGS="$LDFLAGS $HDF5LDFLAGS"
-if [ ls $hdf5_prefix/lib/*hdf5-shared.* &> /dev/null ]; then # try the cmake generated shared name first
+if [ ls $hdf5_lib/*hdf5-shared.* &> /dev/null ]; then # try the cmake generated shared name first
   LIBS="$LIBS -lhdf5-shared"
 else # if not found use the "standard" name
   LIBS="$LIBS -lhdf5"
@@ -65,8 +74,6 @@ fi
 LIBS="$LIBS -lz" # libs required by libhdf5
 AC_SUBST([HDF5CPPFLAGS])
 AC_SUBST([HDF5LDFLAGS])
-AC_SUBST([hdf5_prefix])
-AC_PATH_PROG([h5dump],[h5dump],[no],[$hdf5_prefix/bin:$PATH])
 AC_CHECK_HEADERS([hdf5.h], [],
   [AC_MSG_ERROR([Can not find hdf5 c header hdf5.h])])
 AC_MSG_CHECKING([for hdf5 c library])
