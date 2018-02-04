@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+  <mime-type type="application/vnd.mbsim-env.h5plotserie">
+    <comment>MBSim-Env H5PlotSerie files</comment>
+    <glob pattern="*.mbsim.h5" weight="90"/>
+    <icon name="mbsim-env.h5plotserie"/>
+  </mime-type>
+</mime-info>
