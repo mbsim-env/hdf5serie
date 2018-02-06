@@ -29,6 +29,9 @@ noinst_HEADERS = h5plotserie.qrc curves.h \
   plotdata.h \
   treewidgetitem.h
 
+icondir = @datadir@/h5plotserie/icons
+dist_icon_DATA = h5plotserie.svg
+
 # plugins
 pluginsiconenginesdir = @bindir@/iconengines
 pluginsiconengines_DATA = @QT_PLUGINS@/iconengines/*qsvgicon*
