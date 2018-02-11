@@ -35,6 +35,10 @@ dist_icon_DATA = h5plotserie.svg
 # plugins
 pluginsiconenginesdir = @bindir@/iconengines
 pluginsiconengines_DATA = @QT_PLUGINS@/iconengines/*qsvgicon*
+pluginsaccessibledir = @bindir@/accessible
+pluginsaccessible_DATA = @QT_PLUGINS@/accessible/*qtaccessiblewidgets*
+pluginsaccessiblebridgedir = @bindir@/accessiblebridge
+pluginsaccessiblebridge_DATA = @QT_PLUGINS@/accessiblebridge/*qspiaccessiblebridge*
 
 # some dependencies for h5plotserie.qrc.cc
 h5plotserie.qrc.cc: h5plotserie.qrc h5plotserie.svg
