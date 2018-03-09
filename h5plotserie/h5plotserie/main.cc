@@ -35,7 +35,13 @@ int main(int argc, char** argv) {
 //MISSING Qt seems to generate some FPE, hence disabled  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
 #endif
 
-  QCoreApplication::setLibraryPaths(QStringList()); // do not load plugins from buildin defaults
+  char moduleName[2048];
+#ifdef _WIN32
+  GetModuleFileName(nullptr, moduleName, sizeof(moduleName));
+#else
+  readlink("/proc/self/exe", moduleName, sizeof(moduleName));
+#endif
+  QCoreApplication::setLibraryPaths(QStringList(QFileInfo(moduleName).absolutePath())); // do not load plugins from buildin defaults
   QApplication app(argc, argv);
   app.setOrganizationName("MBSim-Env");
   app.setApplicationName("h5Plotseries Improved");
