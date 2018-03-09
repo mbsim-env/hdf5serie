@@ -29,9 +29,21 @@ noinst_HEADERS = h5plotserie.qrc curves.h \
   plotdata.h \
   treewidgetitem.h
 
+icondir = @datadir@/h5plotserie/icons
+dist_icon_DATA = h5plotserie.svg
+
 # plugins
 pluginsiconenginesdir = @bindir@/iconengines
 pluginsiconengines_DATA = @QT_PLUGINS@/iconengines/*qsvgicon*
+pluginsaccessibledir = @bindir@/accessible
+pluginsaccessible_DATA = @QT_PLUGINS@/accessible/*qtaccessiblewidgets*
+pluginsaccessiblebridgedir = @bindir@/accessiblebridge
+#pluginsaccessiblebridge_DATA = @QT_PLUGINS@/accessiblebridge/*qspiaccessiblebridge* # not available on centos7
 
 # some dependencies for h5plotserie.qrc.cc
 h5plotserie.qrc.cc: h5plotserie.qrc h5plotserie.svg
+
+# freedesktop.org
+freedesktoporgdir = @datadir@/mbsim-env/freedesktop.org
+freedesktoporg_DATA = mbsim-env.org.h5plotserie.xml mbsim-env.org.h5plotserie.desktop mimeapps-h5plotserie.list h5plotserie.svg
+bin_SCRIPTS = desktopIntegration.sh

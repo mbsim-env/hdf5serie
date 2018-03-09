@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=H5Plotserie
+Icon=mbsim-env.h5plotserie
+Exec=@bindir@/h5plotserie --maximized %F
+MimeType=application/vnd.mbsim-env.h5plotserie;

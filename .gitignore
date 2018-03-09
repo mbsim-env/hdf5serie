@@ -11,6 +11,7 @@ h5plotserie/h5plotserie/Makefile.in
 h5plotserie/install-sh
 h5plotserie/ltmain.sh
 h5plotserie/missing
+h5plotserie/compile
 hdf5serie/INSTALL
 hdf5serie/Makefile.in
 hdf5serie/aclocal.m4
@@ -28,3 +29,4 @@ hdf5serie/install-sh
 hdf5serie/ltmain.sh
 hdf5serie/missing
 hdf5serie/test-driver
+hdf5serie/compile

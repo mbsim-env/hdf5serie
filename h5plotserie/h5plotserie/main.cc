@@ -37,8 +37,10 @@ int main(int argc, char** argv) {
 
   QCoreApplication::setLibraryPaths(QStringList()); // do not load plugins from buildin defaults
   QApplication app(argc, argv);
-  app.setOrganizationName("AM");
+  app.setOrganizationName("MBSim-Env");
   app.setApplicationName("h5Plotseries Improved");
+  QLocale::setDefault(QLocale::C);
+  setlocale(LC_ALL, "C");
   
   QStringList arg;
   for (int i=1; i<argc; i++)
@@ -58,7 +60,8 @@ int main(int argc, char** argv) {
         << "Usage:" << endl
         << "  h5plotserie <file.mbsim.h5 | file.h5Layout.xml>" << endl
         << "    -h, --help: Show this help" << endl
-        << "     --fullscreen: Start in full screen mode" << endl;
+        << "    --fullscreen: Start in full screen mode" << endl
+        << "    --maximized: Show window maximized on startup." << endl;
       return 0;
     }
 
@@ -77,6 +80,7 @@ int main(int argc, char** argv) {
   mainWindow.resize(1024, 768);
   mainWindow.show();
   if(arg.contains("--fullscreen")) mainWindow.showFullScreen(); // must be done after mainWindow.show()
+  if(arg.contains("--maximized")) mainWindow.showMaximized();
 
   for(int i=0; i<arg.size(); i++)
     if(arg[i].contains(".mbsim.h5", Qt::CaseSensitive))

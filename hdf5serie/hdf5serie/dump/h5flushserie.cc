@@ -61,8 +61,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   catch(const std::exception &ex) {
-    cout<<"Exception:"<<endl
-        <<ex.what()<<endl;
+    cout<<ex.what()<<endl;
     return 1;
   }
   catch(...) {

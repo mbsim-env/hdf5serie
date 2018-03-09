@@ -9,8 +9,6 @@ docdir=@docdir@
 
 DOXYGENTAGFILES=${docdir}/@PACKAGE@.tag
 
-hdf5_prefix=@hdf5_prefix@
-
 Name: hdf5serie
 Description: A c++ wrapper for HDF5 to write data series
 Requires: fmatvec
