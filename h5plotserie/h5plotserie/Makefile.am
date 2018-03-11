@@ -36,7 +36,11 @@ dist_icon_DATA = h5plotserie.svg
 pluginsiconenginesdir = @bindir@/iconengines
 pluginsiconengines_DATA = @QT_PLUGINS@/iconengines/*qsvgicon*
 pluginsplatformsdir = @bindir@/platforms
-pluginsplatforms_DATA = @QT_PLUGINS@/platforms/*qxcb*
+if COND_WIN32
+pluginsplatforms_DATA = @QT_PLUGINS@/platforms/qwindows.dll
+else
+pluginsplatforms_DATA = @QT_PLUGINS@/platforms/libqxcb.so
+endif
 
 # some dependencies for h5plotserie.qrc.cc
 h5plotserie.qrc.cc: h5plotserie.qrc h5plotserie.svg

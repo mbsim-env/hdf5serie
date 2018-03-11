@@ -16,6 +16,13 @@ dnl By autoscan
 AC_C_CONST
 AC_HEADER_STDBOOL
 
+# windres
+AC_ARG_WITH(windres,
+  [  --with-windres=prog  The windres program (defaults to windres)],
+  [WINDRES="$withval"],
+  [WINDRES="windres"])
+AC_SUBST([WINDRES])
+
 dnl Qt
 PKG_CHECK_MODULES(QT, [Qt5Core >= 5.6 Qt5Gui >= 5.6 Qt5Widgets >= 5.6 Qt5Xml >= 5.6])
 dnl get moc, uic and rcc
@@ -31,7 +38,7 @@ AC_ARG_WITH(qmake, [  --with-qmake=PATH qmake program],
 QT_PLUGINS=$($QMAKE -query QT_INSTALL_PLUGINS)
 AC_SUBST([QT_PLUGINS])
 
-AM_CONDITIONAL([COND_WIN32], [test "_$WIN32" = "_yes"])
+AM_CONDITIONAL([COND_WIN32], [test "_$host_os" = "_mingw32"])
 
 AC_SUBST([HOST_OS],[$host_os])
 if test "_$host_os" != "_mingw32"; then
