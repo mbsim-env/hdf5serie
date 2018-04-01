@@ -22,6 +22,7 @@
 #include <cfenv>
 #include <QApplication>
 #include <QDir>
+#include <QTimer>
 #include "mainwindow.h"
 #include "dataselection.h"
 #include "curves.h"
@@ -97,5 +98,7 @@ int main(int argc, char** argv) {
     else if (arg[i].contains(".h5Layout.xml", Qt::CaseSensitive))
       mainWindow.getCurves()->initLoadCurve(arg[i]);
 
+  if(arg.contains("--autoExit")) // auto exit after 2 sec
+    QTimer::singleShot(2000, &mainWindow, &MainWindow::close);
   return app.exec();
 }
