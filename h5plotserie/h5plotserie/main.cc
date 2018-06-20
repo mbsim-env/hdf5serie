@@ -38,20 +38,6 @@ int main(int argc, char** argv) {
 //MISSING Qt seems to generate some FPE, hence disabled  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
 #endif
 
-  char moduleName[2048];
-#ifdef _WIN32
-  GetModuleFileName(nullptr, moduleName, sizeof(moduleName));
-#else
-  size_t s=readlink("/proc/self/exe", moduleName, sizeof(moduleName));
-  moduleName[s]=0; // null terminate
-#endif
-  QCoreApplication::setLibraryPaths(QStringList(QFileInfo(moduleName).absolutePath())); // do not load plugins from buildin defaults
-  QApplication app(argc, argv);
-  app.setOrganizationName("MBSim-Env");
-  app.setApplicationName("h5Plotseries Improved");
-  QLocale::setDefault(QLocale::C);
-  setlocale(LC_ALL, "C");
-  
   QStringList arg;
   for (int i=1; i<argc; i++)
     arg.push_back(argv[i]);
@@ -75,6 +61,20 @@ int main(int argc, char** argv) {
       return 0;
     }
 
+  char moduleName[2048];
+#ifdef _WIN32
+  GetModuleFileName(nullptr, moduleName, sizeof(moduleName));
+#else
+  size_t s=readlink("/proc/self/exe", moduleName, sizeof(moduleName));
+  moduleName[s]=0; // null terminate
+#endif
+  QCoreApplication::setLibraryPaths(QStringList(QFileInfo(moduleName).absolutePath())); // do not load plugins from buildin defaults
+  QApplication app(argc, argv);
+  app.setOrganizationName("MBSim-Env");
+  app.setApplicationName("h5Plotseries Improved");
+  QLocale::setDefault(QLocale::C);
+  setlocale(LC_ALL, "C");
+  
   if(arg.empty()) {
     QDir dir;
     QRegExp filterRE1(".+\\.mbsim\\.h5");
