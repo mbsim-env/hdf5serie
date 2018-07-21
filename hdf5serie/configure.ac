@@ -16,6 +16,10 @@ AC_C_CONST
 AC_C_INLINE
 AC_HEADER_STDBOOL
 AC_TYPE_PID_T
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_MALLOC
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
 
 dnl force strict standard conformance
 CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors -Wno-long-long"

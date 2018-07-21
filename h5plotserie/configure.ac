@@ -15,6 +15,8 @@ CXXFLAGS="$CXXFLAGS -std=c++11"
 dnl By autoscan
 AC_C_CONST
 AC_HEADER_STDBOOL
+AC_CHECK_FUNCS([setlocale])
+AC_TYPE_SIZE_T
 
 # windres
 AC_ARG_WITH(windres,
