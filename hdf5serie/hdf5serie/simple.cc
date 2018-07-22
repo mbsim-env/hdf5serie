@@ -119,7 +119,7 @@ void HDF5SERIE_CLASS<vector<string> >::write(const vector<string>& data) {
     throw Exception(getPath(), "the dimension does not match");
   VecStr buf(size);
   for(unsigned int i=0; i<static_cast<size_t>(size); i++) {
-    buf[i]=(char*)malloc((data[i].size()+1)*sizeof(char));
+    buf.alloc(i, data[i].size());
     strcpy(buf[i], data[i].c_str());
   }
   HDF5SERIE_H5XWRITE(&buf[0]);
@@ -212,7 +212,7 @@ void HDF5SERIE_CLASS<vector<vector<string> > >::write(const vector<vector<string
   int i=0;
   for(const auto & ir : data)
     for(auto ic=ir.begin(); ic!=ir.end(); ++ic, ++i) {
-      buf[i]=(char*)malloc((ic->size()+1)*sizeof(char));
+      buf.alloc(i, ic->size());
       strcpy(buf[i], ic->c_str());
     }
   HDF5SERIE_H5XWRITE(&buf[0]);

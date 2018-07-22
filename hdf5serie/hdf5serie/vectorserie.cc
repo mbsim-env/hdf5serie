@@ -197,7 +197,7 @@ namespace H5 {
   
     VecStr dummy(dims[1]);
     for(unsigned int i=0; i<dims[1]; i++) {
-      dummy[i]=(char*)malloc((data[i].size()+1)*sizeof(char));
+      dummy.alloc(i, data[i].size());
       strcpy(dummy[i], data[i].c_str());
     }
     H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]);
