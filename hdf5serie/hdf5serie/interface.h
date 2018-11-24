@@ -33,28 +33,6 @@ namespace H5 {
 
   #define HDF5SERIE_MAXCTORPARAMETERS 5
 
-  class ScopedHID {
-    protected:
-      typedef herr_t (*CloseFunc)(hid_t id);
-      hid_t id{-1};
-      CloseFunc closeFunc{nullptr};
-    public:
-      ScopedHID()   = default;
-      ScopedHID(hid_t id_, CloseFunc closeFunc_) : id(id_), closeFunc(closeFunc_) {}
-      ~ScopedHID() {
-        reset();
-      }
-      operator hid_t() {
-        return id;
-      }
-      void reset(hid_t id_=-1, CloseFunc closeFunc_=nullptr) {
-        if(id>=0)
-          closeFunc(id);
-        id=id_;
-        closeFunc=closeFunc_;
-      }
-  };
-
   class Exception : public std::exception {
     protected:
       std::string path;
@@ -64,6 +42,42 @@ namespace H5 {
       explicit Exception(std::string path_, std::string msg_);
       ~Exception() noexcept override;
       const char* what() const noexcept override;
+  };
+
+  class ScopedHID {
+    protected:
+      typedef herr_t (*CloseFunc)(hid_t id);
+      hid_t id{-1};
+      CloseFunc closeFunc{nullptr};
+    public:
+      ScopedHID()   = default;
+      ScopedHID(hid_t id_, CloseFunc closeFunc_) : id(id_), closeFunc(closeFunc_) {
+        if(id<0)
+          throw Exception("<unknown>", "Calling the HDF5 function failed.");
+        if(!closeFunc)
+          throw Exception("<unknown>", "No close function defined.");
+      }
+      ~ScopedHID() {
+        reset();
+      }
+      operator hid_t() {
+        return id;
+      }
+      void reset() {
+        if(id>=0)
+          closeFunc(id);
+        id=-1;
+        closeFunc=nullptr;
+      }
+      void reset(hid_t id_, CloseFunc closeFunc_) {
+        reset();
+        if(id_<0)
+          throw Exception("<unknown>", "Calling the HDF5 function failed (during reset).");
+        if(!closeFunc_)
+          throw Exception("<unknown>", "No close function defined.");
+        id=id_;
+        closeFunc=closeFunc_;
+      }
   };
 
   class File;

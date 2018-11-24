@@ -25,14 +25,23 @@
 #include <hdf5serie/vectorserie.h>
 #include <hdf5serie/toh5type.h>
 #include <vector>
+#include <boost/optional.hpp>
 
 using namespace std;
 using namespace boost::filesystem;
 
 namespace {
   herr_t getChildNamesLCB(hid_t, const char *name, const H5L_info_t *, void *op_data) {
-    set<string> &ret=*static_cast<set<string>*>(op_data);
-    ret.insert(name);
+    pair<boost::optional<exception>, set<string>> &ret=*static_cast<pair<boost::optional<exception>, set<string>>*>(op_data);
+    try {
+      ret.second.insert(name);
+    }
+    catch(exception &ex) {
+      ret.first=ex;
+    }
+    catch(...) {
+      ret.first=runtime_error("Unknown exception during getChildNamesLCB");
+    }
     return 0;
   }
 }
@@ -120,10 +129,12 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
 }
 
 set<string> GroupBase::getChildObjectNames() {
-  set<string> ret;
+  pair<boost::optional<exception>, set<string>> ret;
   hsize_t idx=0;
   H5Literate(id, H5_INDEX_NAME, H5_ITER_NATIVE, &idx, &getChildNamesLCB, &ret);
-  return ret;
+  if(ret.first)
+    throw ret.first.get();
+  return ret.second;
 }
 
 bool GroupBase::hasChildObject(const string &name_) {

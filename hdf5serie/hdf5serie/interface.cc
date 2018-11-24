@@ -27,27 +27,39 @@
 #include <hdf5serie/toh5type.h>
 #include <sstream>
 #include <utility>
+#include <boost/optional.hpp>
 
 using namespace std;
 
 namespace {
   herr_t getChildNamesACB(hid_t, const char *name, const H5A_info_t *, void *op_data) {
-    set<string> &ret=*static_cast<set<string>*>(op_data);
-    ret.insert(name);
+    pair<boost::optional<exception>, set<string>> &ret=*static_cast<pair<boost::optional<exception>, set<string>>*>(op_data);
+    try {
+      ret.second.insert(name);
+    }
+    catch(exception &ex) {
+      ret.first=ex;
+    }
+    catch(...) {
+      ret.first=runtime_error("Unknown exception in getChildNamesACB.");
+    }
     return 0;
   }
 
   herr_t errorWalk(unsigned n, const H5E_error2_t *err, void *data) {
-    stringstream &ret=*static_cast<stringstream*>(data);
-    ret<<"HDF5 error in file "<<err->file_name<<":"<<err->line<<" function "<<err->func_name<<endl<<
-         err->desc<<endl;
+    try {
+      fmatvec::Atom::msgStatic(fmatvec::Atom::Error)<<"HDF5 error in file "<<err->file_name<<":"<<err->line<<" function "<<
+        err->func_name<<endl<<err->desc<<endl;
+    }
+    catch(...) {
+      cerr<<"Error printing error message. This should neven happen."<<endl;
+    }
     return 0;
   }
 
   herr_t errorHandler(hid_t estack, void *client_data) {
-    stringstream str;
-    H5Ewalk2(H5E_DEFAULT, H5E_WALK_UPWARD, &errorWalk, &str);
-    throw runtime_error(str.str());
+    H5Ewalk2(H5E_DEFAULT, H5E_WALK_UPWARD, &errorWalk, nullptr);
+    return 0;
   }
 }
 
@@ -139,10 +151,12 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
 }
 
 set<string> Object::getChildAttributeNames() {
-  set<string> ret;
+  pair<boost::optional<exception>, set<string>> ret;
   hsize_t idx=0;
   H5Aiterate2(id, H5_INDEX_NAME, H5_ITER_NATIVE, &idx, &getChildNamesACB, &ret);
-  return ret;
+  if(ret.first)
+    throw ret.first;
+  return ret.second;
 }
 
 bool Object::hasChildAttribute(const std::string &name_) {
