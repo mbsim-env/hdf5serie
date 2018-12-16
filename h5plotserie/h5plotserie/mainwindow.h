@@ -31,7 +31,7 @@ class MainWindow : public QMainWindow {
   Q_OBJECT
 
   public:
-    MainWindow();
+    MainWindow(const QStringList &arg);
     ~MainWindow() override;
 
     Curves * getCurves() {return curves; }

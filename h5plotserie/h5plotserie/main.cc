@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
         arg.push_back(file[j]);
   }
 
-  MainWindow mainWindow;
+  MainWindow mainWindow(arg);
   mainWindow.resize(1024, 768);
   mainWindow.show();
   if(arg.contains("--fullscreen")) mainWindow.showFullScreen(); // must be done after mainWindow.show()
@@ -97,8 +97,5 @@ int main(int argc, char** argv) {
       mainWindow.getDataSelection()->addFile(arg[i]);
     else if (arg[i].contains(".h5Layout.xml", Qt::CaseSensitive))
       mainWindow.getCurves()->initLoadCurve(arg[i]);
-
-  if(arg.contains("--autoExit")) // auto exit after 2 sec
-    QTimer::singleShot(2000, &mainWindow, &MainWindow::close);
   return app.exec();
 }

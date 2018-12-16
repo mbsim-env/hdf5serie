@@ -37,7 +37,7 @@
 
 using namespace std;
 
-MainWindow::MainWindow()  {
+MainWindow::MainWindow(const QStringList &arg) {
 
   QMenu * fileMenu = menuBar()->addMenu(tr("&File"));
   fileMenu->addAction("add h5-File", this, SLOT(addH5FileDialog()));
@@ -80,6 +80,17 @@ MainWindow::MainWindow()  {
 
   setWindowTitle(tr("h5Plotserie Improved"));
   setWindowIcon(QIcon(":/h5plotserie.svg"));
+
+  // auto exit if everything is finished
+  if(arg.contains("--autoExit")) {
+    auto timer=new QTimer(this);
+    connect(timer, &QTimer::timeout, [this, timer](){
+      timer->stop();
+      if(!close())
+        timer->start(100);
+    });
+    timer->start(100);
+  }
 }
 
 MainWindow::~MainWindow() {
