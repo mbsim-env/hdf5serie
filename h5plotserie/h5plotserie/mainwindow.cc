@@ -28,6 +28,7 @@
 #include "QFile"
 #include "QTextStream"
 #include "QTimer"
+#include <QSettings>
 #include "mainwindow.h"
 #include "dataselection.h"
 #include "curves.h"
@@ -183,4 +184,17 @@ void MainWindow::autoRefresh(bool checked) {
     autoReloadTimer->start(500);
   else
     autoReloadTimer->stop();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+  QSettings settings;
+  settings.setValue("mainwindow/geometry", saveGeometry());
+  settings.setValue("mainwindow/state", saveState());
+  QMainWindow::closeEvent(event);
+}
+
+void MainWindow::showEvent(QShowEvent *event) {
+  QSettings settings;
+  restoreGeometry(settings.value("mainwindow/geometry").toByteArray());
+  restoreState(settings.value("mainwindow/state").toByteArray());
 }

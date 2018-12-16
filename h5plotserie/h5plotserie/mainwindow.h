@@ -52,6 +52,8 @@ class MainWindow : public QMainWindow {
     DataSelection * dataSelection;
     Curves * curves;
     QTimer *autoReloadTimer;
+    void closeEvent(QCloseEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 };
 
