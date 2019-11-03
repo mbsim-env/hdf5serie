@@ -8,11 +8,11 @@ if [ $? -ne 0 ]; then
   exit 0
 else
   echo dslfj
-  if test -x .libs/lt-testlib; then
+  if file .libs/lt-testlib | grep ELF > /dev/null; then
     valgrind --error-exitcode=200 --num-callers=150 --leak-check=full --show-reachable=yes .libs/lt-testlib
-  elif test -x ./testlib; then
+  elif file ./testlib | grep ELF > /dev/null; then
     valgrind --error-exitcode=200 --num-callers=150 --leak-check=full --show-reachable=yes ./testlib
-  elif test -x ./.libs/testlib; then
+  elif file ./.libs/testlib | grep ELF > /dev/null; then
     valgrind --error-exitcode=200 --num-callers=150 --leak-check=full --show-reachable=yes ./.libs/testlib
   else
     echo "Unknown install/build stage."
