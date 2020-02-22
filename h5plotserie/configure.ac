@@ -27,13 +27,11 @@ AC_SUBST([WINDRES])
 
 dnl Qt
 PKG_CHECK_MODULES(QT, [Qt5Core >= 5.6 Qt5Gui >= 5.6 Qt5Widgets >= 5.6 Qt5Xml >= 5.6])
-dnl get moc, uic and rcc
+dnl get moc and uic
 test -z $MOC && { MOC=$(pkg-config --variable=host_bins Qt5Core)/moc || MOC=moc; }
 test -z $UIC && { UIC=$(pkg-config --variable=host_bins Qt5Core)/uic || UIC=uic; }
-test -z $RCC && { RCC=$(pkg-config --variable=host_bins Qt5Core)/rcc || RCC=rcc; }
 AC_SUBST([MOC])
 AC_SUBST([UIC])
-AC_SUBST([RCC])
 
 AC_ARG_WITH(qmake, [  --with-qmake=PATH qmake program],
   [QMAKE="$withval"], [QMAKE="qmake"])
@@ -46,6 +44,12 @@ AC_SUBST([HOST_OS],[$host_os])
 if test "_$host_os" != "_mingw32"; then
   CPPFLAGS="$CPPFLAGS -fPIC"
 fi
+
+dnl shared libraries
+if test "_$host_os" != "_mingw32"; then
+  LIBDL="-ldl"
+fi
+AC_SUBST([LIBDL])
 
 dnl HDF5Serie
 PKG_CHECK_MODULES(HDF5SERIE, hdf5serie)
