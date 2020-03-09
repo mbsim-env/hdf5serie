@@ -35,6 +35,7 @@
 #include "plotarea.h"
 #include "set"
 #include "hdf5serie/file.h"
+#include <boost/dll.hpp>
 
 using namespace std;
 
@@ -80,7 +81,7 @@ MainWindow::MainWindow(const QStringList &arg) {
   curvesDW->setFeatures(QDockWidget::NoDockWidgetFeatures);
 
   setWindowTitle(tr("h5Plotserie Improved"));
-  setWindowIcon(QIcon(":/h5plotserie.svg"));
+  setWindowIcon(QIcon((boost::dll::program_location().parent_path()/"share"/"h5plotserie"/"icons"/"h5plotserie.svg").string().c_str()));
 
   // auto exit if everything is finished
   if(arg.contains("--autoExit")) {
