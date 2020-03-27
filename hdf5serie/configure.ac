@@ -6,7 +6,7 @@ AM_INIT_AUTOMAKE
 AC_LANG([C++])
 
 # enable C++11
-CXXFLAGS="$CXXFLAGS -std=c++11"
+CXXFLAGS="$CXXFLAGS -std=c++17"
 
 LT_INIT([win32-dll])
 AC_PROG_CXX
