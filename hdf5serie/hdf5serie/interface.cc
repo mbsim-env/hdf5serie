@@ -27,13 +27,13 @@
 #include <hdf5serie/toh5type.h>
 #include <sstream>
 #include <utility>
-#include <boost/optional.hpp>
+#include <optional>
 
 using namespace std;
 
 namespace {
   herr_t getChildNamesACB(hid_t, const char *name, const H5A_info_t *, void *op_data) {
-    pair<boost::optional<exception>, set<string>> &ret=*static_cast<pair<boost::optional<exception>, set<string>>*>(op_data);
+    pair<std::optional<exception>, set<string>> &ret=*static_cast<pair<std::optional<exception>, set<string>>*>(op_data);
     try {
       ret.second.insert(name);
     }
@@ -151,7 +151,7 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
 }
 
 set<string> Object::getChildAttributeNames() {
-  pair<boost::optional<exception>, set<string>> ret;
+  pair<std::optional<exception>, set<string>> ret;
   hsize_t idx=0;
   H5Aiterate2(id, H5_INDEX_NAME, H5_ITER_NATIVE, &idx, &getChildNamesACB, &ret);
   if(ret.first)
