@@ -114,5 +114,9 @@ AC_CONFIG_FILES([Makefile doc/Makefile hdf5serie/Makefile hdf5serie/check/Makefi
   doc/doxyfile hdf5serie/dump/h5dumpserie.m hdf5serie/dump/hdf5serieappenddataset.m])
 AC_CONFIG_FILES([hdf5serie/check/testlib.sh],[chmod +x hdf5serie/check/testlib.sh])
 AC_CONFIG_FILES([hdf5serie/check/testdump.sh],[chmod +x hdf5serie/check/testdump.sh])
+AC_CONFIG_FILES([hdf5serie/check/valgrindtestdump.sh],[chmod +x hdf5serie/check/valgrindtestdump.sh])
+AC_CONFIG_FILES([hdf5serie/check/valgrindtestlib.sh],[chmod +x hdf5serie/check/valgrindtestlib.sh])
 
+hardcode_into_libs=no # do not add hardcoded libdirs to ltlibraries
+hardcode_libdir_flag_spec_CXX= # do not add hardcodeed libdirs to ltbinaries
 AC_OUTPUT

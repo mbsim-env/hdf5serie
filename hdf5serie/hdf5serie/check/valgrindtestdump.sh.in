@@ -7,6 +7,7 @@ if [ $? -ne 0 ]; then
   echo "Skipping valgrind test of testdump"
   exit 0
 else
+  export LD_LIBRARY_PATH=@prefix@/bin:@prefix@/lib:$LD_LIBRARY_PATH
   if file ../dump/.libs/lt-h5dumpserie | grep ELF > /dev/null; then
     valgrind --error-exitcode=200 --num-callers=150 --leak-check=full --show-reachable=yes ../dump/.libs/lt-h5lsserie -d -l test2d.h5 || exit
     valgrind --error-exitcode=200 --num-callers=150 --leak-check=full --show-reachable=yes ../dump/.libs/lt-h5dumpserie test2d.h5/timeserie || exit

@@ -81,7 +81,8 @@ MainWindow::MainWindow(const QStringList &arg) {
   curvesDW->setFeatures(QDockWidget::NoDockWidgetFeatures);
 
   setWindowTitle(tr("h5Plotserie Improved"));
-  setWindowIcon(QIcon((boost::dll::program_location().parent_path()/"share"/"h5plotserie"/"icons"/"h5plotserie.svg").string().c_str()));
+  setWindowIcon(QIcon((boost::dll::program_location().parent_path().parent_path()/
+                      "share"/"h5plotserie"/"icons"/"h5plotserie.svg").string().c_str()));
 
   // auto exit if everything is finished
   if(arg.contains("--autoExit")) {
