@@ -44,5 +44,5 @@ endif
 
 # freedesktop.org
 freedesktoporgdir = @datadir@/mbsim-env/freedesktop.org
-freedesktoporg_DATA = mbsim-env.org.h5plotserie.xml mbsim-env.org.h5plotserie.desktop mimeapps-h5plotserie.list h5plotserie.svg
+freedesktoporg_DATA = mbsim-env.de.h5plotserie.xml mbsim-env.de.h5plotserie.desktop mimeapps-h5plotserie.list h5plotserie.svg
 bin_SCRIPTS = desktopIntegration.sh

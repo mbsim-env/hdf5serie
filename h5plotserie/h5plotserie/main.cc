@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setLibraryPaths(QStringList(QFileInfo(moduleName).absolutePath())); // do not load plugins from buildin defaults
   QApplication app(argc, argv);
   app.setOrganizationName("mbsim-env");
-  app.setApplicationName("h4plotserie");
+  app.setApplicationName("h5plotserie");
   app.setOrganizationDomain("www.mbsim-env.de");
   QSettings::setDefaultFormat(QSettings::IniFormat);
   QLocale::setDefault(QLocale::C);
