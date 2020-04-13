@@ -6,4 +6,4 @@ Icon=mbsim-env.h5plotserie
 Exec=@bindir@/h5plotserie %F
 Terminal=false
 MimeType=application/vnd.mbsim-env.h5plotserie;
-Categories=Education;Science;ComputerScience;Math;NumericalAnalysis;Physics;Robotics;Engineering;
+Categories=Science;ComputerScience;NumericalAnalysis;Physics;Math;Robotics;
