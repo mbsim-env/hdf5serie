@@ -2,7 +2,7 @@
 <mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
   <mime-type type="application/vnd.mbsim-env.h5plotserie">
     <comment>MBSim-Env H5PlotSerie files</comment>
-    <glob pattern="*.mbsim.h5"/>
+    <glob pattern="*.mbsh5"/>
     <sub-class-of type="application/x-hdf"/>
     <icon name="mbsim-env.h5plotserie"/>
   </mime-type>
