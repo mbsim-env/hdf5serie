@@ -21,7 +21,7 @@ function hdf5serieappenddataset(hdf5filename, path, data, chunk, h5import)
 %
 %Example:
 %
-%Full Valid OpenMBV XML-File: (TS.ombv.xml)
+%Full Valid OpenMBV XML-File: (TS.ombvx)
 %
 %<?xml version="1.0" encoding="UTF-8"?>
 %<Group name="TS" expand="true" enable="true" xmlns="http://www.mbsim-env.de/OpenMBV">
@@ -48,10 +48,10 @@ function hdf5serieappenddataset(hdf5filename, path, data, chunk, h5import)
 %  </Group>
 %</Group>
 %
-%Octave/Matlab commands to generate the corrosponding HDF5 file (TS.ombv.h5)
+%Octave/Matlab commands to generate the corrosponding HDF5 file (TS.ombvh5)
 %
-%hdf5serieappenddataset('TS.ombv.h5', 'Hauptgruppe1/Box1/data', [0.0 0 0 0 0 0 0 0; 0.1 1 1 1 0.1 0 0 0]);
-%hdf5serieappenddataset('TS.ombv.h5', 'Hauptgruppe1/P1/data', [0.0 0 0 0 0 0 0 0; 0.1 1 1 1 0.1 0 0 0]);
+%hdf5serieappenddataset('TS.ombvh5', 'Hauptgruppe1/Box1/data', [0.0 0 0 0 0 0 0 0; 0.1 1 1 1 0.1 0 0 0]);
+%hdf5serieappenddataset('TS.ombvh5', 'Hauptgruppe1/P1/data', [0.0 0 0 0 0 0 0 0; 0.1 1 1 1 0.1 0 0 0]);
 
 % parameters
 if exist('h5import')==1

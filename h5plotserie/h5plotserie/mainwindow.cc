@@ -69,12 +69,14 @@ MainWindow::MainWindow(const QStringList &arg) {
   setCentralWidget(plotArea);
 
   QDockWidget * dataSelectionDW=new QDockWidget("Data Selection", this);
+  dataSelectionDW->setObjectName("dockWidget/dataSelection");
   addDockWidget(Qt::LeftDockWidgetArea,dataSelectionDW);
   dataSelection = new DataSelection(this);
   dataSelectionDW->setWidget(dataSelection);
   dataSelectionDW->setFeatures(QDockWidget::NoDockWidgetFeatures);
 
   QDockWidget *curvesDW=new QDockWidget("Curves", this);
+  curvesDW->setObjectName("dockWidget/curves");
   addDockWidget(Qt::LeftDockWidgetArea,curvesDW);
   curves = new Curves(this);
   curvesDW->setWidget(curves);

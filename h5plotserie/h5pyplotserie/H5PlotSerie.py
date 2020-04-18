@@ -134,7 +134,7 @@ class H5PlotSerie(QtGui.QMainWindow):
         '''
         try:
             if os.path.exists(filename):
-                if filename.endswith('mbsim.h5') or filename.endswith('ombv.h5'):
+                if filename.endswith('mbsim.h5') or filename.endswith('ombvh5'):
                     if self.getH5File(filename) is None:
                         self.h5Files.append(HDF5Serie.HDF5Serie(filename, 'r'))
                         self.currentDir = os.path.dirname(filename)
