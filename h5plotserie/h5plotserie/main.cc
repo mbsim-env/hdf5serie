@@ -77,17 +77,6 @@ int main(int argc, char** argv) {
   QSettings::setDefaultFormat(QSettings::IniFormat);
   QLocale::setDefault(QLocale::C);
   setlocale(LC_ALL, "C");
-  
-  if(arg.empty()) {
-    QDir dir;
-    QRegExp filterRE1(".+\\.mbsim\\.h5");
-    dir.setFilter(QDir::Files);
-    dir.setPath(".");
-    QStringList file=dir.entryList();
-    for(int j=0; j<file.size(); j++)
-      if(filterRE1.exactMatch(file[j]))
-        arg.push_back(file[j]);
-  }
 
   MainWindow mainWindow(arg);
   mainWindow.resize(1024, 768);
