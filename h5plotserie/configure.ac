@@ -82,6 +82,10 @@ AC_SUBST([QWT_LIBS])
 
 CPPFLAGS="$CPPFLAGS -Wall -Werror"
 
+if test "_$host_os" = "_mingw32"; then
+  LDFLAGS="-mwindows $LDFLAGS"
+fi
+
 LDFLAGS="$LDFLAGS $LDFLAGS_LIBTOOL -no-undefined -Wl,--no-undefined"
 test "_$host_os" != "_mingw32" && LDFLAGS="$LDFLAGS -Wl,--disable-new-dtags,-rpath,\\\$\$ORIGIN/../lib"
 
