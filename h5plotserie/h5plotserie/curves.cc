@@ -210,7 +210,7 @@ PlotDataTable::PlotDataTable(QWidget * parent, const QString &name) : QTableWidg
   for (int i=0; i<pd.numberOfItems(); i++) 
     setHorizontalHeaderItem(i, new QTableWidgetItem(pd.string(i)));
 
-  QObject::connect(this, SIGNAL(currentItemChanged(QTableWidgetItem *, QTableWidgetItem *)), parent, SLOT(plotCurrentTab()));
+  QObject::connect(this, &PlotDataTable::currentItemChanged, static_cast<Curves*>(parent), &Curves::plotCurrentTab);
 
   horizontalHeader()->setSectionsClickable(true);
   horizontalHeader()->installEventFilter(this);

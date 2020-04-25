@@ -38,7 +38,7 @@ class MainWindow : public QMainWindow {
     PlotArea * getPlotArea() {return plotArea; }
     DataSelection * getDataSelection() {return dataSelection; }
 
-  private slots:
+  private:
     void about();
     void help();
     void addH5FileDialog();
@@ -47,7 +47,6 @@ class MainWindow : public QMainWindow {
     void refresh();
     void autoRefresh(bool checked);
 
-  private:
     PlotArea * plotArea;
     DataSelection * dataSelection;
     Curves * curves;

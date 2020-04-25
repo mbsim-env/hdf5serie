@@ -47,7 +47,7 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   fileSelection->addWidget(filterLabel,0,0);
   filter=new QLineEdit(this);
   filter->setToolTip("Enter a regular expression to filter the list.");
-  connect(filter, SIGNAL(returnPressed()), this, SLOT(filterObjectList()));
+  connect(filter, &QLineEdit::returnPressed, this, &DataSelection::filterObjectList);
   fileSelection->addWidget(filter,0,1);
 
   fileBrowser = new QTreeWidget(this);
@@ -64,9 +64,9 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   currentData=new QListWidget(this);
   addWidget(currentData);
 
-  QObject::connect(fileBrowser, SIGNAL(itemClicked(QTreeWidgetItem*, int)), this, SLOT(selectFromFileBrowser(QTreeWidgetItem*,int)));
-  QObject::connect(currentData, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(selectFromCurrentData(QListWidgetItem*)));
-  QObject::connect(fileBrowser,SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)), this, SLOT(updatePath(QTreeWidgetItem *)));
+  QObject::connect(fileBrowser, &QTreeWidget::itemClicked, this, &DataSelection::selectFromFileBrowser);
+  QObject::connect(currentData, &QListWidget::itemClicked, this, &DataSelection::selectFromCurrentData);
+  QObject::connect(fileBrowser,&QTreeWidget::currentItemChanged, this, &DataSelection::updatePath);
 }
 
 DataSelection::~DataSelection() {

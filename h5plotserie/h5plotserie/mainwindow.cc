@@ -42,26 +42,26 @@ using namespace std;
 MainWindow::MainWindow(const QStringList &arg) {
 
   QMenu * fileMenu = menuBar()->addMenu(tr("&File"));
-  fileMenu->addAction("add h5-File", this, SLOT(addH5FileDialog()));
-  fileMenu->addAction("save all plot windows", this, SLOT(saveAllPlotWindows()));
-  fileMenu->addAction("load plot windows", this, SLOT(loadPlotWindows()));
-  fileMenu->addAction("exit", this, SLOT(close()), QKeySequence::Quit);
+  fileMenu->addAction("add h5-File", this, &MainWindow::addH5FileDialog);
+  fileMenu->addAction("save all plot windows", this, &MainWindow::saveAllPlotWindows);
+  fileMenu->addAction("load plot windows", this, &MainWindow::loadPlotWindows);
+  fileMenu->addAction("exit", this, &MainWindow::close, QKeySequence::Quit);
 
   QMenu * refreshMenu = menuBar()->addMenu(tr("&Refresh"));
-  refreshMenu->addAction("Refresh", this, SLOT(refresh()), QKeySequence::Refresh);
+  refreshMenu->addAction("Refresh", this, &MainWindow::refresh, QKeySequence::Refresh);
   QAction *autoRefresh=new QAction("Auto refresh", this);
   refreshMenu->addAction(autoRefresh);
   autoRefresh->setCheckable(true);
   autoRefresh->setShortcut(QKeySequence("Shift+F5"));
-  connect(autoRefresh, SIGNAL(toggled(bool)), this, SLOT(autoRefresh(bool)));
+  connect(autoRefresh, &QAction::toggled, this, &MainWindow::autoRefresh);
 
   autoReloadTimer=new QTimer(this);
-  connect(autoReloadTimer, SIGNAL(timeout()), this, SLOT(refresh()));
+  connect(autoReloadTimer, &QTimer::timeout, this, &MainWindow::refresh);
 
   menuBar()->addSeparator();
   QMenu * helpMenu = menuBar()->addMenu(tr("&About"));
-  helpMenu->addAction("GUI Help", this, SLOT(help()));
-  helpMenu->addAction("About", this, SLOT(about()));
+  helpMenu->addAction("GUI Help", this, &MainWindow::help);
+  helpMenu->addAction("About", this, &MainWindow::about);
 
   statusBar()->showMessage(tr("Ready"));
 

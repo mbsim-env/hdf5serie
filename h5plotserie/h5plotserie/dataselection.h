@@ -51,16 +51,13 @@ class DataSelection : public QSplitter {
     QList<QFileInfo> * getFileInfo() {return &fileInfo; }
     std::shared_ptr<H5::File> getH5File(const boost::filesystem::path &p) const;
 
-  //public slots:
-
-  private slots:
+  private:
     void selectFromFileBrowser(QTreeWidgetItem* item, int col);
     void selectFromCurrentData(QListWidgetItem *item); //=plot
     void filterObjectList();
     void searchObjectList(QTreeWidgetItem *item, const QRegExp& filterRegExp);
     void updatePath(QTreeWidgetItem *);
 
-  private:
     QTreeWidget *fileBrowser; // treeWidget
     QLineEdit * filter;
     QLineEdit * path;

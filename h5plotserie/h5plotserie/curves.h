@@ -48,11 +48,10 @@ class Curves : public QTabWidget {
     void collectFilesToRefresh(std::set<H5::File*> &filesToRefresh);
     void refreshAllTabs();
 
-  private slots:
+  public:
     void plotCurrentTab();
 
   private:
-
     int numberOfWindows{0};
 };
 
@@ -67,13 +66,6 @@ class PlotDataTable : public QTableWidget {
     void addDataSet(PlotData pd);
     void replaceDataSet(PlotData pd);
     void savePlot(QDomDocument * doc, QDomElement * tab);
-
-  protected:
-
-  private slots:
-
-  private:
-  
 };
 
 #endif // CURVES_H

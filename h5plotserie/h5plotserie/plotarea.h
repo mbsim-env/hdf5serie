@@ -40,10 +40,6 @@ class PlotArea : public QMdiArea {
     PlotArea(QWidget * parent = nullptr);
 
     void addPlotWindow(const QString &windowTitle);
-
-  private slots:
-
-  private:
 };
 
 class PlotWindow : public QMdiSubWindow {
