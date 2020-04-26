@@ -52,7 +52,7 @@ using namespace std;
  *
  * Usage:
  *
- * h5lsserie <filename.h5>
+ * h5lsserie <filename>/<path>
  */
 
 string comment="#";
@@ -129,11 +129,11 @@ int main(int argc, char* argv[]) {
     string para=arg[k];
 
     int i;
-    i=para.find(".h5/");
-    string filename=para.substr(0, i+3);
+    i=para.find('/');
+    string filename=para.substr(0, i);
     file[k].reset(new File(filename, File::read));
 
-    string dummy=para.substr(i+3);
+    string dummy=para.substr(i);
     i=dummy.find(':');
     string datasetname, columnname;
     if(i<0) {

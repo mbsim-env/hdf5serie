@@ -122,7 +122,7 @@ class H5PlotSerie(QtGui.QMainWindow):
             self.addFile(path)
         
     def loadFile(self):
-        filename = QtGui.QFileDialog.getOpenFileNameAndFilter(self, 'Load File', filter='*.h5', directory=self.currentDir)
+        filename = QtGui.QFileDialog.getOpenFileNameAndFilter(self, 'Load File', filter='*.mbsh5', directory=self.currentDir)
         
         if filename is not None:
             filename = os.path.abspath(str(filename[0]))
