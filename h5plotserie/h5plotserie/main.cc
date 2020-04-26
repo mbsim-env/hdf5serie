@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
         << "Licensed under the GNU General Public License (GPL)" << endl
         << "" << endl
         << "Usage:" << endl
-        << "  h5plotserie <file.mbsh5 | file.h5Layout.xml>" << endl
+        << "  h5plotserie <file> | <file.h5Layout.xml>" << endl
         << "    -h, --help: Show this help" << endl
         << "    --fullscreen: Start in full screen mode" << endl
         << "    --maximized: Show window maximized on startup." << endl;
@@ -85,9 +85,9 @@ int main(int argc, char** argv) {
   if(arg.contains("--maximized")) mainWindow.showMaximized();
 
   for(int i=0; i<arg.size(); i++)
-    if(arg[i].contains(".mbsh5", Qt::CaseSensitive))
-      mainWindow.getDataSelection()->addFile(arg[i]);
-    else if (arg[i].contains(".h5Layout.xml", Qt::CaseSensitive))
+    if (arg[i].endsWith(".h5Layout.xml", Qt::CaseSensitive))
       mainWindow.getCurves()->initLoadCurve(arg[i]);
+     else
+      mainWindow.getDataSelection()->addFile(arg[i]);
   return app.exec();
 }

@@ -154,7 +154,7 @@ void MainWindow::about() {
 }
 
 void MainWindow::addH5FileDialog() {
-  QStringList files=QFileDialog::getOpenFileNames(this, "Open hdf5 files", ".", "hdf5 Files (*.h5, *mbsh5);;MBSim hdf5 Files (*.mbsh5)");
+  QStringList files=QFileDialog::getOpenFileNames(this, "Open hdf5 files", ".", "Known Files (*.h5 *.mbsh5 *.ombvh5);;MBSim hdf5 Files (*.mbsh5);;OpenMBV hdf5 Files (*.ombvh5);;hdf5 Files (*.h5);;All Files (*.*)");
   for(int i=0; i<files.size(); i++)
     dataSelection->addFile(files[i]);
 }
