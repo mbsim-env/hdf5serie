@@ -85,9 +85,9 @@ int main(int argc, char** argv) {
   if(arg.contains("--maximized")) mainWindow.showMaximized();
 
   for(int i=0; i<arg.size(); i++)
-    if (arg[i].endsWith(".h5Layout.xml", Qt::CaseSensitive))
+    if(arg[i].endsWith(".h5Layout.xml", Qt::CaseSensitive))
       mainWindow.getCurves()->initLoadCurve(arg[i]);
-     else
+    else if(arg[i][0]!='-')
       mainWindow.getDataSelection()->addFile(arg[i]);
   return app.exec();
 }
