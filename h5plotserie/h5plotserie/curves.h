@@ -35,8 +35,6 @@ namespace H5 {
 
 class Curves : public QTabWidget {
   
-  Q_OBJECT
-
   public:
     Curves(QWidget * parent = nullptr);
 
@@ -56,8 +54,6 @@ class Curves : public QTabWidget {
 };
 
 class PlotDataTable : public QTableWidget {
-
-  Q_OBJECT
 
   public:
     PlotDataTable(QWidget * parent = nullptr, const QString &name = "");

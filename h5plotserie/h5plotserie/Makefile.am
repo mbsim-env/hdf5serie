@@ -13,15 +13,6 @@ h5plotserie_SOURCES = $(MAYBE_WIN32_SRC) main.cc \
   mainwindow.cc \
   plotarea.cc
 
-nodist_h5plotserie_SOURCES=$(QT_BUILT_SOURCES)
-
-# C++ source file to build automatically (e.g. abc.moc.cc by abc.h)
-QT_BUILT_SOURCES = curves.moc.cc \
-  dataselection.moc.cc \
-  mainwindow.moc.cc \
-  plotarea.moc.cc
-BUILT_SOURCES = $(QT_BUILT_SOURCES)
-
 noinst_HEADERS = curves.h \
   dataselection.h \
   mainwindow.h \
