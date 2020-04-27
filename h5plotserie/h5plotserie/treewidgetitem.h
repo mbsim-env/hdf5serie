@@ -24,8 +24,6 @@
 
 class TreeWidgetItem : public QTreeWidgetItem {
 
-  //Q_OBJECT
-
   private:
     QString path;
     QStringList list;

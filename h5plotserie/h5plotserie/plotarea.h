@@ -34,8 +34,6 @@ class QwtPlotZoomer;
 
 class PlotArea : public QMdiArea {
 
-  Q_OBJECT
-
   public:
     PlotArea(QWidget * parent = nullptr);
 
@@ -43,8 +41,6 @@ class PlotArea : public QMdiArea {
 };
 
 class PlotWindow : public QMdiSubWindow {
-
-  Q_OBJECT
 
   public:
     PlotWindow(QWidget * parent = nullptr);

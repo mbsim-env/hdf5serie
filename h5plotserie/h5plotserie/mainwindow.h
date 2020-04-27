@@ -28,8 +28,6 @@ class DataSelection;
 
 class MainWindow : public QMainWindow {
 
-  Q_OBJECT
-
   public:
     MainWindow(const QStringList &arg);
     ~MainWindow() override;

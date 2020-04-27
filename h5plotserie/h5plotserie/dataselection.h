@@ -41,8 +41,6 @@ class QWidget;
 
 class DataSelection : public QSplitter {
 
-  Q_OBJECT
-
   public:
     DataSelection(QWidget * parent = nullptr);
     ~DataSelection() override;
