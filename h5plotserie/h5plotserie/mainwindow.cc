@@ -201,4 +201,5 @@ void MainWindow::showEvent(QShowEvent *event) {
   QSettings settings;
   restoreGeometry(settings.value("mainwindow/geometry").toByteArray());
   restoreState(settings.value("mainwindow/state").toByteArray());
+  QMainWindow::showEvent(event);
 }
