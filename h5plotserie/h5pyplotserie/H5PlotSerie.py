@@ -251,7 +251,7 @@ class H5PlotSerie(QtGui.QMainWindow):
         
                 
     def getItemData(self, item = None):
-        if item == None:
+        if item is None:
             selItems = self.treeGroups.selectedItems()
             if len(selItems) == 0:
                 return
