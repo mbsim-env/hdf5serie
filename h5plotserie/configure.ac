@@ -37,6 +37,8 @@ AC_ARG_WITH(qmake, [  --with-qmake=PATH qmake program],
   [QMAKE="$withval"], [QMAKE="qmake"])
 QT_PLUGINS=$($QMAKE -query QT_INSTALL_PLUGINS)
 AC_SUBST([QT_PLUGINS])
+AC_SUBST([QT_PLUGINSSTYLES_DATA], [$(ls -1 $QT_PLUGINS/styles/*.so 2> /dev/null | tr '\n' ' ')])
+AC_SUBST([QT_PLUGINSPLATFORMTHEMES_DATA], [$(ls -1 $QT_PLUGINS/platformthemes/*.so 2> /dev/null | tr '\n' ' ')])
 
 AM_CONDITIONAL([COND_WIN32], [test "_$host_os" = "_mingw32"])
 
@@ -56,25 +58,25 @@ PKG_CHECK_MODULES(HDF5SERIE, hdf5serie)
 
 dnl qwt >= 6
 AC_ARG_WITH(qwt_inc_prefix,
-  [  --with-qwt-inc-prefix=PFX  Prefix where qwt headers are installed],
+  [  --with-qwt-inc-prefix=PFX  Dir where qwt headers are installed],
   [QWT_CFLAGS="-I$withval"],
   [QWT_CFLAGS="-I$prefix/include"])
 AC_ARG_WITH(qwt_lib_name,
-  [  --with-qwt-lib-name=name  Qwt library name -l<name> (defaults to qwt)],
+  [  --with-qwt-lib-name=name  Qwt library name, used as -l<name>, needs a filename called lib<name>.so on Linux. (defaults to qwt)],
   [QWT_LIBNAME="$withval"],
   [QWT_LIBNAME="qwt"])
 AC_ARG_WITH(qwt_lib_prefix,
-  [  --with-qwt-lib-prefix=PFX  Prefix where qwt library is installed],
+  [  --with-qwt-lib-prefix=PFX  Dir where qwt library is installed],
   [QWT_LIBS="-L$withval -l$QWT_LIBNAME"],
   [QWT_LIBS="-L$prefix/lib -l$QWT_LIBNAME"])
 OLDCPPFLAGS=$CPPFLAGS; CPPFLAGS="$CPPFLAGS $QWT_CFLAGS $QT_CFLAGS -std=c++17"
 OLDLIBS=$LIBS; LIBS="$LIBS $QWT_LIBS $QT_LIBS"
-AC_CHECK_HEADERS([qwt_system_clock.h], [], [AC_MSG_ERROR([Can not find qwt_system_clock.h! Maybe a qwt5 header is used!])])
+AC_CHECK_HEADERS([qwt_system_clock.h], [], [AC_MSG_ERROR([Cannot find qwt_system_clock.h! Is qwt6 for qt5 installed? (Provide --with-qwt-inc-prefix=... if needed, see options)])])
 AC_TRY_LINK(
   [#include <qwt_system_clock.h>],
   [new QwtSystemClock;],
   [],
-  [AC_MSG_ERROR([Can not link with qwt >= 6])])
+  [AC_MSG_ERROR([Cannot link with qwt6! Is qwt6 for qt5 installed? (Provide --with-qwt-lib-prefix=... and/or --with-qwt-lib-name=... if needed, see options)])])
 CPPFLAGS=$OLDCPPFLAGS
 LIBS=$OLDLIBS
 AC_SUBST([QWT_CFLAGS])

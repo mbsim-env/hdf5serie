@@ -34,13 +34,8 @@ pluginsplatforms_DATA = @QT_PLUGINS@/platforms/qwindows.dll
 pluginsstyles_DATA = @QT_PLUGINS@/styles/qwindowsvistastyle.dll
 else
 pluginsplatforms_DATA = @QT_PLUGINS@/platforms/libqxcb.so
-pluginsstyles_DATA = @QT_PLUGINS@/styles/adwaita.so \
-                     @QT_PLUGINS@/styles/libbb10styleplugin.so \
-                     @QT_PLUGINS@/styles/libqcleanlooksstyle.so \
-                     @QT_PLUGINS@/styles/libqgtk2style.so \
-                     @QT_PLUGINS@/styles/libqmotifstyle.so \
-                     @QT_PLUGINS@/styles/libqplastiquestyle.so
-pluginsplatformthemes_DATA = @QT_PLUGINS@/platformthemes/libqgtk2.so
+pluginsstyles_DATA = @QT_PLUGINSSTYLES_DATA@
+pluginsplatformthemes_DATA = @QT_PLUGINSPLATFORMTHEMES_DATA@
 endif
 
 # freedesktop.org
