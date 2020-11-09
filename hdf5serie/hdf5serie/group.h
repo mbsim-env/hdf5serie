@@ -24,6 +24,7 @@
 
 #include <hdf5serie/interface.h>
 #include <boost/filesystem.hpp>
+#include <list>
 
 namespace H5 {
 
@@ -71,7 +72,7 @@ namespace H5 {
         return group->openChildObject<T>(path.substr(pos+1));
       }
       Object *openChildObject(const std::string &name_, ElementType *objectType=nullptr, hid_t *type=nullptr);
-      std::set<std::string> getChildObjectNames();
+      std::list<std::string> getChildObjectNames();
       bool hasChildObject(const std::string &name_);
 
       bool isExternalLink(const std::string &name_);

@@ -32,9 +32,9 @@ using namespace boost::filesystem;
 
 namespace {
   herr_t getChildNamesLCB(hid_t, const char *name, const H5L_info_t *, void *op_data) {
-    pair<std::optional<exception>, set<string>> &ret=*static_cast<pair<std::optional<exception>, set<string>>*>(op_data);
+    pair<std::optional<exception>, list<string>> &ret=*static_cast<pair<std::optional<exception>, list<string>>*>(op_data);
     try {
-      ret.second.insert(name);
+      ret.second.push_back(name);
     }
     catch(exception &ex) {
       ret.first=ex;
@@ -128,18 +128,21 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
   }
 }
 
-set<string> GroupBase::getChildObjectNames() {
-  pair<std::optional<exception>, set<string>> ret;
+list<string> GroupBase::getChildObjectNames() {
+  pair<std::optional<exception>, list<string>> ret;
   hsize_t idx=0;
-  H5Literate(id, H5_INDEX_NAME, H5_ITER_NATIVE, &idx, &getChildNamesLCB, &ret);
+  H5Literate(id, H5_INDEX_CRT_ORDER, H5_ITER_INC, &idx, &getChildNamesLCB, &ret);
   if(ret.first)
     throw ret.first.value();
   return ret.second;
 }
 
 bool GroupBase::hasChildObject(const string &name_) {
-   set<string> names=getChildObjectNames();
-   return names.find(name_)!=names.end();
+list<string> names=getChildObjectNames();
+ for (std::list<string>::iterator it = names.begin(); it != names.end(); it++)
+   if(*it == name)
+     return true;
+ return false;
 }
 
 void GroupBase::close() {
@@ -206,7 +209,9 @@ Group::Group(int dummy, GroupBase *parent_, const string &name_) : GroupBase(par
 }
 
 Group::Group(GroupBase *parent_, const string &name_) : GroupBase(parent_, name_) {
-  id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT), &H5Gclose);
+  hid_t group_creation_plist = H5Pcreate(H5P_GROUP_CREATE);
+  H5Pset_link_creation_order(group_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
+ id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, group_creation_plist, H5P_DEFAULT), &H5Gclose);
 }
 
 Group::~Group() {

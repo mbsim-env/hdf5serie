@@ -103,7 +103,7 @@ void DataSelection::addFile(const QString &name) {
   topitem->setToolTip(0, fileInfo.back().absoluteFilePath());
   fileBrowser->addTopLevelItem(topitem);
   QList<QTreeWidgetItem *> items;
-  set<string> names=h5f->getChildObjectNames();
+  list<string> names=h5f->getChildObjectNames();
   for(const auto & name : names) {
     QTreeWidgetItem *item = new TreeWidgetItem(QStringList(name.c_str()));
     auto *grp = h5f->openChildObject<H5::Group>(name);
@@ -123,7 +123,7 @@ shared_ptr<H5::File> DataSelection::getH5File(const boost::filesystem::path &p) 
 }
 
 void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
-  set<string> names=grp->getChildObjectNames();
+  list<string> names=grp->getChildObjectNames();
   for(const auto & name : names) {
     QTreeWidgetItem *child = new TreeWidgetItem(QStringList(name.c_str()));
     item->addChild(child);

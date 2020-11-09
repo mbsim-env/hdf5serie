@@ -201,7 +201,9 @@ void File::open() {
     if(!isSWMR) {
       ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
       H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-      id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, faid), &H5Fclose);
+      hid_t file_creation_plist = H5Pcreate(H5P_FILE_CREATE);
+      H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
+      id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
     }
     else {
       unsigned int flag=H5F_ACC_RDWR;
@@ -226,14 +228,14 @@ void File::open() {
 void File::flushIfRequested() {
   bool localFlushVar;
   {
-    scoped_lock<interprocess_mutex> lock(*ipc.mutex);
+    boost::interprocess::scoped_lock<interprocess_mutex> lock(*ipc.mutex);
     localFlushVar=*ipc.flushVar;
   }
   if(localFlushVar) {
     if(msgAct(Debug))
       msg(Debug)<<"Flushing HDF5 file "+name+", requested by reader process, and send notification if flush finished."<<endl;
     flush();
-    scoped_lock<interprocess_mutex> lock(*ipc.mutex);
+    boost::interprocess::scoped_lock<interprocess_mutex> lock(*ipc.mutex);
     *ipc.flushVar=false;
     ipc.cond->notify_all();
   }
@@ -312,7 +314,7 @@ void requestWriterFlush(H5::File::IPC &ipc, H5::File *me) {
     me->msg(me->Debug)<<"Ask writer process to flush hdf5 file "<<ipc.filename.string()<<"."<<endl;
   // post this file
   {
-    scoped_lock<interprocess_mutex> lock(*ipc.mutex);
+    boost::interprocess::scoped_lock<interprocess_mutex> lock(*ipc.mutex);
     *ipc.flushVar=true;
   }
   // save current time for later use in timed_wait
@@ -330,7 +332,7 @@ bool waitForWriterFlush(H5::File::IPC &ipc, H5::File *me) {
   // wait for file
   bool flushReady=true;
   {
-    scoped_lock<interprocess_mutex> lock(*ipc.mutex);
+    boost::interprocess::scoped_lock<interprocess_mutex> lock(*ipc.mutex);
     if(*ipc.flushVar) {
       flushReady=ipc.cond->timed_wait(lock, ipc.flushRequestTime+milliseconds(msec));//MFMF not working; never timeout out
     }

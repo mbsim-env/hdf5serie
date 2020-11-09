@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 }
 
 void walkH5(const string &indent, const path &filename, const string &path, GroupBase *obj) {
-  set<string> names=obj->getChildObjectNames();
+  list<string> names=obj->getChildObjectNames();
   for(const auto& name : names) {
     if(obj->isExternalLink(name) && !f) {
       pair<boost::filesystem::path, string> link=obj->getExternalLink(name);
