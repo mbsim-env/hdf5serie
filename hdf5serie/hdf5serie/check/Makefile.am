@@ -15,4 +15,4 @@ testlib_SOURCES = testlib.cc
 
 testlib_CPPFLAGS = -I$(top_srcdir) $(FMATVEC_CFLAGS)
 testlib_LDFLAGS = -L..
-testlib_LDADD = ../libhdf5serie.la -l@BOOST_SYSTEM_LIB@
+testlib_LDADD = ../libhdf5serie.la $(FMATVEC_LIBS) -l@BOOST_SYSTEM_LIB@
