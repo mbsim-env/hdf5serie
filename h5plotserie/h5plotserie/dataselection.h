@@ -23,6 +23,7 @@
 #include <QSplitter>
 #include <boost/filesystem.hpp>
 #include <list>
+#include "abstractviewfilter.h"
 
 namespace H5 {
   class H5File;
@@ -52,12 +53,10 @@ class DataSelection : public QSplitter {
   private:
     void selectFromFileBrowser(QTreeWidgetItem* item, int col);
     void selectFromCurrentData(QListWidgetItem *item); //=plot
-    void filterObjectList();
-    void searchObjectList(QTreeWidgetItem *item, const QRegExp& filterRegExp);
     void updatePath(QTreeWidgetItem *);
 
+    OpenMBVGUI::AbstractViewFilter *dataSelectionFilter;
     QTreeWidget *fileBrowser; // treeWidget
-    QLineEdit * filter;
     QLineEdit * path;
     QListWidget * currentData; //=listWidget;
 

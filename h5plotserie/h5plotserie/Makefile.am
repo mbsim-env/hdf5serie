@@ -11,11 +11,13 @@ h5plotserie_SOURCES = $(MAYBE_WIN32_SRC) main.cc \
   curves.cc \
   dataselection.cc \
   mainwindow.cc \
+  abstractviewfilter.cc \
   plotarea.cc
 
 noinst_HEADERS = curves.h \
   dataselection.h \
   mainwindow.h \
+  abstractviewfilter.h \
   plotarea.h \
   plotdata.h \
   treewidgetitem.h

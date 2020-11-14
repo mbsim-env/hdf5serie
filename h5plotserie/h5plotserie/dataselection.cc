@@ -43,17 +43,12 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   auto * fileSelection=new QGridLayout(this);
   dummy->setLayout(fileSelection);
 
-  QLabel * filterLabel=new QLabel("Filter:");
-  fileSelection->addWidget(filterLabel,0,0);
-  filter=new QLineEdit(this);
-  filter->setToolTip("Enter a regular expression to filter the list.");
-  connect(filter, &QLineEdit::returnPressed, this, &DataSelection::filterObjectList);
-  fileSelection->addWidget(filter,0,1);
-
   fileBrowser = new QTreeWidget(this);
   fileSelection->addWidget(fileBrowser,1,0,1,2);
   fileBrowser->setHeaderHidden(true);
   fileBrowser->setColumnCount(1);
+  dataSelectionFilter=new OpenMBVGUI::AbstractViewFilter(fileBrowser);
+  fileSelection->addWidget(dataSelectionFilter, 0,0,1,2);
 
   QLabel * pathLabel=new QLabel("Path:");
   fileSelection->addWidget(pathLabel,2,0);
@@ -70,13 +65,10 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
 }
 
 DataSelection::~DataSelection() {
+  delete dataSelectionFilter;
   if (fileBrowser) {
     delete fileBrowser;
     fileBrowser=nullptr;
-  }
-  if (filter) {
-    delete filter;
-    filter=nullptr;
   }
   if (path) {
     delete path;
@@ -195,41 +187,6 @@ void DataSelection::selectFromCurrentData(QListWidgetItem* item) {
     static_cast<MainWindow*>(parent()->parent())->getCurves()->modifyPlotData(pd, "new");
   else
     static_cast<MainWindow*>(parent()->parent())->getCurves()->modifyPlotData(pd, "replace");
-}
-
-// MainWindow::filterObjectList(...) and MainWindow::searchObjectList(...) are taken from OpenMBV.
-// If changes are made here, please do the same changes in OpenMBV
-void DataSelection::filterObjectList() {
-  QRegExp filterRegExp(filter->text());
-  searchObjectList(fileBrowser->invisibleRootItem(), filterRegExp);
-}
-
-void DataSelection::searchObjectList(QTreeWidgetItem *item, const QRegExp& filterRegExp) {
-  for(int i=0; i<item->childCount(); i++) {
-    // search recursive
-    searchObjectList(item->child(i), filterRegExp);
-    // set color
-    ((TreeWidgetItem*)item->child(i))->setSearchMatched(filterRegExp.indexIn(item->child(i)->text(0))>=0);
-    ((TreeWidgetItem*)item->child(i))->updateTextColor();
-    // if all children and children children are red, collapse
-    int count=0;
-    for(int j=0; j<item->child(i)->childCount(); j++)
-      if((item->child(i)->child(j)->childCount()!=0 && !(((TreeWidgetItem*)(item->child(i)->child(j)))->getSearchMatched()) && 
-            !item->child(i)->child(j)->isExpanded()) ||
-          (item->child(i)->child(j)->childCount()==0 && !(((TreeWidgetItem*)(item->child(i)->child(j)))->getSearchMatched())))
-        count++;
-    item->child(i)->setExpanded(count!=item->child(i)->childCount());
-    // hide
-    item->child(i)->setHidden(false);
-    if((item->child(i)->childCount()!=0 && !(((TreeWidgetItem*)(item->child(i)))->getSearchMatched()) && 
-          !item->child(i)->isExpanded()) ||
-        (item->child(i)->childCount()==0 && !(((TreeWidgetItem*)(item->child(i)))->getSearchMatched()))) {
-      bool hide=true;
-      for(QTreeWidgetItem *it=item; it!=nullptr; it=it->parent())
-        if(filterRegExp.indexIn(it->text(0))>=0) { hide=false; break; }
-      item->child(i)->setHidden(hide);
-    }
-  }
 }
 
 void DataSelection::updatePath(QTreeWidgetItem *cur) {
