@@ -236,16 +236,12 @@ void Dataset::open() {
 
 void Dataset::refresh() {
   Object::refresh();
-#if H5_VERSION_GE(1, 10, 0)
   H5Drefresh(id);
-#endif
 }
 
 void Dataset::flush() {
   Object::flush();
-#if H5_VERSION_GE(1, 10, 0)
   H5Dflush(id);
-#endif
 }
 
 void Dataset::close() {

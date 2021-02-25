@@ -148,23 +148,14 @@ void File::refresh() {
     throw Exception(getPath(), "refresh() can only be called for reading files");
 
   // refresh file
-#if H5_VERSION_GE(1, 10, 0)
   GroupBase::refresh();
-#else
-  close();
-  open();
-#endif
 }
 
 void File::flush() {
   if(type==read)
     throw Exception(getPath(), "flush() can only be called for writing files");
 
-#if H5_VERSION_GE(1, 10, 0)
   GroupBase::flush();
-#else
-  H5Fflush(id, H5F_SCOPE_GLOBAL);
-#endif
 }
 
 void File::close() {
@@ -206,19 +197,11 @@ void File::open() {
       id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
     }
     else {
-      unsigned int flag=H5F_ACC_RDWR;
-#if H5_VERSION_GE(1, 10, 0)
-      flag|=H5F_ACC_SWMR_WRITE;
-#endif
-      id.reset(H5Fopen(name.c_str(), flag, H5P_DEFAULT), &H5Fclose);
+      id.reset(H5Fopen(name.c_str(), H5F_ACC_RDWR | H5F_ACC_SWMR_WRITE, H5P_DEFAULT), &H5Fclose);
     }
   }
   else {
-    unsigned int flag=H5F_ACC_RDONLY;
-#if H5_VERSION_GE(1, 10, 0)
-    flag|=H5F_ACC_SWMR_READ;
-#endif
-    id.reset(H5Fopen(name.c_str(), flag, H5P_DEFAULT), &H5Fclose);
+    id.reset(H5Fopen(name.c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, H5P_DEFAULT), &H5Fclose);
   }
   GroupBase::open();
 }

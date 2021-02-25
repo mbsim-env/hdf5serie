@@ -80,6 +80,16 @@ AC_SUBST([HDF5CPPFLAGS])
 AC_SUBST([HDF5LDFLAGS])
 AC_CHECK_HEADERS([hdf5.h], [],
   [AC_MSG_ERROR([Can not find hdf5 c header hdf5.h])])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <hdf5.h>]],
+[[
+  #if !H5_VERSION_GE(1, 10, 0)
+    #error "Version >= 1.10 needed"
+  #endif
+]])],
+[AC_MSG_RESULT([OK])],
+[AC_MSG_ERROR([Need at least HDF5 version >= 1.10])])
+
 AC_MSG_CHECKING([for hdf5 c library])
 AC_TRY_LINK([#include <hdf5.h>],[H5Fopen("dummy", H5F_ACC_RDWR, H5P_DEFAULT)],[AC_MSG_RESULT([yes])],
   [AC_MSG_RESULT([no]); AC_MSG_ERROR([Can not link with hdf5 c library])])
