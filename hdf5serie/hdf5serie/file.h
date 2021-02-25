@@ -24,20 +24,6 @@
 
 #include <hdf5serie/group.h>
 #include <boost/filesystem.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-
-namespace boost {
-  namespace interprocess {
-#ifdef _WIN32
-    class windows_shared_memory;
-#else
-    class shared_memory_object;
-#endif
-    class mapped_region;
-    class interprocess_mutex;
-    class interprocess_condition;
-  }
-}
 
 namespace H5 {
 
@@ -54,7 +40,6 @@ namespace H5 {
       File(const boost::filesystem::path &filename, FileAccess type_);
       ~File() override;
       void reopenAsSWMR();
-      static void reopenAllFilesAsSWMR();
       static int getDefaultCompression() { return defaultCompression; }
       static void setDefaultCompression(int comp) { defaultCompression=comp; }
       static int getDefaultChunkSize() { return defaultChunkSize; }
@@ -62,31 +47,6 @@ namespace H5 {
       void refresh() override;
       void flush() override;
 
-      void requestWriterFlush();
-      bool waitForWriterFlush();
-
-      void flushIfRequested();
-      static void flushAllFiles();
-      static void flushAllFilesIfRequested();
-      void refreshAfterWriterFlush();
-      static void refreshAllFiles();
-      static void refreshFilesAfterWriterFlush(const std::set<H5::File*> &files);
-      static void refreshAllFilesAfterWriterFlush();
-
-      struct IPC {
-        boost::filesystem::path filename; // the filename of this IPC
-        std::string interprocessName; // the name of this IPC
-#ifdef _WIN32
-        std::shared_ptr<boost::interprocess::windows_shared_memory> shm; // shared memory used for this IPC
-#else
-        std::shared_ptr<boost::interprocess::shared_memory_object> shm; // shared memory used for this IPC
-#endif
-        std::shared_ptr<boost::interprocess::mapped_region> shmmap; // mapping of shared memory to real memory
-        bool *flushVar; // true if flush by the writer is requested (lies in shared memory)
-        boost::interprocess::interprocess_mutex *mutex; // mutex for access of flushVar and cond (lies in shared memory)
-        boost::interprocess::interprocess_condition *cond; // condition to notify readers (lies in shared memory)
-        boost::posix_time::ptime flushRequestTime; // the time of the flush request (only used on reader side)
-      };
     protected:
       FileAccess type;
       bool isSWMR;
@@ -94,13 +54,6 @@ namespace H5 {
       void open() override;
       static int defaultCompression;
       static int defaultChunkSize;
-
-      static std::set<File*> writerFiles;
-      static std::set<File*> readerFiles;
-      std::string interprocessName;
-      IPC ipc;
-      void addFileToNotifyOnRefresh(const boost::filesystem::path &filename);
-      std::vector<IPC> ipcAdd;
   };
 }
 

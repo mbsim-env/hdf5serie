@@ -195,7 +195,6 @@ void GroupBase::handleExternalLink(const string &name_) {
   if(!isExternalLink(name_))
     return;
   pair<path, string> link=getExternalLink(name_);
-  getFile()->addFileToNotifyOnRefresh(link.first);
 }
 
 GroupBase *GroupBase::getFileAsGroup() {
