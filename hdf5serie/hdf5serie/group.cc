@@ -56,7 +56,7 @@ GroupBase::GroupBase(GroupBase *parent_, const string &name_) : Object(parent_, 
 
 GroupBase::~GroupBase() = default;
 
-Object *GroupBase::openChildObject(const string &name_, ElementType *objectType, hid_t *type) {
+Object *GroupBase::openChildObject(const string &name_, ElementType *objectType, hid_t *type) {//mfmf *type needed?
   ScopedHID o(H5Oopen(id, name_.c_str(), H5P_DEFAULT), &H5Oclose);
   H5I_type_t t=H5Iget_type(o);
   if(t==H5I_BADID)
@@ -137,24 +137,6 @@ list<string> GroupBase::getChildObjectNames() {
   return ret.second;
 }
 
-bool GroupBase::hasChildObject(const string &name_) {
-list<string> names=getChildObjectNames();
- for (std::list<string>::iterator it = names.begin(); it != names.end(); it++)
-   if(*it == name)
-     return true;
- return false;
-}
-
-void GroupBase::close() {
-  Container<Object, GroupBase>::close();
-  Object::close();
-}
-
-void GroupBase::open() {
-  Object::open();
-  Container<Object, GroupBase>::open();
-}
-
 void GroupBase::refresh() {
   Object::refresh();
   Container<Object, GroupBase>::refresh();
@@ -163,6 +145,11 @@ void GroupBase::refresh() {
 void GroupBase::flush() {
   Object::flush();
   Container<Object, GroupBase>::flush();
+}
+
+void GroupBase::enableSWMR() {
+  Object::enableSWMR();
+  Container<Object, GroupBase>::enableSWMR();
 }
 
 bool GroupBase::isExternalLink(const string &name_) {
@@ -204,27 +191,16 @@ GroupBase *GroupBase::getFileAsGroup() {
 
 
 Group::Group(int dummy, GroupBase *parent_, const string &name_) : GroupBase(parent_, name_) {
-  open();
+  id.reset(H5Gopen2(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Gclose);
 }
 
 Group::Group(GroupBase *parent_, const string &name_) : GroupBase(parent_, name_) {
-  hid_t group_creation_plist = H5Pcreate(H5P_GROUP_CREATE);
+  ScopedHID group_creation_plist(H5Pcreate(H5P_GROUP_CREATE), &H5Pclose);
   H5Pset_link_creation_order(group_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
- id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, group_creation_plist, H5P_DEFAULT), &H5Gclose);
+  id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, group_creation_plist, H5P_DEFAULT), &H5Gclose);
 }
 
 Group::~Group() {
-  close();
-}
-
-void Group::close() {
-  GroupBase::close();
-  id.reset();
-}
-
-void Group::open() {
-  id.reset(H5Gopen2(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Gclose);
-  GroupBase::open();
 }
 
 void Group::refresh() {
@@ -233,6 +209,10 @@ void Group::refresh() {
 
 void Group::flush() {
   GroupBase::flush();
+}
+
+void Group::enableSWMR() {
+  GroupBase::enableSWMR();
 }
 
 }

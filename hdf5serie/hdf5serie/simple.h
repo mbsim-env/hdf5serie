@@ -27,7 +27,7 @@ template<class T>
 class HDF5SERIE_CLASS : public HDF5SERIE_BASECLASS {
   friend class Container<HDF5SERIE_CONTAINERBASECLASS, HDF5SERIE_PARENTCLASS>;
   private:
-    hid_t memDataTypeID;
+    hid_t memDataTypeID; // no need to use ScopedHID since only a static hid_t is stored here
     ScopedHID memDataSpaceID;
   protected:
     /** \brief Constructor for opening or creating a attribute/dataset
@@ -49,9 +49,6 @@ class HDF5SERIE_CLASS : public HDF5SERIE_BASECLASS {
     HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
 
     ~HDF5SERIE_CLASS() override;
-
-    void close() override;
-    void open() override;
 
   public:
     /** \brief Write data
@@ -82,15 +79,13 @@ template<class T>
 class HDF5SERIE_CLASS<std::vector<T> > : public HDF5SERIE_BASECLASS {
   friend class Container<HDF5SERIE_CONTAINERBASECLASS, HDF5SERIE_PARENTCLASS>;
   private:
-    hid_t memDataTypeID;
+    hid_t memDataTypeID; // no need to use SScopedHID since only a static hid_t is stored here
     ScopedHID memDataSpaceID;
     int size;
   protected:
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
     HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_);
     ~HDF5SERIE_CLASS() override;
-    void close() override;
-    void open() override;
   public:
     void write(const std::vector<T>& data);
     std::vector<T> read();
@@ -110,7 +105,7 @@ template<class T>
 class HDF5SERIE_CLASS<std::vector<std::vector<T> > > : public HDF5SERIE_BASECLASS {
   friend class Container<HDF5SERIE_CONTAINERBASECLASS, HDF5SERIE_PARENTCLASS>;
   private:
-    hid_t memDataTypeID;
+    hid_t memDataTypeID; // no need to use SScopedHID since only a static hid_t is stored here
     ScopedHID memDataSpaceID;
     int rows;
     int cols;
@@ -118,8 +113,6 @@ class HDF5SERIE_CLASS<std::vector<std::vector<T> > > : public HDF5SERIE_BASECLAS
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
     HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_);
     ~HDF5SERIE_CLASS() override;
-    void close() override;
-    void open() override;
   public:
     void write(const std::vector<std::vector<T> >& data);
     std::vector<std::vector<T> > read();

@@ -39,7 +39,7 @@ namespace H5 {
       };
       File(const boost::filesystem::path &filename, FileAccess type_);
       ~File() override;
-      void reopenAsSWMR();
+      void enableSWMR() override;
       static int getDefaultCompression() { return defaultCompression; }
       static void setDefaultCompression(int comp) { defaultCompression=comp; }
       static int getDefaultChunkSize() { return defaultChunkSize; }
@@ -49,9 +49,6 @@ namespace H5 {
 
     protected:
       FileAccess type;
-      bool isSWMR;
-      void close() override;
-      void open() override;
       static int defaultCompression;
       static int defaultChunkSize;
   };

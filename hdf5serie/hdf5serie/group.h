@@ -33,10 +33,9 @@ namespace H5 {
       GroupBase(int dummy, GroupBase *parent_, const std::string &name_);
       GroupBase(GroupBase *parent_, const std::string &name_);
       ~GroupBase() override;
-      void close() override;
-      void open() override;
       void refresh() override;
       void flush() override;
+      void enableSWMR() override;
       Dataset *openChildDataset(const std::string &name_, ElementType *objectType, hid_t *type);
       void handleExternalLink(const std::string &name_);
       GroupBase *getFileAsGroup();
@@ -73,7 +72,6 @@ namespace H5 {
       }
       Object *openChildObject(const std::string &name_, ElementType *objectType=nullptr, hid_t *type=nullptr);
       std::list<std::string> getChildObjectNames();
-      bool hasChildObject(const std::string &name_);
 
       bool isExternalLink(const std::string &name_);
       std::pair<boost::filesystem::path, std::string> getExternalLink(const std::string &name_);
@@ -87,10 +85,9 @@ namespace H5 {
       Group(int dummy, GroupBase *parent_, const std::string &name_);
       Group(GroupBase *parent_, const std::string &name_);
       ~Group() override;
-      void close() override;
-      void open() override;
       void refresh() override;
       void flush() override;
+      void enableSWMR() override;
   };
 
 }

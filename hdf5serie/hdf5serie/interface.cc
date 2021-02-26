@@ -85,16 +85,13 @@ Element::Element(std::string name_) :  name(std::move(name_)) {
 
 Element::~Element() = default;
 
-void Element::close() {
-}
-
-void Element::open() {
-}
-
 void Element::refresh() {
 }
 
 void Element::flush() {
+}
+
+void Element::enableSWMR() {
 }
 
 Object::Object(GroupBase *parent_, const std::string &name_) : Element(name_), 
@@ -163,11 +160,6 @@ bool Object::hasChildAttribute(const std::string &name_) {
    return names.find(name_)!=names.end();
 }
 
-void Object::open() {
-  Element::open();
-  Container<Attribute, Object>::open();
-}
-
 void Object::refresh() {
   Element::refresh();
   Container<Attribute, Object>::refresh();
@@ -178,9 +170,9 @@ void Object::flush() {
   Container<Attribute, Object>::flush();
 }
 
-void Object::close() {
-  Container<Attribute, Object>::close();
-  Element::close();
+void Object::enableSWMR() {
+  Element::enableSWMR();
+  Container<Attribute, Object>::enableSWMR();
 }
 
 Object *Object::getFileAsObject() {
@@ -205,14 +197,6 @@ Attribute::Attribute(Object *parent_, const std::string &name_) : Element(name_)
 
 Attribute::~Attribute() = default;
 
-void Attribute::close() {
-  Element::close();
-}
-
-void Attribute::open() {
-  Element::open();
-}
-
 void Attribute::refresh() {
   Element::refresh();
 }
@@ -230,10 +214,6 @@ Dataset::Dataset(GroupBase *parent_, const std::string &name_) : Object(parent_,
 
 Dataset::~Dataset() = default;
 
-void Dataset::open() {
-  Object::open();
-}
-
 void Dataset::refresh() {
   Object::refresh();
   H5Drefresh(id);
@@ -244,8 +224,8 @@ void Dataset::flush() {
   H5Dflush(id);
 }
 
-void Dataset::close() {
-  Object::close();
+void Dataset::enableSWMR() {
+  Object::enableSWMR();
 }
 
 vector<hsize_t> Dataset::getExtentDims() {

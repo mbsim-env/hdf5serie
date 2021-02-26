@@ -30,24 +30,23 @@ namespace H5 {
 int File::defaultCompression=1;
 int File::defaultChunkSize=100;
 
-File::File(const path &filename, FileAccess type_) : GroupBase(nullptr, filename.string()), type(type_), isSWMR(false) {
+File::File(const path &filename, FileAccess type_) : GroupBase(nullptr, filename.string()), type(type_) {
   file=this;
-  open();
+
+  if(type==write) {
+    ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
+    H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+    ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
+    H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
+    id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
+  }
+  else {
+    id.reset(H5Fopen(name.c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, H5P_DEFAULT), &H5Fclose);
+  }
 }
 
 
 File::~File() {
-  close();
-}
-
-void File::reopenAsSWMR() {
-  if(type==read)
-    throw Exception(getPath(), "Can only reopen files opened for writing in SWMR mode");
-
-  isSWMR=true;
-
-  close();
-  open();
 }
 
 void File::refresh() {
@@ -65,52 +64,13 @@ void File::flush() {
   GroupBase::flush();
 }
 
-void File::close() {
-  // close everything (except the file itself)
-  GroupBase::close();
+void File::enableSWMR() {
+  if(type==read)
+    throw Exception(getPath(), "enableSWMR() can only be called for writing files");
+  GroupBase::enableSWMR();
 
-  // check if all object are closed now: if not -> throw internal error (with details about the opened objects)
-  ssize_t count=H5Fget_obj_count(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
-  if(count<0)
-    throw Exception(getPath(), "Internal error: H5Fget_obj_count failed");
-  if(count>0) {
-    vector<hid_t> obj(count, 0);
-    ssize_t ret=H5Fget_obj_ids(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL, count, &obj[0]);
-    if(ret<0)
-      throw Exception(getPath(), "Internal error: H5Fget_obj_ids failed");
-    vector<char> name(1000+1);
-    stringstream err;
-    err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
-    for(auto it : obj) {
-      size_t ret=H5Iget_name(it, &name[0], 1000);
-      if(ret<=0)
-        throw Exception(getPath(), "Internal error: H5Iget_name");
-      err<<"type="<<H5Iget_type(it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
-    }
-    throw Exception(getPath(), err.str());
-  }
-
-  // now close also the file with is now the last opened identifier
-  id.reset();
-}
-
-void File::open() {
-  if(type==write) {
-    if(!isSWMR) {
-      ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
-      H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-      hid_t file_creation_plist = H5Pcreate(H5P_FILE_CREATE);
-      H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
-      id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
-    }
-    else {
-      id.reset(H5Fopen(name.c_str(), H5F_ACC_RDWR | H5F_ACC_SWMR_WRITE, H5P_DEFAULT), &H5Fclose);
-    }
-  }
-  else {
-    id.reset(H5Fopen(name.c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, H5P_DEFAULT), &H5Fclose);
-  }
-  GroupBase::open();
+  if(H5Fstart_swmr_write(id)<0)
+    throw Exception(getPath(), "enableSWMR() failed: still opened attributes, ...");
 }
 
 }

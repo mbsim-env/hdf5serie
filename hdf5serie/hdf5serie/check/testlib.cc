@@ -23,8 +23,6 @@
 #include <cassert>
 #include <cfenv>
 #include <hdf5serie/vectorserie.h>
-//#include <hdf5serie/matrixserie.h>
-//#include <hdf5serie/structserie.h>
 #include <hdf5serie/simpleattribute.h>
 #include <hdf5serie/simpledataset.h>
 #include <iostream>
@@ -60,7 +58,7 @@ int main() {
   dsd->write(d);
   dsd->setDescription("testdesc");
   cout<<dsd->read()<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -80,7 +78,7 @@ int main() {
   dsd->write(d);
   dsd->setDescription("testdesc");
   cout<<dsd->read()<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -108,7 +106,7 @@ int main() {
   vector<double> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -132,7 +130,7 @@ int main() {
   vector<string> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -170,7 +168,7 @@ int main() {
   double d=5.67;
   dsd->write(d);
   cout<<dsd->read()<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -190,7 +188,7 @@ int main() {
   string d="sdlfkjsf";
   dsd->write(d);
   cout<<dsd->read()<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -221,7 +219,7 @@ int main() {
   vector<double> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -249,7 +247,7 @@ int main() {
   vector<string> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -297,7 +295,7 @@ int main() {
   dataStr.push_back("b");
   dataStr.push_back("c");
   tsStr->append(dataStr);
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
   {
   File file("test2d.h5", File::read);
@@ -310,56 +308,6 @@ int main() {
   outhead=ts->getColumnLabel();
   for(unsigned int i=0; i<outhead.size(); i++) cout<<outhead[i]<<endl;
   }
-
-
-
-
-//  /***** MYMATRIXSERIE *****/
-//  cout<<"MATRIXSERIE\n";
-//  {
-//  H5File file("testmat.h5", H5F_ACC_TRUNC);
-//  MatrixSerie<double> ts;
-//  ts.create(file, "matserie", 4, 5);
-//  ts.setDescription("mydesctipsldfk");
-//  vector<vector<double> > mat;
-//  vector<double> row;
-//  row.push_back(1.2);
-//  row.push_back(2.3);
-//  row.push_back(3.4);
-//  row.push_back(3.4);
-//  row.push_back(3.4);
-//  mat.push_back(row);
-//  mat.push_back(row);
-//  mat.push_back(row);
-//  mat.push_back(row);
-//  ts.append(mat);
-//  ts.append(mat);
-//  vector<vector<double> > out;
-//  out=ts.getMatrix(0);
-//  for(unsigned int r=0; r<out.size(); r++) { for(unsigned int c=0; c<out[r].size(); c++) cout<<out[r][c]<<" "; cout<<endl; }
-//  out=ts.getMatrix(1);
-//  for(unsigned int r=0; r<out.size(); r++) { for(unsigned int c=0; c<out[r].size(); c++) cout<<out[r][c]<<" "; cout<<endl; }
-//  cout<<ts.getDescription()<<endl;
-//  }
-//  {
-//  H5File file("testmat.h5", H5F_ACC_RDWR);
-//  MatrixSerie<double> ts;
-//  ts.open(file, "matserie");
-//  cout<<ts.getDescription()<<endl;
-//  vector<vector<double> > mat;
-//  vector<double> row;
-//  row.push_back(1.2);
-//  row.push_back(2.3);
-//  row.push_back(3.4);
-//  row.push_back(3.4);
-//  row.push_back(3.4);
-//  mat.push_back(row);
-//  mat.push_back(row);
-//  mat.push_back(row);
-//  mat.push_back(row);
-//  ts.append(mat);
-//  cout<<ts.getNumberOfMatrices()<<endl;
-//  }
 
 
 
@@ -391,7 +339,7 @@ int main() {
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
 
   /***** Attribute vector<vector<string>> *****/
@@ -409,7 +357,7 @@ int main() {
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
 
   /***** Dataset vector<vector<double>> *****/
@@ -426,7 +374,7 @@ int main() {
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
 
   /***** Dataset vector<vector<string>> *****/
@@ -443,7 +391,7 @@ int main() {
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)
       cout<<out[r][c]<<endl;
-  file.reopenAsSWMR();
+  file.enableSWMR();
   }
 
 //  /***** Dataset vector<vector<double>> fmatvec *****/
@@ -458,59 +406,6 @@ int main() {
 //  Mat out;
 //  out=dr.read();
 //  cout<<out<<endl;
-//  file.close();
-//  }
-
-
-//  cout<<"SERIE1D\n";
-//  {
-//  H5File file("testcompound.h5", H5F_ACC_TRUNC);
-//  StructSerie<MyStruct> s1;
-//  MyStruct data;
-//  s1.registerMember(data, data.d, "mydouble");
-//  s1.registerMember(data, data.v, 3, "myvector");
-//  s1.registerMember(data, data.vs, 3, "myvectorstring");
-//  s1.registerMember(data, data.f, "myfloat");
-//  s1.registerMember(data, data.s, "mystring");
-//  s1.registerMember(data, data.i, "myint");
-//  s1.create(file, "serie1d");
-//  s1.setDescription("myserie1ddesc");
-//  cout<<s1.getDescription()<<endl;
-//  cout<<s1.getRows()<<endl;
-//  cout<<s1.getMembers()<<endl;
-//  vector<string> lab;
-//  lab=s1.getMemberLabel();
-//  for(unsigned int i=0; i<lab.size(); i++)
-//    cout<<lab[i]<<endl;
-//  vector<int> vv; vv.push_back(1111); vv.push_back(2222); vv.push_back(3333);
-//  vector<string> vvstr; vvstr.push_back("str1"); vvstr.push_back("str2"); vvstr.push_back("str3");
-//  data.d=6.1; data.f=1.2; data.s="teststr"; data.v=vv; data.vs=vvstr; data.i=4;
-//  s1.append(data);
-//  data.d=7.1; data.f=2.2; data.s="teststr2"; data.v=vv; data.vs=vvstr; data.i=5;
-//  s1.append(data);
-//  file.close();
-//  }
-//  {
-//  H5File file("testcompound.h5", H5F_ACC_RDONLY);
-//  StructSerie<MyStruct> s1;
-//  MyStruct data;
-//  s1.registerMember(data, data.d, "mydouble");
-//  s1.registerMember(data, data.v, 3, "myvector");
-//  s1.registerMember(data, data.vs, 3, "myvectorstring");
-//  s1.registerMember(data, data.f, "myfloat");
-//  s1.registerMember(data, data.s, "mystring");
-//  s1.registerMember(data, data.i, "myint");
-//  s1.open(file, "serie1d");
-//  MyStruct out;
-//  out=s1.getRow(0);
-//  cout<<out.d<<endl;
-//  for(unsigned int i=0; i<out.v.size(); i++) 
-//    cout<<out.v[i]<<endl;
-//  for(unsigned int i=0; i<out.vs.size(); i++) 
-//    cout<<out.vs[i]<<endl;
-//  cout<<out.f<<endl;
-//  cout<<out.s<<endl;
-//  cout<<out.i<<endl;
 //  file.close();
 //  }
 

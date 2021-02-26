@@ -5,7 +5,6 @@ libhdf5serie_la_SOURCES = toh5type.cc file.cc group.cc interface.cc \
   simpleattribute.cc \
   simpledataset.cc \
   vectorserie.cc
-#  matrixserie.cc
 
 hdf5serieincludedir = $(includedir)/hdf5serie
 libhdf5serie_la_CPPFLAGS = -I$(top_srcdir) $(FMATVEC_CFLAGS)
@@ -18,5 +17,3 @@ hdf5serieinclude_HEADERS = toh5type.h file.h group.h interface.h \
   vectorserie.h \
   knownpodtypes.def \
   knowntypes.def
-#  structserie.h
-#  matrixserie.h

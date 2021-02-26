@@ -3,7 +3,9 @@ template<class T>
 HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_) : HDF5SERIE_BASECLASS(parent_, name_) {
   T dummy2;
   memDataTypeID=toH5Type(dummy2);
-  open();
+
+  id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
+  memDataSpaceID.reset(H5Screate(H5S_SCALAR), &H5Sclose);
 }
 
 template<class T>
@@ -20,20 +22,6 @@ HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::s
 
 template<class T>
 HDF5SERIE_CLASS<T>::~HDF5SERIE_CLASS() = default;
-
-template<class T>
-void HDF5SERIE_CLASS<T>::close() {
-  HDF5SERIE_BASECLASS::close();
-  memDataSpaceID.reset();
-  id.reset();
-}
-
-template<class T>
-void HDF5SERIE_CLASS<T>::open() {
-  id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
-  memDataSpaceID.reset(H5Screate(H5S_SCALAR), &H5Sclose);
-  HDF5SERIE_BASECLASS::open();
-}
 
 template<class T>
 void HDF5SERIE_CLASS<T>::write(const T& data) {
@@ -69,7 +57,12 @@ template<class T>
 HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_) : HDF5SERIE_BASECLASS(parent_, name_) {
   T dummy2;
   memDataTypeID=toH5Type(dummy2);
-  open();
+
+  id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
+  memDataSpaceID.reset(HDF5SERIE_H5XGET_SPACE, &H5Sclose);
+  hsize_t dims[1];
+  H5Sget_simple_extent_dims(memDataSpaceID, dims, nullptr);
+  size=dims[0];
 }
 
 template<class T>
@@ -89,23 +82,6 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
 
 template<class T>
 HDF5SERIE_CLASS<vector<T> >::~HDF5SERIE_CLASS() = default;
-
-template<class T>
-void HDF5SERIE_CLASS<vector<T> >::close() {
-  HDF5SERIE_BASECLASS::close();
-  memDataSpaceID.reset();
-  id.reset();
-}
-
-template<class T>
-void HDF5SERIE_CLASS<vector<T> >::open() {
-  id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
-  memDataSpaceID.reset(HDF5SERIE_H5XGET_SPACE, &H5Sclose);
-  hsize_t dims[1];
-  H5Sget_simple_extent_dims(memDataSpaceID, dims, nullptr);
-  size=dims[0];
-  HDF5SERIE_BASECLASS::open();
-}
 
 template<class T>
 void HDF5SERIE_CLASS<vector<T> >::write(const vector<T> &data) {
@@ -152,7 +128,13 @@ template<class T>
 HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_) : HDF5SERIE_BASECLASS(parent_, name_) {
   T dummy2;
   memDataTypeID=toH5Type(dummy2);
-  open();
+
+  id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
+  memDataSpaceID.reset(HDF5SERIE_H5XGET_SPACE, &H5Sclose);
+  hsize_t dims[2];
+  H5Sget_simple_extent_dims(memDataSpaceID, dims, nullptr);
+  rows=dims[0];
+  cols=dims[1];
 }
 
 template<class T>
@@ -174,24 +156,6 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
 
 template<class T>
 HDF5SERIE_CLASS<vector<vector<T> > >::~HDF5SERIE_CLASS() = default;
-
-template<class T>
-void HDF5SERIE_CLASS<vector<vector<T> > >::close() {
-  HDF5SERIE_BASECLASS::close();
-  memDataSpaceID.reset();
-  id.reset();
-}
-
-template<class T>
-void HDF5SERIE_CLASS<vector<vector<T> > >::open() {
-  id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
-  memDataSpaceID.reset(HDF5SERIE_H5XGET_SPACE, &H5Sclose);
-  hsize_t dims[2];
-  H5Sget_simple_extent_dims(memDataSpaceID, dims, nullptr);
-  rows=dims[0];
-  cols=dims[1];
-  HDF5SERIE_BASECLASS::open();
-}
 
 template<class T>
 void HDF5SERIE_CLASS<vector<vector<T> > >::write(const vector<vector<T> > &data) {

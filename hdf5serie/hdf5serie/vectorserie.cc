@@ -39,7 +39,29 @@ namespace H5 {
   VectorSerie<T>::VectorSerie(int dummy, GroupBase *parent_, const string &name_) : Dataset(parent_, name_) {
     T dummy2;
     memDataTypeID=toH5Type(dummy2);
-    open();
+
+    // open the dataset, get column size and chunk size, close dataset again
+    id.reset(H5Dopen(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Dclose);
+    ScopedHID sid(H5Dget_space(id), &H5Sclose);
+    if(H5Sget_simple_extent_ndims(sid)!=2)
+      throw Exception(getPath(), "A VectorSerie dataset must have 2 dimensions.");
+    hsize_t maxDims[2];
+    H5Sget_simple_extent_dims(sid, dims, maxDims);
+    if(maxDims[0]!=H5S_UNLIMITED)
+      throw Exception(getPath(), "A VectorSerie dataset must have unlimited dimension in the first dimension.");
+    ScopedHID cpl(H5Dget_create_plist(id), &H5Pclose);
+    H5Pget_chunk(cpl, 2, maxDims);
+    ScopedHID apl(H5Dget_access_plist(id), &H5Pclose);
+    id.reset();
+    // reopen the dataset with chunk cache == chunk size
+    H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*maxDims[0], 0.75);
+    id.reset(H5Dopen(parent->getID(), name.c_str(), apl), &H5Dclose);
+
+    // create mem space
+    hsize_t memDims[]={1, dims[1]};
+    memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
+    msg(Debug)<<"HDF5:\n"
+              <<"Opened object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
   }
 
   template<class T>
@@ -69,40 +91,6 @@ namespace H5 {
 
   template<class T>
   VectorSerie<T>::~VectorSerie() = default;
-
-  template<class T>
-  void VectorSerie<T>::close() {
-    Dataset::close();
-    memDataSpaceID.reset();
-    id.reset();
-  }
-
-  template<class T>
-  void VectorSerie<T>::open() {
-    // open the dataset, get column size and chunk size, close dataset again
-    id.reset(H5Dopen(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Dclose);
-    ScopedHID sid(H5Dget_space(id), &H5Sclose);
-    if(H5Sget_simple_extent_ndims(sid)!=2)
-      throw Exception(getPath(), "A VectorSerie dataset must have 2 dimensions.");
-    hsize_t maxDims[2];
-    H5Sget_simple_extent_dims(sid, dims, maxDims);
-    if(maxDims[0]!=H5S_UNLIMITED)
-      throw Exception(getPath(), "A VectorSerie dataset must have unlimited dimension in the first dimension.");
-    ScopedHID cpl(H5Dget_create_plist(id), &H5Pclose);
-    H5Pget_chunk(cpl, 2, maxDims);
-    ScopedHID apl(H5Dget_access_plist(id), &H5Pclose);
-    id.reset();
-    // reopen the dataset with chunk cache == chunk size
-    H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*maxDims[0], 0.75);
-    id.reset(H5Dopen(parent->getID(), name.c_str(), apl), &H5Dclose);
-
-    // create mem space
-    hsize_t memDims[]={1, dims[1]};
-    memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
-    msg(Debug)<<"HDF5:\n"
-              <<"Opened object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
-    Dataset::open();
-  }
 
   template<class T>
   void VectorSerie<T>::setDescription(const string& description) {

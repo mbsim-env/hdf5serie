@@ -63,7 +63,7 @@ namespace H5 {
   class VectorSerie : public Dataset {
     friend class Container<Object, GroupBase>;
     private:
-      hid_t memDataTypeID;
+      hid_t memDataTypeID; // no need to useScopedHID since only a static hid_t is stored here
       ScopedHID memDataSpaceID;
       hsize_t dims[2];
     protected:
@@ -71,8 +71,6 @@ namespace H5 {
       VectorSerie(GroupBase *parent_, const std::string &name_, int cols,
         int compression=File::getDefaultCompression(), int chunkSize=File::getDefaultChunkSize());
       ~VectorSerie() override;
-      void close() override;
-      void open() override;
 
     public:
       /** \brief Sets a description for the dataset

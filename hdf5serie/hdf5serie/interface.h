@@ -104,12 +104,11 @@ namespace H5 {
       std::string name;
       Element(std::string name_);
       ~Element() override;
-      virtual void close();
-      virtual void open();
       virtual void refresh();
       virtual void flush();
+      virtual void enableSWMR();
     public:
-      //! Note: use the returned hid_t only temporarily since its value may change, at least when File::reopenAsSWMR is called.
+      //! Note: use the returned hid_t only temporarily since it may get invalid, at least when File::enableSWMR is called.
       hid_t getID() { return id; }
       std::string getName() { return name; }
   };
@@ -123,14 +122,6 @@ namespace H5 {
         for(auto it=childs.begin(); it!=childs.end(); ++it)
           delete it->second;
       }
-      void close() {
-        for(auto it=childs.begin(); it!=childs.end(); ++it)
-          it->second->close();
-      }
-      void open() {
-        for(auto it=childs.begin(); it!=childs.end(); ++it)
-          it->second->open();
-      }
       void refresh() {
         for(auto it=childs.begin(); it!=childs.end(); ++it)
           it->second->refresh();
@@ -138,6 +129,21 @@ namespace H5 {
       void flush() {
         for(auto it=childs.begin(); it!=childs.end(); ++it)
           it->second->flush();
+      }
+      void enableSWMR() {
+        if constexpr (std::is_same_v<Child, Attribute>) {
+          // attributes must be closed if SWMR is enabled
+          for(auto it=childs.begin(); it!=childs.end(); ++it)
+            delete it->second;
+          childs.clear();
+        }
+        else {
+          // for everything else we just call enableSWMR (which usually does just nothing)
+          for(auto it=childs.begin(); it!=childs.end(); ++it)
+          {
+            it->second->enableSWMR();
+          }
+        }
       }
       std::map<std::string, Child*> childs;
 
@@ -203,10 +209,9 @@ namespace H5 {
     protected:
       Object(GroupBase *parent_, const std::string &name_);
       ~Object() override;
-      void close() override;
-      void open() override;
       void refresh() override;
       void flush() override;
+      void enableSWMR() override;
       GroupBase *parent;
       File *file;
       Object *getFileAsObject(); // helper function used in openChildAttribute
@@ -250,8 +255,6 @@ namespace H5 {
       ~Attribute() override;
       Object *parent;
       File *file;
-      void close() override;
-      void open() override;
       void refresh() override;
       void flush() override;
     public:
@@ -265,10 +268,9 @@ namespace H5 {
       Dataset(GroupBase *parent_, const std::string &name_);
       Dataset(int dummy, GroupBase *parent_, const std::string &name_);
       ~Dataset() override;
-      void close() override;
-      void open() override;
       void refresh() override;
       void flush() override;
+      void enableSWMR() override;
     public:
       std::vector<hsize_t> getExtentDims();
   };
