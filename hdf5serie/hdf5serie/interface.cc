@@ -100,7 +100,7 @@ Object::Object(GroupBase *parent_, const std::string &name_) : Element(name_),
 
 Object::~Object() = default;
 
-Attribute *Object::openChildAttribute(const std::string &name_, ElementType *attributeType) {
+Attribute *Object::openChildAttribute(const std::string &name_, ElementType *attributeType, hid_t *type) {
   ScopedHID d(H5Aopen(id, name_.c_str(), H5P_DEFAULT), &H5Dclose);
   ScopedHID sd(H5Dget_space(d), &H5Sclose);
   hsize_t ndim=H5Sget_simple_extent_ndims(sd);
@@ -109,6 +109,7 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
   H5Sget_simple_extent_dims(sd, &dims[0], &maxDims[0]);
   ScopedHID td(H5Dget_type(d), &H5Tclose);
   ScopedHID ntd(H5Tget_native_type(td, H5T_DIR_ASCEND), &H5Tclose);
+  if(type) *type=ntd;
   switch(ndim) {
     case 0:
       if(attributeType) *attributeType=simpleAttributeScalar;
