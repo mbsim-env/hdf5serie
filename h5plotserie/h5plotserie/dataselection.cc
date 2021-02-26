@@ -77,13 +77,13 @@ DataSelection::~DataSelection() {
 }
 
 void DataSelection::addFile(const QString &name) {
-  auto it=find_if(h5File.begin(), h5File.end(), [&name](const decltype(h5File)::value_type& a){
-    return boost::filesystem::equivalent(a.first, name.toStdString());
-  });
-  if(it!=h5File.end()) {
-    it->second->refreshAfterWriterFlush();
-    return;
-  }
+//mfmf  auto it=find_if(h5File.begin(), h5File.end(), [&name](const decltype(h5File)::value_type& a){
+//mfmf    return boost::filesystem::equivalent(a.first, name.toStdString());
+//mfmf  });
+//mfmf  if(it!=h5File.end()) {
+//mfmf    it->second->refreshAfterWriterFlush();
+//mfmf    return;
+//mfmf  }
 
   fileInfo.append(name);
   file.append(name);
@@ -102,7 +102,7 @@ void DataSelection::addFile(const QString &name) {
     insertChildInTree(grp, item);
     topitem->addChild(item);
   }
-  h5f->refreshAfterWriterFlush();
+//mfmf  h5f->refreshAfterWriterFlush();
 }
 
 shared_ptr<H5::File> DataSelection::getH5File(const boost::filesystem::path &p) const {
