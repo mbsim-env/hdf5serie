@@ -77,6 +77,11 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) :
         sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
       }
     }
+    if(sharedData) {
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex, incrment shmUseCount and unlock mutex"<<endl;
+      ipc::scoped_lock lock(sharedData->mutex);
+      sharedData->shmUseCount++;
+    }
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file unlocked"<<endl;
   }
   // now the process shared memory is created or opened atomically and the file lock is releases
@@ -175,6 +180,8 @@ void File::stillAlivePing() {
           msg(Atom::Debug)<<"HDF5Serie: set writer state=none, since a writer seem to have crashed"<<endl;
           sharedData->writerState=WriterState::none;
         }
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Decrement shmUseCount"<<endl;
+        sharedData->shmUseCount--;
         it=sharedData->processes.erase(it);
         sharedData->cond.notify_all();
       }
@@ -221,22 +228,20 @@ File::~File() {
     case dump:   break;
   }
 
-  //mfmf add a shmUseCount flag to shm: delete shm if 0 during file lock; no mutex lock needed; also decrement during crash detect
-//mfmf race condition  ipc::file_lock fileLock(filename.c_str());
-//mfmf race condition  if(sharedData) {
-//mfmf race condition    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Locking HDF5 file"<<endl;
-//mfmf race condition    ipc::scoped_lock lockF(fileLock);
-//mfmf race condition    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file locked"<<endl;
-//mfmf race condition
-//mfmf race condition    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex"<<endl;
-//mfmf race condition    ipc::scoped_lock lockM(sharedData->mutex);
-//mfmf race condition    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Mutex locked, and remove shared memory if writerState==none and activeReaders==0"<<endl;
-//mfmf race condition    if(sharedData->writerState==WriterState::none && sharedData->activeReaders==0) {
-//mfmf race condition      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": writerState==none and activeReaders==0, remove shared memory"<<endl;
-//mfmf race condition      ipc::shared_memory_object::remove(shmName.c_str());
-//mfmf race condition    }
-//mfmf race condition    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": unlock mutex lock and  unlock HDF5 file lock"<<endl;
-//mfmf race condition  }
+  ipc::file_lock fileLock(filename.c_str());
+  if(sharedData) {
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Locking HDF5 file"<<endl;
+    ipc::scoped_lock lockF(fileLock);
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file locked. Lock mutex, decrement shmUseCount and unlock mutex"<<endl;
+    {
+      ipc::scoped_lock lock(sharedData->mutex);
+      sharedData->shmUseCount--;
+    }
+    if(sharedData->shmUseCount==0) {
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": shared memory no longer used, remove it"<<endl;
+      ipc::shared_memory_object::remove(shmName.c_str());
+    }
+  }
 }
 
 void File::closeWriter() {
@@ -375,6 +380,8 @@ void File::dumpSharedMemory() {
   cout<<"filename: "<<filename.string()<<endl;
 
   cout<<"shared memory name: "<<shmName<<endl;
+
+  cout<<"shmUseCount: "<<sharedData->shmUseCount<<endl;
 
   {
     ipc::scoped_lock lock(sharedData->mutex, ipc::try_to_lock);

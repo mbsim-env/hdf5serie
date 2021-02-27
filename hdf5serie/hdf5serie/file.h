@@ -52,7 +52,7 @@ namespace H5 {
       enum FileAccess {
         read,  //!< open file for reading
         write, //!< open file for writing
-        dump,  //!< INTERNAL: dump the shared memory content
+        dump,  //!< INTERNAL: dump the shared memory content //mfmf remove this and add a static function dumpSharedMemory
       };
       //! Opens the HDF5 file filename_ as a writer or reader dependent on type_.
       File(const boost::filesystem::path &filename_, FileAccess type_);
@@ -64,7 +64,8 @@ namespace H5 {
       //! A reader should call this function periodically to check if the reader should close and reopen the file (if true is returned).
       //! If true is returned reloadAfterRequest should be called.
       bool shouldClose();
-      //! close the file and reopen it gain.
+      //! close the file and reopen it gain. Between close and reopen the writer which requested the reload runs its task.
+      //! This process blocks until the writer has finished (the writer has entered SWMR mode).
       void reloadAfterRequest();
 
       static int getDefaultCompression() { return defaultCompression; }
@@ -104,11 +105,13 @@ namespace H5 {
       //! This struct holds synchronization primitives for inter-process communication
       //! One such object exists in process shared memory for each file (not for each instance of File).
       struct SharedMemObject { // access to all members of this object is guarded by sharedData->mutex (interprocess wide)
+        // the following member is only used for life-time handling of the shared memroy object itself
+        size_t shmUseCount { 0 }; //<! the number users of this shared memory object
         // the following members are used to synchronize the writer and all readers.
-        boost::interprocess::interprocess_mutex mutex;                        //<! mutex for synchronization handling.
-        boost::interprocess::interprocess_condition cond;                     //<! a condition variable for signaling state changes.
-        WriterState writerState { WriterState::none };                        //<! the current state of the write of this file.
-        size_t activeReaders { 0 };                                           //<! the number of active readers on this file.
+        boost::interprocess::interprocess_mutex mutex;    //<! mutex for synchronization handling.
+        boost::interprocess::interprocess_condition cond; //<! a condition variable for signaling state changes.
+        WriterState writerState { WriterState::none };    //<! the current state of the write of this file.
+        size_t activeReaders { 0 };                       //<! the number of active readers on this file.
         // the follwing members are only used for still-alive / crash detection handling
         boost::container::static_vector<ProcessInfo, MAXREADERS+1> processes; //<! a list of all processes accessing the shared memory
       };
