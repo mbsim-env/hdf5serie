@@ -19,6 +19,7 @@
  *
  */
 
+#include <boost/interprocess/shared_memory_object.hpp>
 #include <config.h>
 #include <hdf5serie/file.h>
 #include <boost/interprocess/sync/file_lock.hpp>
@@ -41,15 +42,15 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) : GroupBa
   file=this;
 
   // create inter process shared memory atomically
+  msg(Atom::Debug)<<"HDF5Serie: Touch file"<<endl;
+  // create file -> to ensure is exists for file locking
+  { ofstream str(filename, ios_base::app); }
+  // exclusively lock the file to atomically create or open a shared memory associated with this file
+  ipc::file_lock fileLock(filename.c_str());
   {
-    msg(Atom::Debug)<<"HDF5Serie: Touch file"<<endl;
-    // create file -> to ensure is exists for file locking
-    { ofstream str(filename, ios_base::app); }
-    // exclusively lock the file to atomically create or open a shared memory associated with this file
-    msg(Atom::Debug)<<"HDF5Serie: Getting HDF5 file lock"<<endl;
-    ipc::file_lock fileLock(filename.c_str());
-    msg(Atom::Debug)<<"HDF5Serie: HDF5 file locked"<<endl;
+    msg(Atom::Debug)<<"HDF5Serie: Locking HDF5 file"<<endl;
     ipc::scoped_lock lock(fileLock);
+    msg(Atom::Debug)<<"HDF5Serie: HDF5 file locked"<<endl;
     // convert filename to valid boost interprocess name (cname)
     shmName="hdf5serieShm_";
     auto absFilename=boost::filesystem::absolute(filename).generic_string();
@@ -69,12 +70,14 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) : GroupBa
       sharedData=static_cast<SharedMemObject*>(region.get_address()); // get pointer
     }
     catch(...) {
-      // ... if it failed, create the shared memory
-      msg(Atom::Debug)<<"HDF5Serie: Opening shared memory failed, create now"<<endl;
-      shm=ipc::shared_memory_object(ipc::create_only, shmName.c_str(), ipc::read_write);
-      shm.truncate(sizeof(SharedMemObject)); // size the shared memory
-      region=ipc::mapped_region(shm, ipc::read_write); // map memory
-      sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
+      if(type!=dump) {
+        // ... if it failed, create the shared memory
+        msg(Atom::Debug)<<"HDF5Serie: Opening shared memory failed, create now"<<endl;
+        shm=ipc::shared_memory_object(ipc::create_only, shmName.c_str(), ipc::read_write);
+        shm.truncate(sizeof(SharedMemObject)); // size the shared memory
+        region=ipc::mapped_region(shm, ipc::read_write); // map memory
+        sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
+      }
     }
     msg(Atom::Debug)<<"HDF5Serie: HDF5 file unlocked"<<endl;
   }
@@ -156,6 +159,21 @@ File::~File() {
     case write: closeWriter(); break;
     case read:  closeReader(); break;
     case dump:  break;
+  }
+
+  ipc::file_lock fileLock(filename.c_str());
+  if(sharedData) {
+    msg(Atom::Debug)<<"HDF5Serie: Locking HDF5 file"<<endl;
+    ipc::scoped_lock lockF(fileLock);
+    msg(Atom::Debug)<<"HDF5Serie: HDF5 file locked"<<endl;
+
+    msg(Atom::Debug)<<"HDF5Serie: Lock mutex"<<endl;
+    ipc::scoped_lock lockM(sharedData->mutex);
+    msg(Atom::Debug)<<"HDF5Serie: Mutex locked, and remove shared memory if writerState==none and activeReaders==0"<<endl;
+    if(sharedData->writerState==WriterState::none && sharedData->activeReaders==0) {
+      msg(Atom::Debug)<<"HDF5Serie: writerState==none and activeReaders==0, remove shared memory"<<endl;
+      ipc::shared_memory_object::remove(shmName.c_str());
+    }
   }
 }
 
