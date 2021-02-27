@@ -46,9 +46,9 @@ namespace H5 {
     friend class GroupBase;
     public:
       enum FileAccess {
-        read,
-        write,
-        dump
+        read,  //!< open file for reading
+        write, //!< open file for writing
+        dump,  //!< INTERNAL: dump the shared memory content
       };
       //! Opens the HDF5 file filename_ as a writer or reader dependent on type_.
       File(const boost::filesystem::path &filename_, FileAccess type_);
@@ -69,6 +69,9 @@ namespace H5 {
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
       void refresh() override;
       void flush() override;
+
+      //! Internal helper function which removes the shared memory
+      static void removeSharedMemory(const boost::filesystem::path &filename);
 
     private:
       static int defaultCompression;
@@ -102,6 +105,8 @@ namespace H5 {
       boost::interprocess::mapped_region region;
       //! Pointer to the shared memory object
       SharedMemObject *sharedData {nullptr};
+
+      static std::string createShmName(const boost::filesystem::path &filename);
 
       //! Helper function to open the file as a reader
       void openReader();

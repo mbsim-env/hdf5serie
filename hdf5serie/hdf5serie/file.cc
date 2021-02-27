@@ -52,16 +52,7 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) : GroupBa
     ipc::scoped_lock lock(fileLock);
     msg(Atom::Debug)<<"HDF5Serie: HDF5 file locked"<<endl;
     // convert filename to valid boost interprocess name (cname)
-    shmName="hdf5serieShm_";
-    auto absFilename=boost::filesystem::absolute(filename).generic_string();
-    for(const char &c : absFilename) {
-      if(('a'<=c && c<='z') || ('A'<=c && c<='Z') || ('0'<=c && c<='9'))
-        shmName+=c;
-      else if(c=='/')
-        shmName+='_';
-      else
-        shmName+="_"+to_string(static_cast<unsigned char>(c))+"_";
-    }
+    shmName=createShmName(filename);
     try {
       // try to open the shared memory ...
       msg(Atom::Debug)<<"HDF5Serie: Try to open shared memory named "<<shmName<<endl;
@@ -85,9 +76,9 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) : GroupBa
   // from now on this shared memory is used for any syncronization/communiation between the processes
 
   switch(type) {
-    case write: openWriter(); break;
-    case read:  openReader(); break;
-    case dump:  dumpSharedMemory(); break;
+    case write:  openWriter(); break;
+    case read:   openReader(); break;
+    case dump:   dumpSharedMemory(); break;
   }
 }
 
@@ -156,9 +147,9 @@ void File::openReader() {
 
 File::~File() {
   switch(type) {
-    case write: closeWriter(); break;
-    case read:  closeReader(); break;
-    case dump:  break;
+    case write:  closeWriter(); break;
+    case read:   closeReader(); break;
+    case dump:   break;
   }
 
   ipc::file_lock fileLock(filename.c_str());
@@ -331,7 +322,26 @@ void File::dumpSharedMemory() {
   cout<<"activeReaders: "<<sharedData->activeReaders<<endl;
 }
 
-//mfmf  cout<<"Remove the shared memory associated with a HDF5Serie HDF5 file."<<endl;
-//mfmf  cout<<"This is a unsecure operation and may cause other processes using this file to fail."<<endl;
-//mfmf  boost::interprocess::shared_memory_object::remove(name.c_str());
+string File::createShmName(const boost::filesystem::path &filename) {
+  string shmName="hdf5serieShm_";
+  auto absFilename=boost::filesystem::absolute(filename).generic_string();
+  for(const char &c : absFilename) {
+    if(('a'<=c && c<='z') || ('A'<=c && c<='Z') || ('0'<=c && c<='9'))
+      shmName+=c;
+    else if(c=='/')
+      shmName+='_';
+    else
+      shmName+="_"+to_string(static_cast<unsigned char>(c))+"_";
+  }
+  return shmName;
+}
+
+void File::removeSharedMemory(const boost::filesystem::path &filename) {
+  string shmName=createShmName(filename);
+  cout<<"Remove shared memory for HDF5Serie HDF5 file."<<endl;
+  cout<<"filename: "<<filename.string()<<endl;
+  cout<<"shared memory name: "<<shmName<<endl;
+  ipc::shared_memory_object::remove(shmName.c_str());
+}
+
 }

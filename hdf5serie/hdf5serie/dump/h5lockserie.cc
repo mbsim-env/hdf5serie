@@ -43,7 +43,8 @@ int main(int argc, char* argv[]) {
     po::options_description opts("Options");
     opts.add_options()
       ("help,h", "Produce this help message")
-      ("dump"  , "Dump shared memory content (default if no other option given)")
+      ("dump"  , "Dump shared memory content (default if no other option given). The shared memory is NOT locked while reading!!!")
+      ("remove", "Remove the shared memory. The shared memory is removed EVEN if it is used by any other process!!!")
     ;
 
     // parse arguments and store in vm
@@ -55,9 +56,9 @@ int main(int argc, char* argv[]) {
     
     // help text
     if(vm.count("help")) {
-      cout<<"Dump the shared memory content associated with a HDF5Serie HDF5 file."<<endl;
+      cout<<"Apply action to the shared memory associated with a HDF5Serie HDF5 file."<<endl;
       cout<<"Required positional option:"<<endl;
-      cout<<"  filename              The filename to investigate (can be given more than ones)"<<endl;
+      cout<<"  filename              The filename of the HDF5 file (can be given more than ones)"<<endl;
       cout<<opts<<endl;
       return 0;
     }
@@ -67,11 +68,19 @@ int main(int argc, char* argv[]) {
       cout<<"At least one positional option filename is required, see -h.\n";
       return 0;
     }
+    if(vm.count("dump") && vm.count("remove")) {
+      cout<<"The options --dump and --remove are mutally exclusive, see -h.\n";
+      return 0;
+    }
 
     // run given task
     for(auto &fn : vm["filename"].as<vector<string>>()) {
-      // dump shared memory
-      File(fn, File::dump);
+      if(vm.count("remove"))
+        // remove shared memory
+        File::removeSharedMemory(fn);
+      else
+        // dump shared memory
+        File(fn, File::dump);
     }
   }
   catch(exception &ex) {
