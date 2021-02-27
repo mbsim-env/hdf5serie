@@ -40,12 +40,52 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) : GroupBa
 
   file=this;
 
-  sharedData=getSharedMemory(this, filename, shm, region);
+  // create inter process shared memory atomically
+  {
+    msg(Atom::Debug)<<"HDF5Serie: Touch file"<<endl;
+    // create file -> to ensure is exists for file locking
+    { ofstream str(filename, ios_base::app); }
+    // exclusively lock the file to atomically create or open a shared memory associated with this file
+    msg(Atom::Debug)<<"HDF5Serie: Getting HDF5 file lock"<<endl;
+    ipc::file_lock fileLock(filename.c_str());
+    msg(Atom::Debug)<<"HDF5Serie: HDF5 file locked"<<endl;
+    ipc::scoped_lock lock(fileLock);
+    // convert filename to valid boost interprocess name (cname)
+    shmName="hdf5serieShm_";
+    auto absFilename=boost::filesystem::absolute(filename).generic_string();
+    for(const char &c : absFilename) {
+      if(('a'<=c && c<='z') || ('A'<=c && c<='Z') || ('0'<=c && c<='9'))
+        shmName+=c;
+      else if(c=='/')
+        shmName+='_';
+      else
+        shmName+="_"+to_string(static_cast<unsigned char>(c))+"_";
+    }
+    try {
+      // try to open the shared memory ...
+      msg(Atom::Debug)<<"HDF5Serie: Try to open shared memory named "<<shmName<<endl;
+      shm=ipc::shared_memory_object(ipc::open_only, shmName.c_str(), ipc::read_write);
+      region=ipc::mapped_region(shm, ipc::read_write); // map memory
+      sharedData=static_cast<SharedMemObject*>(region.get_address()); // get pointer
+    }
+    catch(...) {
+      // ... if it failed, create the shared memory
+      msg(Atom::Debug)<<"HDF5Serie: Opening shared memory failed, create now"<<endl;
+      shm=ipc::shared_memory_object(ipc::create_only, shmName.c_str(), ipc::read_write);
+      shm.truncate(sizeof(SharedMemObject)); // size the shared memory
+      region=ipc::mapped_region(shm, ipc::read_write); // map memory
+      sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
+    }
+    msg(Atom::Debug)<<"HDF5Serie: HDF5 file unlocked"<<endl;
+  }
+  // now the process shared memory is created or opened atomically and the file lock is releases
+  // from now on this shared memory is used for any syncronization/communiation between the processes
 
-  if(type==write)
-    openWriter();
-  else
-    openReader();
+  switch(type) {
+    case write: openWriter(); break;
+    case read:  openReader(); break;
+    case dump:  dumpSharedMemory(); break;
+  }
 }
 
 void File::openWriter() {
@@ -112,10 +152,11 @@ void File::openReader() {
 }
 
 File::~File() {
-  if(type==write)
-    closeWriter();
-  else
-    closeReader();
+  switch(type) {
+    case write: closeWriter(); break;
+    case read:  closeReader(); break;
+    case dump:  break;
+  }
 }
 
 void File::closeWriter() {
@@ -159,14 +200,14 @@ void File::closeReader() {
 }
 
 void File::reloadAfterRequest() {
-  if(type==write)
-    throw runtime_error("H5::File::reloadAfterRequest cannot be called for a writer.");
+  if(type!=read)
+    throw runtime_error("H5::File::reloadAfterRequest is only possible for readers.");
   closeReader(); // close the file such that a writer which wait can start writing if all reader have closed
   openReader(); // this call blocks until the writer has switched to SWMR mode; then this reader reopens the file
 }
 
 void File::refresh() {
-  if(type==write)
+  if(type!=read)
     throw Exception(getPath(), "refresh() can only be called for reading files");
 
   // refresh file
@@ -176,7 +217,7 @@ void File::refresh() {
 }
 
 void File::flush() {
-  if(type==read)
+  if(type!=write)
     throw Exception(getPath(), "flush() can only be called for writing files");
 
   if(msgActStatic(Atom::Debug))
@@ -185,7 +226,7 @@ void File::flush() {
 }
 
 void File::enableSWMR() {
-  if(type==read)
+  if(type!=write)
     throw Exception(getPath(), "enableSWMR() can only be called for writing files");
   msg(Atom::Debug)<<"HDF5Serie: enableSWMR in writer and call H5Fstart_swmr_write"<<endl;
   GroupBase::enableSWMR();
@@ -230,74 +271,14 @@ void File::listenForWriterRequest(ipc::scoped_lock<ipc::interprocess_mutex> &&lo
     msg(Atom::Info)<<"HDF5Serie: THREAD: writer wants to write, set readerShouldClose"<<endl;
     readerShouldClose=true; //MFMF maybe a callback to the caller should be used here
   }
-  msg(Atom::Info)<<"HDF5Serie: THREAD: unlock mutex and end thread"<<endl;
+  msg(Atom::Debug)<<"HDF5Serie: THREAD: unlock mutex and end thread"<<endl;
 }
 
 bool File::shouldClose() {
   return readerShouldClose;
 }
 
-File::SharedMemObject* File::getSharedMemory(File *self,
-                                             const boost::filesystem::path &filename,
-                                             boost::interprocess::shared_memory_object &shm,
-                                             boost::interprocess::mapped_region &region,
-                                             bool openOnly,
-                                             std::string *name) {
-  ostream &debugOut=self ? self->msg(Atom::Debug) : Atom::msgStatic(Atom::Debug);
-  SharedMemObject *ptr=nullptr;
-  // create inter process shared memory atomically
-  {
-    debugOut<<"HDF5Serie: Touch file"<<endl;
-    // create file -> to ensure is exists for file locking
-    { ofstream str(filename, ios_base::app); }
-    // exclusively lock the file to atomically create or open a shared memory associated with this file
-    debugOut<<"HDF5Serie: Getting HDF5 file lock"<<endl;
-    ipc::file_lock fileLock(filename.c_str());
-    debugOut<<"HDF5Serie: HDF5 file locked"<<endl;
-    ipc::scoped_lock lock(fileLock);
-    // convert filename to valid boost interprocess name (cname)
-    string shmName="hdf5serieShm_mfmfa4";
-    auto absFilename=boost::filesystem::absolute(filename).generic_string();
-    for(const char &c : absFilename) {
-      if(('a'<=c && c<='z') || ('A'<=c && c<='Z') || ('0'<=c && c<='9'))
-        shmName+=c;
-      else if(c=='/')
-        shmName+='_';
-      else
-        shmName+="_"+to_string(static_cast<unsigned char>(c))+"_";
-    }
-    if(name)
-      *name=shmName;
-    try {
-      // try to open the shared memory ...
-      debugOut<<"HDF5Serie: Try to open shared memory named "<<shmName<<endl;
-      shm=ipc::shared_memory_object(ipc::open_only, shmName.c_str(), ipc::read_write);
-      region=ipc::mapped_region(shm, ipc::read_write); // map memory
-      ptr=static_cast<SharedMemObject*>(region.get_address()); // get pointer
-    }
-    catch(...) {
-      if(openOnly)
-        return nullptr;
-      // ... if it failed, create the shared memory
-      debugOut<<"HDF5Serie: Opening shared memory failed, create now"<<endl;
-      shm=ipc::shared_memory_object(ipc::create_only, shmName.c_str(), ipc::read_write);
-      shm.truncate(sizeof(SharedMemObject)); // size the shared memory
-      region=ipc::mapped_region(shm, ipc::read_write); // map memory
-      ptr=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
-    }
-    debugOut<<"HDF5Serie: HDF5 file unlocked"<<endl;
-  }
-  // now the process shared memory is created or opened atomically and the file lock is releases
-  // from now on this shared memory is used for any syncronization/communiation between the processes
-  return ptr;
-}
-
-void File::dumpSharedMemory(const boost::filesystem::path &filename) {
-  boost::interprocess::shared_memory_object shm;
-  boost::interprocess::mapped_region region;
-  string name;
-  auto sharedData=getSharedMemory(nullptr, filename, shm, region, true, &name);
-
+void File::dumpSharedMemory() {
   cout<<endl;
 
   if(!sharedData) {
@@ -311,7 +292,7 @@ void File::dumpSharedMemory(const boost::filesystem::path &filename) {
 
   cout<<"filename: "<<filename.string()<<endl;
 
-  cout<<"shared memory name: "<<name<<endl;
+  cout<<"shared memory name: "<<shmName<<endl;
 
   {
     ipc::scoped_lock lock(sharedData->mutex, ipc::try_to_lock);
@@ -332,15 +313,7 @@ void File::dumpSharedMemory(const boost::filesystem::path &filename) {
   cout<<"activeReaders: "<<sharedData->activeReaders<<endl;
 }
 
-void File::removeSharedMemory(const boost::filesystem::path &filename) {
-  boost::interprocess::shared_memory_object shm;
-  boost::interprocess::mapped_region region;
-  string name;
-  getSharedMemory(nullptr, filename, shm, region, true, &name);
-
-  cout<<"Remove the shared memory associated with a HDF5Serie HDF5 file."<<endl;
-  cout<<"This is a unsecure operation and may cause other processes using this file to fail."<<endl;
-  boost::interprocess::shared_memory_object::remove(name.c_str());
-}
-
+//mfmf  cout<<"Remove the shared memory associated with a HDF5Serie HDF5 file."<<endl;
+//mfmf  cout<<"This is a unsecure operation and may cause other processes using this file to fail."<<endl;
+//mfmf  boost::interprocess::shared_memory_object::remove(name.c_str());
 }

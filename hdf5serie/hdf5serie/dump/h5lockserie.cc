@@ -44,7 +44,6 @@ int main(int argc, char* argv[]) {
     opts.add_options()
       ("help,h", "Produce this help message")
       ("dump"  , "Dump shared memory content (default if no other option given)")
-      ("remove", "Remove the shared memory. This is a unsecure operation of other processes are currently using this file!!!")
     ;
 
     // parse arguments and store in vm
@@ -56,7 +55,7 @@ int main(int argc, char* argv[]) {
     
     // help text
     if(vm.count("help")) {
-      cout<<"Dump or modify the shared memory content associated with a HDF5Serie HDF5 file."<<endl;
+      cout<<"Dump the shared memory content associated with a HDF5Serie HDF5 file."<<endl;
       cout<<"Required positional option:"<<endl;
       cout<<"  filename              The filename to investigate (can be given more than ones)"<<endl;
       cout<<opts<<endl;
@@ -68,19 +67,11 @@ int main(int argc, char* argv[]) {
       cout<<"At least one positional option filename is required, see -h.\n";
       return 0;
     }
-    if(vm.count("dump") and vm.count("remove")) {
-      cout<<"Conflicting options --dump and --remove, see -h.\n";
-      return 0;
-    }
 
     // run given task
     for(auto &fn : vm["filename"].as<vector<string>>()) {
-      if(vm.count("remove"))
-        // remove shared memory
-        File::removeSharedMemory(fn);
-      else
-        // dump shared memory
-        File::dumpSharedMemory(fn);
+      // dump shared memory
+      File(fn, File::dump);
     }
   }
   catch(exception &ex) {

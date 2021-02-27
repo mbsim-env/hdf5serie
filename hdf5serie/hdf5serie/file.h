@@ -47,7 +47,8 @@ namespace H5 {
     public:
       enum FileAccess {
         read,
-        write
+        write,
+        dump
       };
       //! Opens the HDF5 file filename_ as a writer or reader dependent on type_.
       File(const boost::filesystem::path &filename_, FileAccess type_);
@@ -68,11 +69,6 @@ namespace H5 {
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
       void refresh() override;
       void flush() override;
-
-      //! Internal helper function which dumps the content of the shared memory
-      static void dumpSharedMemory(const boost::filesystem::path &filename);
-      //! Internal helper function which removes the shared memory, even if other processes still need it
-      static void removeSharedMemory(const boost::filesystem::path &filename);
 
     private:
       static int defaultCompression;
@@ -98,6 +94,8 @@ namespace H5 {
         WriterState writerState { WriterState::none };    //<! the current state of the write of this file.
         size_t activeReaders { 0 };                       //<! the number of active readers on this file.
       };
+      //! Name of the shared memory
+      std::string shmName;
       //! Shared memory object holding the shared memory
       boost::interprocess::shared_memory_object shm;
       //! Memory region holding the shared memory map
@@ -131,15 +129,8 @@ namespace H5 {
       //! This flag is set to true by the thread when a new writer requests action.
       std::atomic<bool> readerShouldClose { false }; // access to this object is handled atomically (within the current process)
 
-      //! Get pointer to shared memory object SharedMemoryObject. Returns the used shm and region object.
-      //! Also returned the shared memory name if provided.
-      //! The shared memory is get atomically using a file lock on filename
-      static SharedMemObject* getSharedMemory(File *self,
-                                              const boost::filesystem::path &filename,
-                                              boost::interprocess::shared_memory_object &shm,
-                                              boost::interprocess::mapped_region &region,
-                                              bool openOnly=false,
-                                              std::string *name=nullptr);
+      //! Internal helper function which dumps the content of the shared memory
+      void dumpSharedMemory();
   };
 }
 
