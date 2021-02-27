@@ -110,6 +110,14 @@ AC_ARG_WITH([boost-program-options-lib],
   [  --with-boost-program-options-lib=LIBNAME  The library name of boost program options excluding prefix/suffix (Default: boost_program_options).],
   [BOOST_PROGRAM_OPTIONS_LIB="$withval"], [BOOST_PROGRAM_OPTIONS_LIB="boost_program_options"])
 AC_SUBST([BOOST_PROGRAM_OPTIONS_LIB])
+AC_ARG_WITH([boost-thread-lib],
+  [  --with-boost-thread-lib=LIBNAME  The library name of boost thread excluding prefix/suffix (Default: boost_thread).],
+  [BOOST_THREAD_LIB="$withval"], [BOOST_THREAD_LIB="boost_thread"])
+AC_SUBST([BOOST_THREAD_LIB])
+AC_ARG_WITH([boost-chrono-lib],
+  [  --with-boost-chrono-lib=LIBNAME  The library name of boost chrono excluding prefix/suffix (Default: boost_chrono).],
+  [BOOST_CHRONO_LIB="$withval"], [BOOST_CHRONO_LIB="boost_chrono"])
+AC_SUBST([BOOST_CHRONO_LIB])
 AC_ARG_WITH([boost-filesystem-lib],
   [  --with-boost-filesystem-lib=LIBNAME  The library name of boost filesystem excluding prefix/suffix (Default: boost_filesystem).],
   [BOOST_FILESYSTEM_LIB="$withval"], [BOOST_FILESYSTEM_LIB="boost_filesystem"])

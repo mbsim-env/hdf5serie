@@ -28,7 +28,11 @@
 #include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
+#include <boost/container/static_vector.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <thread>
+#include <boost/thread/thread.hpp>
 
 namespace H5 {
 
@@ -89,13 +93,24 @@ namespace H5 {
         active,       //<! a writer exists and is currently in dateset/attribute creation mode
         swmr,         //<! a writer exists and is currently in SWMR mode
       };
+      //! the maximal number of reader which can access the file simultanously
+      constexpr static size_t MAXREADERS { 100 };
+      //! Information about a process accessing the shared memory (a process means here an instance of a File class)
+      struct ProcessInfo {
+        boost::uuids::uuid processUUID;         //!< a globally unique identifier for each process
+        boost::posix_time::ptime lastAliveTime; //!< the last still alive timestamp of the process
+        FileAccess type;                        //!< the type of the process read or write
+      };
       //! This struct holds synchronization primitives for inter-process communication
       //! One such object exists in process shared memory for each file (not for each instance of File).
       struct SharedMemObject { // access to all members of this object is guarded by sharedData->mutex (interprocess wide)
-        boost::interprocess::interprocess_mutex mutex;    //<! mutex for synchronization handling.
-        boost::interprocess::interprocess_condition cond; //<! a condition variable for signaling state changes.
-        WriterState writerState { WriterState::none };    //<! the current state of the write of this file.
-        size_t activeReaders { 0 };                       //<! the number of active readers on this file.
+        // the following members are used to synchronize the writer and all readers.
+        boost::interprocess::interprocess_mutex mutex;                        //<! mutex for synchronization handling.
+        boost::interprocess::interprocess_condition cond;                     //<! a condition variable for signaling state changes.
+        WriterState writerState { WriterState::none };                        //<! the current state of the write of this file.
+        size_t activeReaders { 0 };                                           //<! the number of active readers on this file.
+        // the follwing members are only used for still-alive / crash detection handling
+        boost::container::static_vector<ProcessInfo, MAXREADERS+1> processes; //<! a list of all processes accessing the shared memory
       };
       //! Name of the shared memory
       std::string shmName;
@@ -124,8 +139,11 @@ namespace H5 {
       void wait(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &lock,
                 const std::string &blockingMsg, const std::function<bool()> &pred);
 
+      boost::thread stillAlivePingThread; // we use boost::thread here to use the interruption point of boost which are not availabe for std::thread
+      void stillAlivePing();
+
       //! A thread created for a reader to listen when a new writer process requests
-      std::thread listenForWriterRequestThread;
+      std::thread listenForWriterRequestThread; // boost thread interruption points does not help here its not working with boost::interprocess::interprocess_condition -> hence we implement it ourself using the exitThread flag
       //! The worker function for the thread listenForWriterRequestThread.
       void listenForWriterRequest(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &&lock);
       //! Flag which is set to true to enforce the thread to exit (on the next condition notify signal)
@@ -136,6 +154,11 @@ namespace H5 {
 
       //! Internal helper function which dumps the content of the shared memory
       void dumpSharedMemory();
+
+      boost::uuids::uuid processUUID; //!< a globally unique identifier for this process
+
+      void initProcessInfo();
+      void deinitProcessInfo();
   };
 }
 
