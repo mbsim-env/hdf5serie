@@ -106,6 +106,10 @@ AC_ARG_WITH([boost-inc],
 # boost
 AC_CHECK_HEADERS([boost/filesystem.hpp],[],[AC_MSG_ERROR([Can not find boost/filesystem.hpp])])
 
+AC_ARG_WITH([boost-program-options-lib],
+  [  --with-boost-program-options-lib=LIBNAME  The library name of boost program options excluding prefix/suffix (Default: boost_program_options).],
+  [BOOST_PROGRAM_OPTIONS_LIB="$withval"], [BOOST_PROGRAM_OPTIONS_LIB="boost_program_options"])
+AC_SUBST([BOOST_PROGRAM_OPTIONS_LIB])
 AC_ARG_WITH([boost-filesystem-lib],
   [  --with-boost-filesystem-lib=LIBNAME  The library name of boost filesystem excluding prefix/suffix (Default: boost_filesystem).],
   [BOOST_FILESYSTEM_LIB="$withval"], [BOOST_FILESYSTEM_LIB="boost_filesystem"])

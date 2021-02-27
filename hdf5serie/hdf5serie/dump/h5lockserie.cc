@@ -1,0 +1,92 @@
+/* Copyright (C) 2009 Markus Friedrich
+ *
+ * This library is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU Lesser General Public 
+ * License as published by the Free Software Foundation; either 
+ * version 2.1 of the License, or (at your option) any later version. 
+ *  
+ * This library is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+ * Lesser General Public License for more details. 
+ *  
+ * You should have received a copy of the GNU Lesser General Public 
+ * License along with this library; if not, write to the Free Software 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+ *
+ * Contact:
+ *   friedrich.at.gc@googlemail.com
+ *
+ */
+
+#include <config.h>
+#include <boost/program_options.hpp>
+#include <iostream>
+#include <hdf5serie/file.h>
+
+using namespace std;
+using namespace H5;
+namespace po = boost::program_options;
+
+int main(int argc, char* argv[]) {
+  try {
+    // positional filename options (1 more more times
+    po::positional_options_description posArg;
+    posArg.add("filename", -1);
+    // hidden options to store positional arguments
+    po::options_description hiddenOpts("");
+    hiddenOpts.add_options()
+      ("filename", po::value<vector<string>>(), "")
+    ;
+
+    // available options
+    po::options_description opts("Options");
+    opts.add_options()
+      ("help,h", "Produce this help message")
+      ("dump"  , "Dump shared memory content (default if no other option given)")
+      ("remove", "Remove the shared memory. This is a unsecure operation of other processes are currently using this file!!!")
+    ;
+
+    // parse arguments and store in vm
+    po::options_description allOpts("");
+    allOpts.add(opts).add(hiddenOpts);
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv).options(allOpts).positional(posArg).run(), vm);
+    po::notify(vm);    
+    
+    // help text
+    if(vm.count("help")) {
+      cout<<"Dump or modify the shared memory content associated with a HDF5Serie HDF5 file."<<endl;
+      cout<<"Required positional option:"<<endl;
+      cout<<"  filename              The filename to investigate (can be given more than ones)"<<endl;
+      cout<<opts<<endl;
+      return 0;
+    }
+    
+    // check options
+    if(!vm.count("filename") || vm["filename"].as<vector<string>>().empty()) {
+      cout<<"At least one positional option filename is required, see -h.\n";
+      return 0;
+    }
+    if(vm.count("dump") and vm.count("remove")) {
+      cout<<"Conflicting options --dump and --remove, see -h.\n";
+      return 0;
+    }
+
+    // run given task
+    for(auto &fn : vm["filename"].as<vector<string>>()) {
+      if(vm.count("remove"))
+        // remove shared memory
+        File::removeSharedMemory(fn);
+      else
+        // dump shared memory
+        File::dumpSharedMemory(fn);
+    }
+  }
+  catch(exception &ex) {
+    cerr<<ex.what()<<endl;
+    return 1;
+  }
+
+  return 0;
+}
