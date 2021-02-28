@@ -68,18 +68,16 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) :
       sharedData=static_cast<SharedMemObject*>(region.get_address()); // get pointer
     }
     catch(...) {
-      if(type!=dump) {
-        // ... if it failed, create the shared memory
-        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Opening shared memory failed, create now"<<endl;
-        shm=ipc::shared_memory_object(ipc::create_only, shmName.c_str(), ipc::read_write);
-        shm.truncate(sizeof(SharedMemObject)); // size the shared memory
-        region=ipc::mapped_region(shm, ipc::read_write); // map memory
-        sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
-      }
+      // ... if it failed, create the shared memory
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Opening shared memory failed, create now"<<endl;
+      shm=ipc::shared_memory_object(ipc::create_only, shmName.c_str(), ipc::read_write);
+      shm.truncate(sizeof(SharedMemObject)); // size the shared memory
+      region=ipc::mapped_region(shm, ipc::read_write); // map memory
+      sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
     }
-    if(sharedData) {
+    {
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex, incrment shmUseCount and unlock mutex"<<endl;
-      ipc::scoped_lock lock(sharedData->mutex);
+      ipc::scoped_lock mutexLock(sharedData->mutex);
       sharedData->shmUseCount++;
     }
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file unlocked"<<endl;
@@ -90,7 +88,6 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) :
   switch(type) {
     case write:  openWriter(); break;
     case read:   openReader(); break;
-    case dump:   dumpSharedMemory(); break;
   }
 }
 
@@ -225,11 +222,10 @@ File::~File() {
   switch(type) {
     case write:  closeWriter(); break;
     case read:   closeReader(); break;
-    case dump:   break;
   }
 
   ipc::file_lock fileLock(filename.c_str());
-  if(sharedData) {
+  {
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Locking HDF5 file"<<endl;
     ipc::scoped_lock lockF(fileLock);
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file locked. Lock mutex, decrement shmUseCount and unlock mutex"<<endl;
@@ -365,44 +361,58 @@ bool File::shouldClose() {
   return readerShouldClose;
 }
 
-void File::dumpSharedMemory() {
-  cout<<endl;
-
-  if(!sharedData) {
-    cout<<"The HDF5Serie HDF5 file of the following name does not have an associated shared memory."<<endl;
-    cout<<"filename: "<<filename.string()<<endl;
-    return;
-  }
-
-  cout<<"Dump of the shared memory associated with a HDF5Serie HDF5 file."<<endl;
-  cout<<"This dump prints the shared memory WITHOUT locking the memory."<<endl;
-
-  cout<<"filename: "<<filename.string()<<endl;
-
-  cout<<"shared memory name: "<<shmName<<endl;
-
-  cout<<"shmUseCount: "<<sharedData->shmUseCount<<endl;
-
+void File::dumpSharedMemory(const boost::filesystem::path &filename) {
+  // exclusively lock the file to atomically open the shared memory associated with this file
+  ipc::file_lock fileLock(filename.c_str());
   {
-    ipc::scoped_lock lock(sharedData->mutex, ipc::try_to_lock);
-    cout<<"mutex: "<<(lock.owns() ? "unlocked" : "locked")<<endl;
+    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Locking HDF5 file"<<endl;
+    ipc::scoped_lock lock(fileLock);
+    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file locked"<<endl;
+    // convert filename to valid boost interprocess name (cname)
+    string shmName=createShmName(filename);
+    boost::interprocess::shared_memory_object shm;
+    boost::interprocess::mapped_region region;
+    SharedMemObject *sharedData=nullptr;
+    try {
+      // try to open the shared memory ...
+      msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Try to open shared memory named "<<shmName<<endl;
+      shm=ipc::shared_memory_object(ipc::open_only, shmName.c_str(), ipc::read_write);
+      region=ipc::mapped_region(shm, ipc::read_write); // map memory
+      sharedData=static_cast<SharedMemObject*>(region.get_address()); // get pointer
+    }
+    catch(...) {
+      cout<<"The HDF5Serie HDF5 file of the following name does not have an associated shared memory."<<endl;
+      cout<<"filename: "<<filename.string()<<endl;
+      return;
+    }
+
+    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex"<<endl;
+    ipc::scoped_lock mutexLock(sharedData->mutex);
+    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked"<<endl;
+    cout<<"Dump of the shared memory associated with a HDF5Serie HDF5 file."<<endl;
+    cout<<"This dump prints the shared memory WITHOUT locking the memory."<<endl;
+    cout<<"filename: "<<filename.string()<<endl;
+    cout<<"shared memory name: "<<shmName<<endl;
+    cout<<"shmUseCount: "<<sharedData->shmUseCount<<endl;
+    {
+      ipc::scoped_lock lock(sharedData->mutex, ipc::try_to_lock);
+      cout<<"mutex: "<<(lock.owns() ? "unlocked" : "locked")<<endl;
+    }
+    // cond: nothing to dump
+    string str;
+    switch(sharedData->writerState) {
+      case WriterState::none:         str="none";         break;
+      case WriterState::writeRequest: str="writeRequest"; break;
+      case WriterState::active:       str="active";       break;
+      case WriterState::swmr:         str="swmr";         break;
+    }
+    cout<<"writerState: "<<str<<endl;
+    cout<<"activeReaders: "<<sharedData->activeReaders<<endl;
+    for(auto &pi : sharedData->processes)
+      cout<<"processes: UUID="<<pi.processUUID<<" lastAliveTime="<<pi.lastAliveTime<<" type="<<(pi.type == write ? "write": "read")<<endl;
+
+    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex unlock and HDF5 file unlocked"<<endl;
   }
-
-  // cond: nothing to dump
-
-  string str;
-  switch(sharedData->writerState) {
-    case WriterState::none:         str="none";         break;
-    case WriterState::writeRequest: str="writeRequest"; break;
-    case WriterState::active:       str="active";       break;
-    case WriterState::swmr:         str="swmr";         break;
-  }
-  cout<<"writerState: "<<str<<endl;
-
-  cout<<"activeReaders: "<<sharedData->activeReaders<<endl;
-
-  for(auto &pi : sharedData->processes)
-    cout<<"processes: UUID="<<pi.processUUID<<" lastAliveTime="<<pi.lastAliveTime<<" type="<<(pi.type == write ? "write": "read")<<endl;
 }
 
 string File::createShmName(const boost::filesystem::path &filename) {

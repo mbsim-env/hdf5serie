@@ -43,8 +43,8 @@ int main(int argc, char* argv[]) {
     po::options_description opts("Options");
     opts.add_options()
       ("help,h", "Produce this help message")
-      ("dump"  , "Dump shared memory content (default if no other option given). The shared memory is NOT locked while reading!!!")
-      ("remove", "Remove the shared memory. The shared memory is removed EVEN if it is used by any other process!!!")
+      ("dump"  , "Dump shared memory content (default if no other option given).")
+      ("remove", "Remove the shared memory !!!The shared memory is removed EVEN if it is used by any other process!!!")
     ;
 
     // parse arguments and store in vm
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
         File::removeSharedMemory(fn);
       else
         // dump shared memory
-        File(fn, File::dump);
+        File::dumpSharedMemory(fn);
     }
   }
   catch(exception &ex) {

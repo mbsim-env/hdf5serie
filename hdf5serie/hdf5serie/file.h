@@ -52,7 +52,6 @@ namespace H5 {
       enum FileAccess {
         read,  //!< open file for reading
         write, //!< open file for writing
-        dump,  //!< INTERNAL: dump the shared memory content //mfmf remove this and add a static function dumpSharedMemory
       };
       //! Opens the HDF5 file filename_ as a writer or reader dependent on type_.
       File(const boost::filesystem::path &filename_, FileAccess type_);
@@ -75,6 +74,8 @@ namespace H5 {
       void refresh() override;
       void flush() override;
 
+      //! Internal helper function which dumps the content of the shared memory
+      static void dumpSharedMemory(const boost::filesystem::path &filename);
       //! Internal helper function which removes the shared memory
       static void removeSharedMemory(const boost::filesystem::path &filename);
 
@@ -154,9 +155,6 @@ namespace H5 {
 
       //! This flag is set to true by the thread when a new writer requests action.
       std::atomic<bool> readerShouldClose { false }; // access to this object is handled atomically (within the current process)
-
-      //! Internal helper function which dumps the content of the shared memory
-      void dumpSharedMemory();
 
       boost::uuids::uuid processUUID; //!< a globally unique identifier for this process
 
