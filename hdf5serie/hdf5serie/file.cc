@@ -234,13 +234,18 @@ File::~File() {
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Locking HDF5 file"<<endl;
     ipc::scoped_lock lockF(fileLock);
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file locked. Lock mutex, decrement shmUseCount and unlock mutex"<<endl;
+    size_t localShmUseCount;
     {
       ipc::scoped_lock lock(sharedData->mutex);
       sharedData->shmUseCount--;
+      localShmUseCount=sharedData->shmUseCount;
     }
-    if(sharedData->shmUseCount==0) {
+    // sharedData->shmUseCount cannot be incremente by another process since we sill own the file lock (but the mutex is unlocked now)
+    if(localShmUseCount==0) {
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": shared memory no longer used, remove it"<<endl;
-      ipc::shared_memory_object::remove(shmName.c_str());
+      sharedData->~SharedMemObject(); // call destructor of SharedMemObject
+      // region does not need destruction
+      ipc::shared_memory_object::remove(shmName.c_str()); // effectively destructs shm
     }
   }
 }

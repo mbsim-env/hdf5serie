@@ -79,6 +79,7 @@ namespace H5 {
       void flush() override;
 
       //! Internal helper function which dumps the content of the shared memory associated with filename.
+      //! !!! Note that the mutex is NOT locked for this operation but the file lock is accquired.
       static void dumpSharedMemory(const boost::filesystem::path &filename);
       //! Internal helper function which removes the shared memory associated with filename, !!!EVEN if other process still use it!!!
       static void removeSharedMemory(const boost::filesystem::path &filename);
@@ -116,8 +117,10 @@ namespace H5 {
         // the following members are used to synchronize the writer and all readers.
         boost::interprocess::interprocess_mutex mutex;    //<! mutex for synchronization handling.
         boost::interprocess::interprocess_condition cond; //<! a condition variable for signaling state changes.
-        WriterState writerState { WriterState::none };    //<! the current state of the write of this file.
-        size_t activeReaders { 0 };                       //<! the number of active readers on this file.
+        // the following members represent the state of the writer and readers
+        // after setting any of these variables sharedData->cond.notify_all() must be called to notify all waiting process about the change
+        WriterState writerState { WriterState::none }; //<! the current state of the write of this file.
+        size_t activeReaders { 0 };                    //<! the number of active readers on this file.
         // the follwing members are only used for still-alive/crash detection handling
         boost::container::static_vector<ProcessInfo, MAXREADERS+1> processes; //<! a list of all processes accessing the shared memory
       };

@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     po::options_description opts("Options");
     opts.add_options()
       ("help,h", "Produce this help message")
-      ("dump"  , "Dump shared memory content (default if no other option given).")
+      ("dump"  , "Dump shared memory content (default if no other option given). !!!Note that the mutex is NOT locked for this operation!!!")
       ("remove", "Remove the shared memory !!!The shared memory is removed EVEN if it is used by any other process!!!")
     ;
 
