@@ -24,7 +24,7 @@
 #include <hdf5serie/file.h>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/uuid/random_generator.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 using namespace std;
@@ -61,7 +61,7 @@ void File::openOrCreateShm() {
   // create inter process shared memory atomically
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Touch file"<<endl;
   // create file -> to ensure is exists for file locking
-  { ofstream str(filename, ios_base::app); }
+  { ofstream str(filename.string(), ios_base::app); }
   // exclusively lock the file to atomically create or open a shared memory associated with this file
   ipc::file_lock fileLock(filename.c_str());
   {
