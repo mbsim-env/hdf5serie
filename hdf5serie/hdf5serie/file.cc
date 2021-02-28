@@ -41,6 +41,7 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) :
   filename(filename_),
   type(type_),
   processUUID(boost::uuids::random_generator()()) {
+
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Process UUID = "<<processUUID<<endl;
 
   if(getenv("HDF5SERIE_DEBUG"))
@@ -48,6 +49,15 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) :
 
   file=this;
 
+  openOrCreateShm();
+
+  switch(type) {
+    case write: openWriter(); break;
+    case read:  openReader(); break;
+  }
+}
+
+void File::openOrCreateShm() {
   // create inter process shared memory atomically
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Touch file"<<endl;
   // create file -> to ensure is exists for file locking
@@ -84,11 +94,6 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_) :
   }
   // now the process shared memory is created or opened atomically and the file lock is releases
   // from now on this shared memory is used for any syncronization/communiation between the processes
-
-  switch(type) {
-    case write:  openWriter(); break;
-    case read:   openReader(); break;
-  }
 }
 
 void File::openWriter() {
@@ -282,9 +287,9 @@ void File::closeReader() {
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": thread joined"<<endl;
 }
 
-void File::reloadAfterRequest() {
+void File::reopen() {
   if(type!=read)
-    throw runtime_error("H5::File::reloadAfterRequest is only possible for readers.");
+    throw runtime_error("H5::File::reopen is only possible for readers.");
   closeReader(); // close the file such that a writer which wait can start writing if all reader have closed
   openReader(); // this call blocks until the writer has switched to SWMR mode; then this reader reopens the file
 }
@@ -357,7 +362,7 @@ void File::listenForWriterRequest(ipc::scoped_lock<ipc::interprocess_mutex> &&lo
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": THREAD: unlock mutex and end thread"<<endl;
 }
 
-bool File::shouldClose() {
+bool File::shouldReopen() {
   return readerShouldClose;
 }
 
