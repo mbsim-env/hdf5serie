@@ -19,12 +19,16 @@
  *
  */
 
+// the following two lines are a workaround for a bug in boost 1.69
+#define BOOST_PENDING_INTEGER_LOG2_HPP
+#include <boost/integer/integer_log2.hpp>
+
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <config.h>
 #include <hdf5serie/file.h>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 using namespace std;
