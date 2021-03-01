@@ -92,8 +92,9 @@ void File::openOrCreateShm() {
       sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
     }
     {
-      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex, incrment shmUseCount and unlock mutex"<<endl;
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex"<<endl;
       ipc::scoped_lock mutexLock(sharedData->mutex);
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": incrment shmUseCount and unlock mutex"<<endl;
       sharedData->shmUseCount++;
     }
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file unlocked"<<endl;
@@ -145,7 +146,7 @@ void File::initProcessInfo() {
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": init process info"<<endl;
   // save the process info of this process in shared memory
   if(sharedData->processes.size()==MAXREADERS+1)
-    throw runtime_error("Too many process are accessing this file.");
+    throw Exception(getPath(), "Too many process are accessing this file.");
   sharedData->processes.push_back(ProcessInfo{processUUID,
                                               boost::posix_time::microsec_clock::universal_time(),
                                               type});
@@ -167,9 +168,9 @@ void File::deinitProcessInfo() {
 void File::stillAlivePing() {
   while(1) {
     boost::this_thread::sleep_for(boost::chrono::milliseconds(1000)); // this is a boost thread interruption point // mfmf configure time
-    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex for still alive ping"<<endl;
+//    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex for still alive ping"<<endl;
     ipc::scoped_lock lock(sharedData->mutex);
-    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Mutex locked and update keep alive timestamp"<<endl;
+//    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Mutex locked and update keep alive timestamp"<<endl;
     auto curIt=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
       return pi.processUUID==processUUID;
     });
@@ -181,14 +182,14 @@ void File::stillAlivePing() {
         msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
                           " Assume that this process crashed. Remove it from shared memory."<<endl;
         if(it->type==read) {
-          msg(Atom::Debug)<<"HDF5Serie: decrement reader state, since a reader seem to have crashed"<<endl;
+//          msg(Atom::Debug)<<"HDF5Serie: decrement reader state, since a reader seem to have crashed"<<endl;
           sharedData->activeReaders--;
         }
         else if(it->type==write) {
-          msg(Atom::Debug)<<"HDF5Serie: set writer state=none, since a writer seem to have crashed"<<endl;
+//          msg(Atom::Debug)<<"HDF5Serie: set writer state=none, since a writer seem to have crashed"<<endl;
           sharedData->writerState=WriterState::none;
         }
-        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Decrement shmUseCount"<<endl;
+//        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Decrement shmUseCount"<<endl;
         sharedData->shmUseCount--;
         it=sharedData->processes.erase(it);
         sharedData->cond.notify_all();
@@ -197,7 +198,7 @@ void File::stillAlivePing() {
         it++;
     }
 
-    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unlock mutex"<<endl;
+//    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unlock mutex"<<endl;
   }
 }
 
@@ -229,36 +230,49 @@ void File::openReader() {
 }
 
 File::~File() {
-  switch(type) {
-    case write:  closeWriter(); break;
-    case read:   closeReader(); break;
-  }
-
-  ipc::file_lock fileLock(filename.c_str());
+  try
   {
-    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Locking HDF5 file"<<endl;
-    ipc::scoped_lock lockF(fileLock);
-    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file locked. Lock mutex, decrement shmUseCount and unlock mutex"<<endl;
-    size_t localShmUseCount;
+    switch(type) {
+      case write:  closeWriter(); break;
+      case read:   closeReader(); break;
+    }
+
+    ipc::file_lock fileLock(filename.c_str());
     {
-      ipc::scoped_lock lock(sharedData->mutex);
-      sharedData->shmUseCount--;
-      localShmUseCount=sharedData->shmUseCount;
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Locking HDF5 file"<<endl;
+      ipc::scoped_lock lockF(fileLock);
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": file locked"<<endl;
+      size_t localShmUseCount;
+      {
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex"<<endl;
+        ipc::scoped_lock lock(sharedData->mutex);
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, and decrement shmUseCount"<<endl;
+        sharedData->shmUseCount--;
+        localShmUseCount=sharedData->shmUseCount;
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": unlock mutex"<<endl;
+      }
+      // sharedData->shmUseCount cannot be incremente by another process since we sill own the file lock (but the mutex is unlocked now)
+      if(localShmUseCount==0) {
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": shared memory no longer used, remove it"<<endl;
+        sharedData->~SharedMemObject(); // call destructor of SharedMemObject
+        // region does not need destruction
+        ipc::shared_memory_object::remove(shmName.c_str()); // effectively destructs shm
+      }
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": unlock file"<<endl;
     }
-    // sharedData->shmUseCount cannot be incremente by another process since we sill own the file lock (but the mutex is unlocked now)
-    if(localShmUseCount==0) {
-      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": shared memory no longer used, remove it"<<endl;
-      sharedData->~SharedMemObject(); // call destructor of SharedMemObject
-      // region does not need destruction
-      ipc::shared_memory_object::remove(shmName.c_str()); // effectively destructs shm
-    }
+  }
+  catch(const exception &ex) {
+    msg(Atom::Warn)<<"HDF5Serie: Exception during destructor: "<<ex.what()<<endl;
+  }
+  catch(...) {
+    msg(Atom::Warn)<<"HDF5Serie: Unknown exception during destructor."<<endl;
   }
 }
 
 void File::closeWriter() {
   // close writer file
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": close HDF5 writer file"<<endl;
-  id.reset();
+  close();
 
   {
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex"<<endl;
@@ -276,11 +290,12 @@ void File::closeWriter() {
 void File::closeReader() {
   // close reader file
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": close HDF5 reader file"<<endl;
-  id.reset();
+  close();
 
   {
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex"<<endl;
     ipc::scoped_lock lock(sharedData->mutex);
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked"<<endl;
     // close a reader
     // decrements the number of active readers and notify about this change
     sharedData->activeReaders--;
@@ -328,7 +343,7 @@ void File::enableSWMR() {
   {
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex"<<endl;
     ipc::scoped_lock lock(sharedData->mutex);
-    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": set writerState=swmr and notify"<<endl;
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, set writerState=swmr and notify"<<endl;
     // switch the writer state from active to swmr and notify about this change
     sharedData->writerState=WriterState::swmr;
     sharedData->cond.notify_all();
@@ -344,6 +359,7 @@ void File::wait(ipc::scoped_lock<ipc::interprocess_mutex> &lock,
     if(!blockingMsg.empty())
       msg(Atom::Info)<<"HDF5Serie: "<<filename.string()<<": "<<blockingMsg<<endl;
     sharedData->cond.wait(lock, [&pred](){ return pred(); });
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Not blocking for: "<<blockingMsg<<endl;
   }
 }
 
@@ -394,9 +410,6 @@ void File::dumpSharedMemory(const boost::filesystem::path &filename) {
       return;
     }
 
-    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": lock mutex"<<endl;
-    ipc::scoped_lock mutexLock(sharedData->mutex);
-    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked"<<endl;
     cout<<"Dump of the shared memory associated with a HDF5Serie HDF5 file."<<endl;
     cout<<"This dump prints the shared memory WITHOUT locking the memory."<<endl;
     cout<<"filename: "<<filename.string()<<endl;
@@ -419,7 +432,7 @@ void File::dumpSharedMemory(const boost::filesystem::path &filename) {
     for(auto &pi : sharedData->processes)
       cout<<"processes: UUID="<<pi.processUUID<<" lastAliveTime="<<pi.lastAliveTime<<" type="<<(pi.type == write ? "write": "read")<<endl;
 
-    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex unlock and HDF5 file unlocked"<<endl;
+    msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file unlocked"<<endl;
   }
 }
 
