@@ -40,10 +40,13 @@ namespace H5 {
 int File::defaultCompression=1;
 int File::defaultChunkSize=100;
 
-File::File(const boost::filesystem::path &filename_, FileAccess type_) :
+File::File(const boost::filesystem::path &filename_, FileAccess type_,
+           const std::function<void()> &closeRequestCallback_) :
   GroupBase(nullptr, filename_.string()),
   filename(filename_),
   type(type_),
+  closeRequestCallback(closeRequestCallback_),
+  shmName(createShmName(filename)),
   processUUID(boost::uuids::random_generator()()) {
 
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Process UUID = "<<processUUID<<endl;
@@ -73,7 +76,6 @@ void File::openOrCreateShm() {
     ipc::scoped_lock lock(fileLock);
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": HDF5 file locked"<<endl;
     // convert filename to valid boost interprocess name (cname)
-    shmName=createShmName(filename);
     try {
       // try to open the shared memory ...
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Try to open shared memory named "<<shmName<<endl;
@@ -109,7 +111,7 @@ void File::openWriter() {
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unlock mutex and wait for writerState==none"<<endl;
     // open a writer
     // wait until no other writer is active
-    wait(lock, "Blocking until other writer has finished or goes to SWMR mode.", [this](){
+    wait(lock, "Blocking until other writer has finished.", [this](){
       return sharedData->writerState==WriterState::none;
     });
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": writerState==none; number of readers "<<sharedData->activeReaders<<endl;
@@ -175,7 +177,7 @@ void File::stillAlivePing() {
 
     auto it=sharedData->processes.begin();
     while(it!=sharedData->processes.end()) {
-      if(it->lastAliveTime+boost::posix_time::milliseconds(3000)<curIt->lastAliveTime) {
+      if(it->lastAliveTime+boost::posix_time::milliseconds(3000)<curIt->lastAliveTime) { // mfmf configure time
         msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
                           " Assume that this process crashed. Remove it from shared memory."<<endl;
         if(it->type==read) {
@@ -218,7 +220,6 @@ void File::openReader() {
     // open a thread which listens for futher writer which want to start writing
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": start thread and pass lock to thread"<<endl;
     exitThread=false; // flag indicating that the thread should close -> false at thread start
-    readerShouldClose=false; // at start of a reader its ensured that no writer wants to write
     listenForWriterRequestThread=thread(&File::listenForWriterRequest, this, move(lock));
   }
 
@@ -296,13 +297,6 @@ void File::closeReader() {
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": thread joined"<<endl;
 }
 
-void File::reopen() {
-  if(type!=read)
-    throw runtime_error("H5::File::reopen is only possible for readers.");
-  closeReader(); // close the file such that a writer which wait can start writing if all reader have closed
-  openReader(); // this call blocks until the writer has switched to SWMR mode; then this reader reopens the file
-}
-
 void File::refresh() {
   if(type!=read)
     throw Exception(getPath(), "refresh() can only be called for reading files");
@@ -348,7 +342,7 @@ void File::wait(ipc::scoped_lock<ipc::interprocess_mutex> &lock,
   if(!sharedData->cond.timed_wait(lock, boost::posix_time::microsec_clock::universal_time(), [&pred](){ return pred(); })) {
     // if timed-out print the blocking message and wait again (for without a timeout)
     if(!blockingMsg.empty())
-      msg(Atom::Info)<<filename.string()<<": "<<blockingMsg<<endl;
+      msg(Atom::Info)<<"HDF5Serie: "<<filename.string()<<": "<<blockingMsg<<endl;
     sharedData->cond.wait(lock, [&pred](){ return pred(); });
   }
 }
@@ -364,15 +358,15 @@ void File::listenForWriterRequest(ipc::scoped_lock<ipc::interprocess_mutex> &&lo
   });
   // if a write request has happen (we are not here due to a thread exit request) ...
   if(sharedData->writerState==WriterState::writeRequest) {
-    // ... set the should close flag which is (hopefully) checked by the caller periodically.
-    msg(Atom::Info)<<filename.string()<<": A writer wants to write to "<<filename.string()<<", this reader is sked to close."<<endl;
-    readerShouldClose=true; //MFMF maybe a callback to the caller should be used here
+    // ... call the callback to notify the caller of this reader about this request
+    if(closeRequestCallback) {
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file. Notify this reader."<<endl;
+      closeRequestCallback();
+    }
+    else
+      msg(Atom::Info)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file but this reader does not handle such requests."<<endl;
   }
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": THREAD: unlock mutex and end thread"<<endl;
-}
-
-bool File::shouldReopen() {
-  return readerShouldClose;
 }
 
 void File::dumpSharedMemory(const boost::filesystem::path &filename) {

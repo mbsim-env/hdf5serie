@@ -54,19 +54,19 @@ namespace H5 {
         write, //!< open file for writing
       };
       //! Opens the HDF5 file filename_ as a writer or reader dependent on type_.
-      File(const boost::filesystem::path &filename_, FileAccess type_);
+      //! For a reader closeRequestCallback_ should be set!
+      //! This callback is called if any writer want to write the file this reader also holds.
+      //! If this callback is called you should close (destruct) this File object in time.
+      //! After close (destruct) you can immediately reopen the file by constructing a File object (with the same HDF5 file) again.
+      //! The inter process communication will ensure the the requested writer does its job before you can reopen the file for reading again.
+      //! Note that this callback function will be called from of a thread created by this File constructor.
+      File(const boost::filesystem::path &filename_, FileAccess type_,
+           const std::function<void()> &closeRequestCallback_=std::function<void()>());
       //! Closes the HDF5 file.
       ~File() override;
       //! Switch a writer from dataset creation mode to SWMR. After this call no datasets, groups or attributes can be created anymore
       //! and attributes are closed! But readers are no longer blocked and can read the file.
       void enableSWMR() override;
-      //! A reader should call this function periodically to check if it should reopen the file.
-      //! If true, reopen should be called in time.
-      bool shouldReopen();
-      //! Close the file and wait until a writer has rewritten the file (until the writer is again in SWMR mode).
-      //! Hence, the call blocks until has done this action. Afterwards the file is reopened.
-      //! Note that only the File object is reopened. NO dataset or other HDF5 objects are available after this call.
-      void reopen();
 
       static int getDefaultCompression() { return defaultCompression; }
       static void setDefaultCompression(int comp) { defaultCompression=comp; }
@@ -88,10 +88,16 @@ namespace H5 {
       static int defaultCompression;
       static int defaultChunkSize;
 
-      boost::filesystem::path filename;
-
+      //! The name of the file
+      const boost::filesystem::path filename;
       //! Flag if this instance is a writer or reader
-      FileAccess type;
+      const FileAccess type;
+      //! This callback is called when a writer requested a close of all readers
+      const std::function<void()> closeRequestCallback;
+      //! Name of the shared memory
+      const std::string shmName;
+      //!< a globally unique identifier for this process
+      const boost::uuids::uuid processUUID;
 
       //! A writer can be in the following state:
       enum class WriterState {
@@ -124,8 +130,6 @@ namespace H5 {
         // the follwing members are only used for still-alive/crash detection handling
         boost::container::static_vector<ProcessInfo, MAXREADERS+1> processes; //<! a list of all processes accessing the shared memory
       };
-      //! Name of the shared memory
-      std::string shmName;
 
       //! Shared memory object holding the shared memory
       //! Access to shm (and region) must bu guarded by locking the boost filelock of filename.
@@ -168,11 +172,6 @@ namespace H5 {
       void listenForWriterRequest(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &&lock);
       //! Flag which is set to true to enforce the thread to exit (on the next condition notify signal)
       bool exitThread { false }; // access is object is guarded by sharedData->mutex (interprocess wide)
-
-      //! This flag is set to true by the thread when a new writer requests action.
-      std::atomic<bool> readerShouldClose { false }; // access to this object is handled atomically (within the current process)
-
-      boost::uuids::uuid processUUID; //!< a globally unique identifier for this process
 
       //! Write process information of this process to the shared memory
       void initProcessInfo();
