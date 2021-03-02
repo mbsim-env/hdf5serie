@@ -33,6 +33,7 @@ namespace H5 {
       GroupBase(int dummy, GroupBase *parent_, const std::string &name_);
       GroupBase(GroupBase *parent_, const std::string &name_);
       ~GroupBase() override;
+      void close() override;
       void refresh() override;
       void flush() override;
       void enableSWMR() override;
@@ -85,6 +86,7 @@ namespace H5 {
       Group(int dummy, GroupBase *parent_, const std::string &name_);
       Group(GroupBase *parent_, const std::string &name_);
       ~Group() override;
+      void close() override;
       void refresh() override;
       void flush() override;
       void enableSWMR() override;

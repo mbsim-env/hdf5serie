@@ -104,6 +104,7 @@ namespace H5 {
       std::string name;
       Element(std::string name_);
       ~Element() override;
+      virtual void close();
       virtual void refresh();
       virtual void flush();
       virtual void enableSWMR();
@@ -121,6 +122,10 @@ namespace H5 {
       ~Container() {
         for(auto it=childs.begin(); it!=childs.end(); ++it)
           delete it->second;
+      }
+      void close() {
+        for(auto it=childs.begin(); it!=childs.end(); ++it)
+          it->second->close();
       }
       void refresh() {
         for(auto it=childs.begin(); it!=childs.end(); ++it)
@@ -209,6 +214,7 @@ namespace H5 {
     protected:
       Object(GroupBase *parent_, const std::string &name_);
       ~Object() override;
+      void close() override;
       void refresh() override;
       void flush() override;
       void enableSWMR() override;
@@ -255,6 +261,7 @@ namespace H5 {
       ~Attribute() override;
       Object *parent;
       File *file;
+      void close() override;
       void refresh() override;
       void flush() override;
     public:
@@ -268,6 +275,7 @@ namespace H5 {
       Dataset(GroupBase *parent_, const std::string &name_);
       Dataset(int dummy, GroupBase *parent_, const std::string &name_);
       ~Dataset() override;
+      void close() override;
       void refresh() override;
       void flush() override;
       void enableSWMR() override;

@@ -71,6 +71,7 @@ namespace H5 {
       VectorSerie(GroupBase *parent_, const std::string &name_, int cols,
         int compression=File::getDefaultCompression(), int chunkSize=File::getDefaultChunkSize());
       ~VectorSerie() override;
+      void close() override;
 
     public:
       /** \brief Sets a description for the dataset

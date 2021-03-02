@@ -50,6 +50,8 @@ class HDF5SERIE_CLASS : public HDF5SERIE_BASECLASS {
 
     ~HDF5SERIE_CLASS() override;
 
+    void close() override;
+
   public:
     /** \brief Write data
      *
@@ -86,6 +88,7 @@ class HDF5SERIE_CLASS<std::vector<T> > : public HDF5SERIE_BASECLASS {
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
     HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_);
     ~HDF5SERIE_CLASS() override;
+    void close() override;
   public:
     void write(const std::vector<T>& data);
     std::vector<T> read();
@@ -113,6 +116,7 @@ class HDF5SERIE_CLASS<std::vector<std::vector<T> > > : public HDF5SERIE_BASECLAS
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
     HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_);
     ~HDF5SERIE_CLASS() override;
+    void close() override;
   public:
     void write(const std::vector<std::vector<T> >& data);
     std::vector<std::vector<T> > read();

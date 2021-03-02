@@ -24,6 +24,13 @@ template<class T>
 HDF5SERIE_CLASS<T>::~HDF5SERIE_CLASS() = default;
 
 template<class T>
+void HDF5SERIE_CLASS<T>::close() {
+  HDF5SERIE_BASECLASS::close();
+  memDataSpaceID.reset();
+  id.reset();
+}
+
+template<class T>
 void HDF5SERIE_CLASS<T>::write(const T& data) {
   HDF5SERIE_H5XWRITE(&data);
 }
@@ -82,6 +89,13 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
 
 template<class T>
 HDF5SERIE_CLASS<vector<T> >::~HDF5SERIE_CLASS() = default;
+
+template<class T>
+void HDF5SERIE_CLASS<vector<T> >::close() {
+  HDF5SERIE_BASECLASS::close();
+  memDataSpaceID.reset();
+  id.reset();
+}
 
 template<class T>
 void HDF5SERIE_CLASS<vector<T> >::write(const vector<T> &data) {
@@ -156,6 +170,13 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
 
 template<class T>
 HDF5SERIE_CLASS<vector<vector<T> > >::~HDF5SERIE_CLASS() = default;
+
+template<class T>
+void HDF5SERIE_CLASS<vector<vector<T> > >::close() {
+  HDF5SERIE_BASECLASS::close();
+  memDataSpaceID.reset();
+  id.reset();
+}
 
 template<class T>
 void HDF5SERIE_CLASS<vector<vector<T> > >::write(const vector<vector<T> > &data) {

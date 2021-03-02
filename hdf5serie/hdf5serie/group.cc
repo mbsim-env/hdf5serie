@@ -137,6 +137,11 @@ list<string> GroupBase::getChildObjectNames() {
   return ret.second;
 }
 
+void GroupBase::close() {
+  Container<Object, GroupBase>::close();
+  Object::close();
+}
+
 void GroupBase::refresh() {
   Object::refresh();
   Container<Object, GroupBase>::refresh();
@@ -197,10 +202,15 @@ Group::Group(int dummy, GroupBase *parent_, const string &name_) : GroupBase(par
 Group::Group(GroupBase *parent_, const string &name_) : GroupBase(parent_, name_) {
   ScopedHID group_creation_plist(H5Pcreate(H5P_GROUP_CREATE), &H5Pclose);
   H5Pset_link_creation_order(group_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
-  id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, group_creation_plist, H5P_DEFAULT), &H5Gclose);
+ id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, group_creation_plist, H5P_DEFAULT), &H5Gclose);
 }
 
 Group::~Group() {
+}
+
+void Group::close() {
+  GroupBase::close();
+  id.reset();
 }
 
 void Group::refresh() {

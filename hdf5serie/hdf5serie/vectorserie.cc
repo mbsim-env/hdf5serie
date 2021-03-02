@@ -93,6 +93,13 @@ namespace H5 {
   VectorSerie<T>::~VectorSerie() = default;
 
   template<class T>
+  void VectorSerie<T>::close() {
+    Dataset::close();
+    memDataSpaceID.reset();
+    id.reset();
+  }
+
+  template<class T>
   void VectorSerie<T>::setDescription(const string& description) {
     SimpleAttribute<string> *desc=createChildAttribute<SimpleAttribute<string> >("Description")();
     desc->write(description);

@@ -88,6 +88,9 @@ Element::~Element() = default;
 void Element::refresh() {
 }
 
+void Element::close() {
+}
+
 void Element::flush() {
 }
 
@@ -176,6 +179,11 @@ void Object::enableSWMR() {
   Container<Attribute, Object>::enableSWMR();
 }
 
+void Object::close() {
+  Container<Attribute, Object>::close();
+  Element::close();
+}
+
 Object *Object::getFileAsObject() {
   return getFile();
 }
@@ -197,6 +205,10 @@ Attribute::Attribute(Object *parent_, const std::string &name_) : Element(name_)
 }
 
 Attribute::~Attribute() = default;
+
+void Attribute::close() {
+  Element::close();
+}
 
 void Attribute::refresh() {
   Element::refresh();
@@ -227,6 +239,10 @@ void Dataset::flush() {
 
 void Dataset::enableSWMR() {
   Object::enableSWMR();
+}
+
+void Dataset::close() {
+  Object::close();
 }
 
 vector<hsize_t> Dataset::getExtentDims() {

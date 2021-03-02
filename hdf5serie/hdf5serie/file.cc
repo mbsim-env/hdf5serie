@@ -458,4 +458,34 @@ void File::removeSharedMemory(const boost::filesystem::path &filename) {
   ipc::shared_memory_object::remove(shmName.c_str());
 }
 
+
+void File::close() {
+  // close everything (except the file itself)
+  GroupBase::close();
+
+  // check if all object are closed now: if not -> throw internal error (with details about the opened objects)
+  ssize_t count=H5Fget_obj_count(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
+  if(count<0)
+    throw Exception(getPath(), "Internal error: H5Fget_obj_count failed");
+  if(count>0) {
+    vector<hid_t> obj(count, 0);
+    ssize_t ret=H5Fget_obj_ids(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL, count, &obj[0]);
+    if(ret<0)
+      throw Exception(getPath(), "Internal error: H5Fget_obj_ids failed");
+    vector<char> name(1000+1);
+    stringstream err;
+    err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
+    for(auto it : obj) {
+      size_t ret=H5Iget_name(it, &name[0], 1000);
+      if(ret<=0)
+        throw Exception(getPath(), "Internal error: H5Iget_name");
+      err<<"type="<<H5Iget_type(it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
+    }
+    throw Exception(getPath(), err.str());
+  }
+
+  // now close also the file with is now the last opened identifier
+  id.reset();
+}
+
 }
