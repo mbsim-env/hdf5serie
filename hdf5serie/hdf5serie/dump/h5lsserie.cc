@@ -75,12 +75,6 @@ int main(int argc, char *argv[]) {
 void walkH5(const string &indent, const path &filename, const string &path, GroupBase *obj) {
   list<string> names=obj->getChildObjectNames();
   for(const auto& name : names) {
-    if(obj->isExternalLink(name) && !f) {
-      pair<boost::filesystem::path, string> link=obj->getExternalLink(name);
-      cout<<indent<<"* "<<name<<" (External Link: \""<<link.first.string()<<link.second<<"\")"<<endl;
-      continue;
-    }
-
     Object *child=obj->openChildObject(name);
 
     auto *g=dynamic_cast<Group*>(child);
@@ -119,8 +113,7 @@ cout<<
 "  h5lsserie [-d] [-l] [-f] [-h|--help] <file.h5> ..."<<endl<<
 "    -h, --help: Show this help"<<endl<<
 "    -d:         Show 'Description' attribute"<<endl<<
-"    -l:         Show 'Column/Member Label'"<<endl<<
-"    -f:         Follow external links"<<endl;
+"    -l:         Show 'Column/Member Label'"<<endl;
 }
 
 void printDesc(const string& indent, Object *obj) {

@@ -157,38 +157,6 @@ void GroupBase::enableSWMR() {
   Container<Object, GroupBase>::enableSWMR();
 }
 
-bool GroupBase::isExternalLink(const string &name_) {
-  H5L_info_t link;
-  H5Lget_info(id, name_.c_str(), &link, H5P_DEFAULT);
-  return link.type==H5L_TYPE_EXTERNAL;
-}
-
-pair<path, string> GroupBase::getExternalLink(const string &name_) {
-  H5L_info_t link_buff;
-  H5Lget_info(id, name_.c_str(), &link_buff, H5P_DEFAULT);
-  vector<char> buff(link_buff.u.val_size);
-  H5Lget_val(id, name_.c_str(), &buff[0], link_buff.u.val_size, H5P_DEFAULT);
-  const char *linkFilename;
-  const char *obj_path;
-  H5Lunpack_elink_val(&buff[0], link_buff.u.val_size, nullptr, &linkFilename, &obj_path);
-  return make_pair(absolute(linkFilename, path(getFile()->getName()).parent_path()), obj_path);
-  //MFMF use same algo for retrun.first as in doc of H5Lcreate_external
-}
-
-void GroupBase::createExternalLink(const string &name_, const pair<boost::filesystem::path, string> &target) {
-  H5Lcreate_external(target.first.string().c_str(), target.second.c_str(), id, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT);
-}
-
-void GroupBase::createSoftLink(const string &name_, const string &target) {
-  H5Lcreate_soft( target.c_str(), id, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT);
-}
-
-void GroupBase::handleExternalLink(const string &name_) {
-  if(!isExternalLink(name_))
-    return;
-  pair<path, string> link=getExternalLink(name_);
-}
-
 GroupBase *GroupBase::getFileAsGroup() {
   return getFile();
 }

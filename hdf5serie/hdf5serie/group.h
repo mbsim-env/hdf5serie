@@ -38,7 +38,6 @@ namespace H5 {
       void flush() override;
       void enableSWMR() override;
       Dataset *openChildDataset(const std::string &name_, ElementType *objectType, hid_t *type);
-      void handleExternalLink(const std::string &name_);
       GroupBase *getFileAsGroup();
     public:
       template<class T>
@@ -58,7 +57,6 @@ namespace H5 {
 
       template<class T>
       T* openChildObject(const std::string &path) {
-        handleExternalLink(path);
         if(path[0]=='/') // absolute path -> call openChildObject from file
           return getFileAsGroup()->openChildObject<T>(path.substr(1));
         // now its a relative path
@@ -73,11 +71,6 @@ namespace H5 {
       }
       Object *openChildObject(const std::string &name_, ElementType *objectType=nullptr, hid_t *type=nullptr);
       std::list<std::string> getChildObjectNames();
-
-      bool isExternalLink(const std::string &name_);
-      std::pair<boost::filesystem::path, std::string> getExternalLink(const std::string &name_);
-      void createExternalLink(const std::string &name_, const std::pair<boost::filesystem::path, std::string> &target);
-      void createSoftLink(const std::string &name_, const std::string &target);
   };
 
   class Group : public GroupBase {

@@ -49,10 +49,10 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
   shmName(createShmName(filename)),
   processUUID(boost::uuids::random_generator()()) {
 
-  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Process UUID = "<<processUUID<<endl;
-
   if(getenv("HDF5SERIE_DEBUG"))
     setMessageStreamActive(Atom::Debug, true);
+
+  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Process UUID = "<<processUUID<<endl;
 
   file=this;
 
@@ -168,9 +168,9 @@ void File::deinitProcessInfo() {
 void File::stillAlivePing() {
   while(1) {
     boost::this_thread::sleep_for(boost::chrono::milliseconds(1000)); // this is a boost thread interruption point // mfmf configure time
-//    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex for still alive ping"<<endl;
+    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex for still alive ping"<<endl;
     ipc::scoped_lock lock(sharedData->mutex);
-//    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Mutex locked and update keep alive timestamp"<<endl;
+    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Mutex locked and update keep alive timestamp"<<endl;
     auto curIt=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
       return pi.processUUID==processUUID;
     });
@@ -182,14 +182,14 @@ void File::stillAlivePing() {
         msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
                           " Assume that this process crashed. Remove it from shared memory."<<endl;
         if(it->type==read) {
-//          msg(Atom::Debug)<<"HDF5Serie: decrement reader state, since a reader seem to have crashed"<<endl;
+          msg(Atom::Debug)<<"HDF5Serie: decrement reader state, since a reader seem to have crashed"<<endl;
           sharedData->activeReaders--;
         }
         else if(it->type==write) {
-//          msg(Atom::Debug)<<"HDF5Serie: set writer state=none, since a writer seem to have crashed"<<endl;
+          msg(Atom::Debug)<<"HDF5Serie: set writer state=none, since a writer seem to have crashed"<<endl;
           sharedData->writerState=WriterState::none;
         }
-//        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Decrement shmUseCount"<<endl;
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Decrement shmUseCount"<<endl;
         sharedData->shmUseCount--;
         it=sharedData->processes.erase(it);
         sharedData->cond.notify_all();
@@ -198,7 +198,7 @@ void File::stillAlivePing() {
         it++;
     }
 
-//    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unlock mutex"<<endl;
+    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unlock mutex"<<endl;
   }
 }
 
@@ -237,7 +237,7 @@ File::~File() {
       case read:   closeReader(); break;
     }
 
-    ipc::file_lock fileLock(filename.c_str());
+    ipc::file_lock fileLock(filename.c_str());//mfmf file_lock are not very portable -> use a named mutex (the mutex in the shm may be obsolte than)
     {
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Locking HDF5 file"<<endl;
       ipc::scoped_lock lockF(fileLock);

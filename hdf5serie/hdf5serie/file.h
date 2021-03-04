@@ -78,8 +78,6 @@ namespace H5 {
       //! Flush the datasets of a writer
       void flush() override;
 
-      void close() override;
-
       //! Internal helper function which dumps the content of the shared memory associated with filename.
       //! !!! Note that the mutex is NOT locked for this operation but the file lock is accquired.
       static void dumpSharedMemory(const boost::filesystem::path &filename);
@@ -89,6 +87,8 @@ namespace H5 {
     private:
       static int defaultCompression;
       static int defaultChunkSize;
+
+      void close() override;
 
       //! The name of the file
       const boost::filesystem::path filename;
