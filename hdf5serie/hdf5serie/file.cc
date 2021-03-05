@@ -319,7 +319,13 @@ void File::refresh() {
   // refresh file
   if(msgActStatic(Atom::Debug))
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": refresh reader"<<endl;
-  GroupBase::refresh();
+  WriterState ws;
+  {
+    ipc::scoped_lock lock(sharedData->mutex);
+    ws=sharedData->writerState;
+  }
+  if(ws==WriterState::swmr)
+    GroupBase::refresh();
 }
 
 void File::flush() {

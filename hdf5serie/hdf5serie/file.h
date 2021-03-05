@@ -73,7 +73,7 @@ namespace H5 {
       static int getDefaultChunkSize() { return defaultChunkSize; }
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
 
-      //! Refresh the dataset of a reader
+      //! Refresh the dataset of a reader (if a writer is active)
       void refresh() override;
       //! Flush the datasets of a writer
       void flush() override;
