@@ -317,12 +317,16 @@ void File::refresh() {
     throw Exception(getPath(), "refresh() can only be called for reading files");
 
   // refresh file
-  if(msgActStatic(Atom::Debug))
-    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": refresh reader"<<endl;
   WriterState ws;
   {
     ipc::scoped_lock lock(sharedData->mutex);
     ws=sharedData->writerState;
+  }
+  if(msgActStatic(Atom::Debug)) {
+    if(ws==WriterState::swmr)
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": refresh reader"<<endl;
+    else
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": skipping refresh reader (no writer is active)"<<endl;
   }
   if(ws==WriterState::swmr)
     GroupBase::refresh();
@@ -332,9 +336,20 @@ void File::flush() {
   if(type!=write)
     throw Exception(getPath(), "flush() can only be called for writing files");
 
-  if(msgActStatic(Atom::Debug))
-    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": flush writer"<<endl;
-  GroupBase::flush();
+  // flush file
+  int ar;
+  {
+    ipc::scoped_lock lock(sharedData->mutex);
+    ar=sharedData->activeReaders;
+  }
+  if(msgActStatic(Atom::Debug)) {
+    if(ar>0)
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": flush writer"<<endl;
+    else
+      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": skipping flush writer (no reader is active)"<<endl;
+  }
+  if(ar>0)
+    GroupBase::flush();
 }
 
 void File::enableSWMR() {
