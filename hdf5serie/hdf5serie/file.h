@@ -61,7 +61,8 @@ namespace H5 {
       //! The inter process communication will ensure the the requested writer does its job before you can reopen the file for reading again.
       //! Note that this callback function will be called from of a thread created by this File constructor.
       File(const boost::filesystem::path &filename_, FileAccess type_,
-           const std::function<void()> &closeRequestCallback_=std::function<void()>());
+           const std::function<void()> &closeRequestCallback_=std::function<void()>(),
+           const std::function<void()> &refreshCallback_=std::function<void()>());
       //! Closes the HDF5 file.
       ~File() override;
       //! Switch a writer from dataset creation mode to SWMR. After this call no datasets, groups or attributes can be created anymore
@@ -73,10 +74,15 @@ namespace H5 {
       static int getDefaultChunkSize() { return defaultChunkSize; }
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
 
-      //! Refresh the dataset of a reader (if a writer is active)
+      //! Refresh the dataset of a reader
       void refresh() override;
-      //! Flush the datasets of a writer
-      void flush() override;
+      //! Request a flush of the writer.
+      //! This is not blocking. If the writer has flushed the refreshCallback is called, see constructor.
+      void requestFlush();
+      //! Flush the file (the dataset) of a writer if this is requested by a reader.
+      //! Does nothing if no reader has requested a flush.
+      //! If a flush happend the reades are notified about the flush.
+      void flushIfRequested();
 
       //! Internal helper function which dumps the content of the shared memory associated with filename.
       //! !!! Note that the mutex is NOT locked for this operation but the file lock is accquired.
@@ -96,6 +102,9 @@ namespace H5 {
       const FileAccess type;
       //! This callback is called when a writer requested a close of all readers
       const std::function<void()> closeRequestCallback;
+      //! This callback is called when a writer has flushed
+      const std::function<void()> refreshCallback;
+      bool flushRequested { false };
       //! Name of the shared memory
       const std::string shmName;
       //!< a globally unique identifier for this process
@@ -131,6 +140,8 @@ namespace H5 {
         size_t activeReaders { 0 };                    //<! the number of active readers on this file.
         // the follwing members are only used for still-alive/crash detection handling
         boost::container::static_vector<ProcessInfo, MAXREADERS+1> processes; //<! a list of all processes accessing the shared memory
+        // the follwing members are only used for flush/refresh handling
+        bool flushRequest; //<! Is set to true by reader if a flush of the writer should be done. The writer resets to false after a flush.
       };
 
       //! Shared memory object holding the shared memory
@@ -166,12 +177,12 @@ namespace H5 {
       boost::thread stillAlivePingThread; // the thread for still alive pings
       void stillAlivePing(); // the worker function
 
-      //! A thread created for a reader to listen when a new writer process requests
+      //! A thread created for a reader to listen when a new writer process requests a write of has flushed the file.
       //! boost thread interruption points does not help here since its not working with boost::interprocess::interprocess_condition
       //! -> hence we implement it ourself using the exitThread flag
-      std::thread listenForWriterRequestThread;
-      //! The worker function for the thread listenForWriterRequestThread.
-      void listenForWriterRequest(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &&lock);
+      std::thread listenForRequestThread;
+      //! The worker function for the thread listenForRequestThread.
+      void listenForRequest(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &&lock);
       //! Flag which is set to true to enforce the thread to exit (on the next condition notify signal)
       bool exitThread { false }; // access is object is guarded by sharedData->mutex (interprocess wide)
 

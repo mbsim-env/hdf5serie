@@ -41,11 +41,13 @@ int File::defaultCompression=1;
 int File::defaultChunkSize=100;
 
 File::File(const boost::filesystem::path &filename_, FileAccess type_,
-           const std::function<void()> &closeRequestCallback_) :
+           const std::function<void()> &closeRequestCallback_,
+           const std::function<void()> &refreshCallback_) :
   GroupBase(nullptr, filename_.string()),
   filename(filename_),
   type(type_),
   closeRequestCallback(closeRequestCallback_),
+  refreshCallback(refreshCallback_),
   shmName(createShmName(filename)),
   processUUID(boost::uuids::random_generator()()) {
 
@@ -221,7 +223,7 @@ void File::openReader() {
     // open a thread which listens for futher writer which want to start writing
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": start thread and pass lock to thread"<<endl;
     exitThread=false; // flag indicating that the thread should close -> false at thread start
-    listenForWriterRequestThread=thread(&File::listenForWriterRequest, this, move(lock));
+    listenForRequestThread=thread(&File::listenForRequest, this, move(lock));
   }
 
   // open file
@@ -308,7 +310,7 @@ void File::closeReader() {
   }
   // the thread should close now and we wait for it to join.
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": join thread"<<endl;
-  listenForWriterRequestThread.join();
+  listenForRequestThread.join();
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": thread joined"<<endl;
 }
 
@@ -316,40 +318,36 @@ void File::refresh() {
   if(type!=read)
     throw Exception(getPath(), "refresh() can only be called for reading files");
 
-  // refresh file
-  WriterState ws;
-  {
-    ipc::scoped_lock lock(sharedData->mutex);
-    ws=sharedData->writerState;
-  }
-  if(msgActStatic(Atom::Debug)) {
-    if(ws==WriterState::swmr)
-      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": refresh reader"<<endl;
-    else
-      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": skipping refresh reader (no writer is active)"<<endl;
-  }
-  if(ws==WriterState::swmr)
-    GroupBase::refresh();
+  GroupBase::refresh();
 }
 
-void File::flush() {
-  if(type!=write)
-    throw Exception(getPath(), "flush() can only be called for writing files");
+void File::requestFlush() {
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex"<<endl;
+  ipc::scoped_lock lock(sharedData->mutex);
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, set flushRequest flag and unlock mutex"<<endl;
+  sharedData->flushRequest=true;
+  flushRequested=true;
+  sharedData->cond.notify_all(); // not really needed since we assume that the writer is polling on this flag frequently.
+}
 
-  // flush file
-  int ar;
-  {
-    ipc::scoped_lock lock(sharedData->mutex);
-    ar=sharedData->activeReaders;
+void File::flushIfRequested() {
+  if(type!=write)
+    throw Exception(getPath(), "flushIfRequested() can only be called for writing files");
+
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex"<<endl;
+  ipc::scoped_lock lock(sharedData->mutex);
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, checking for fush request"<<endl;
+  if(!sharedData->flushRequest) {
+    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": no flush request, unlock mutex"<<endl;
+    return;
   }
-  if(msgActStatic(Atom::Debug)) {
-    if(ar>0)
-      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": flush writer"<<endl;
-    else
-      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": skipping flush writer (no reader is active)"<<endl;
-  }
-  if(ar>0)
-    GroupBase::flush();
+
+  // flush file (and datasets) and reset flushRequest flag and notify
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": flush file"<<endl;
+  GroupBase::flush();
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": reset flush request flag notify and unlock"<<endl;
+  sharedData->flushRequest=false;
+  sharedData->cond.notify_all();
 }
 
 void File::enableSWMR() {
@@ -384,24 +382,43 @@ void File::wait(ipc::scoped_lock<ipc::interprocess_mutex> &lock,
   }
 }
 
-void File::listenForWriterRequest(ipc::scoped_lock<ipc::interprocess_mutex> &&lock) {
+void File::listenForRequest(ipc::scoped_lock<ipc::interprocess_mutex> &&lock) {
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": THREAD: started, move lock to thread scope, unlock and wait "
-                                                  "for writerState==writeRequest or thread exit flag"<<endl;
+                                                  "for writerState==writeRequest or flush done or thread exit flag"<<endl;
   // this thread just listens for all notifications and ...
   ipc::scoped_lock threadLock(move(lock));
-  // ... waits until write request happens (or this thread is to be closed)
-  wait(threadLock, "", [this](){
-    return sharedData->writerState==WriterState::writeRequest || exitThread;
-  });
-  // if a write request has happen (we are not here due to a thread exit request) ...
-  if(sharedData->writerState==WriterState::writeRequest) {
-    // ... call the callback to notify the caller of this reader about this request
-    if(closeRequestCallback) {
-      msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file. Notify this reader."<<endl;
-      closeRequestCallback();
+  while(1) {
+    // ... waits until write request happens (or this thread is to be closed)
+    wait(threadLock, "", [this](){
+      return sharedData->writerState==WriterState::writeRequest ||
+             (sharedData->flushRequest==false && flushRequested) ||
+             exitThread;
+    });
+    // if a writer has done is flush after a reqeust ...
+    if(sharedData->flushRequest==false && flushRequested) {
+      flushRequested=false;
+      // ... call the callback to notify the caller of this reader about the finished flush
+      if(refreshCallback) {
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file. Notify this reader."<<endl;
+        refreshCallback();
+      }
+      else
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file but this reader does not handle such nofitications."<<endl;
+      // do no exit the thread
     }
-    else
-      msg(Atom::Info)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file but this reader does not handle such requests."<<endl;
+    // if a write request has happen (we are not here due to a thread exit request) ...
+    if(sharedData->writerState==WriterState::writeRequest) {
+      // ... call the callback to notify the caller of this reader about this request
+      if(closeRequestCallback) {
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file. Notify this reader."<<endl;
+        closeRequestCallback();
+      }
+      else
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file but this reader does not handle such requests."<<endl;
+      break; // exit the thread
+    }
+    if(exitThread)
+      break; // exit the thread
   }
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": THREAD: unlock mutex and end thread"<<endl;
 }
