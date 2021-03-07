@@ -178,7 +178,6 @@ void MainWindow::loadPlotWindows() {
 void MainWindow::refresh() {
   set<H5::File*> filesToRefresh;
   curves->collectFilesToRefresh(filesToRefresh);
-//mfmf  H5::File::refreshFilesAfterWriterFlush(filesToRefresh);
 
   curves->refreshAllTabs();
 }

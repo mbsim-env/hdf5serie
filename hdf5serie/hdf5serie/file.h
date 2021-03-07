@@ -46,8 +46,6 @@ namespace H5 {
    * - if readers are active and a writer wants to start writing the readers are notified by a reopen request.
    */
   class File : public GroupBase {
-    friend class Dataset;
-    friend class GroupBase;
     public:
       enum FileAccess {
         read,  //!< open file for reading
@@ -59,7 +57,9 @@ namespace H5 {
       //! If this callback is called you should close (destruct) this File object in time.
       //! After close (destruct) you can immediately reopen the file by constructing a File object (with the same HDF5 file) again.
       //! The inter process communication will ensure the the requested writer does its job before you can reopen the file for reading again.
-      //! Note that this callback function will be called from of a thread created by this File constructor.
+      //! For a reader refreshCallback_ should also be set if the reader will call requestFlush.
+      //! This this callback is called the reader should call refresh().
+      //! Note that both callback functions will be called from of a thread created by this constructor.
       File(const boost::filesystem::path &filename_, FileAccess type_,
            const std::function<void()> &closeRequestCallback_=std::function<void()>(),
            const std::function<void()> &refreshCallback_=std::function<void()>());

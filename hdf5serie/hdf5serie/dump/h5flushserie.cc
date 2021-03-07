@@ -51,9 +51,6 @@ int main(int argc, char *argv[]) {
     for(int i=1; i<argc; ++i)
       h5File.push_back(make_shared<File>(argv[i], File::read));
 
-    vector<bool> refreshNeeded;
-    refreshNeeded.reserve(h5File.size());
-
     return 0;
   }
   catch(const std::exception &ex) {

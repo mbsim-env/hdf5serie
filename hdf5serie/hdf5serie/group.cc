@@ -56,7 +56,7 @@ GroupBase::GroupBase(GroupBase *parent_, const string &name_) : Object(parent_, 
 
 GroupBase::~GroupBase() = default;
 
-Object *GroupBase::openChildObject(const string &name_, ElementType *objectType, hid_t *type) {//mfmf *type needed?
+Object *GroupBase::openChildObject(const string &name_, ElementType *objectType, hid_t *type) {
   ScopedHID o(H5Oopen(id, name_.c_str(), H5P_DEFAULT), &H5Oclose);
   H5I_type_t t=H5Iget_type(o);
   if(t==H5I_BADID)
