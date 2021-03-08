@@ -30,6 +30,8 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
 using namespace std;
 using namespace fmatvec;
@@ -39,6 +41,35 @@ namespace H5 {
 
 int File::defaultCompression=1;
 int File::defaultChunkSize=100;
+
+class Settings {
+  private:
+    static boost::filesystem::path getFileName() {
+#if _WIN32
+      boost::filesystem::path base(getenv("APPDATA"));
+#else
+      boost::filesystem::path base(getenv("HOME"));
+      base/=".config";
+#endif
+      return base/"mbsim-env"/"hdf5serie.ini";
+    }
+  public:
+    // Get configuration value of path (e.g. "keepAlive/pingFrequency").
+    // If the path does not exits it is added to config files with defaultValue and defaultValue is returned.
+    template<class T>
+    static T getValue(string path, const T& defaultValue) {
+      boost::algorithm::replace_all(path, "/", ".");
+      boost::property_tree::ptree pt;
+      if(boost::filesystem::exists(getFileName()))
+        boost::property_tree::ini_parser::read_ini(getFileName().string(), pt);
+      boost::optional<T> v=pt.get_optional<T>(path);
+      if(v)
+        return v.get();
+      pt.put(path, defaultValue);
+      boost::property_tree::ini_parser::write_ini(getFileName().string(), pt);
+      return defaultValue;
+    }
+};
 
 File::File(const boost::filesystem::path &filename_, FileAccess type_,
            const std::function<void()> &closeRequestCallback_,
@@ -169,38 +200,41 @@ void File::deinitProcessInfo() {
 
 void File::stillAlivePing() {
   while(1) {
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(1000)); // this is a boost thread interruption point // mfmf configure time
-    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex for still alive ping"<<endl;
-    ipc::scoped_lock lock(sharedData->mutex);
-    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Mutex locked and update keep alive timestamp"<<endl;
-    auto curIt=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
-      return pi.processUUID==processUUID;
-    });
-    curIt->lastAliveTime=boost::posix_time::microsec_clock::universal_time();
+    {
+      if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex for still alive ping"<<endl;
+      ipc::scoped_lock lock(sharedData->mutex);
+      if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Mutex locked and update keep alive timestamp"<<endl;
+      auto curIt=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
+        return pi.processUUID==processUUID;
+      });
+      curIt->lastAliveTime=boost::posix_time::microsec_clock::universal_time();
 
-    auto it=sharedData->processes.begin();
-    while(it!=sharedData->processes.end()) {
-      if(it->lastAliveTime+boost::posix_time::milliseconds(3000)<curIt->lastAliveTime) { // mfmf configure time
-        msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
-                          " Assume that this process crashed. Remove it from shared memory."<<endl;
-        if(it->type==read) {
-          msg(Atom::Debug)<<"HDF5Serie: decrement reader state, since a reader seem to have crashed"<<endl;
-          sharedData->activeReaders--;
+      auto it=sharedData->processes.begin();
+      while(it!=sharedData->processes.end()) {
+        if(it->lastAliveTime+boost::posix_time::milliseconds(Settings::getValue("keepAlive/fixAfter", 3000))<curIt->lastAliveTime) {
+          msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
+                            " Assume that this process crashed. Remove it from shared memory."<<endl;
+          if(it->type==read) {
+            msg(Atom::Debug)<<"HDF5Serie: decrement reader state, since a reader seem to have crashed"<<endl;
+            sharedData->activeReaders--;
+          }
+          else if(it->type==write) {
+            msg(Atom::Debug)<<"HDF5Serie: set writer state=none, since a writer seem to have crashed"<<endl;
+            sharedData->writerState=WriterState::none;
+          }
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Decrement shmUseCount"<<endl;
+          sharedData->shmUseCount--;
+          it=sharedData->processes.erase(it);
+          sharedData->cond.notify_all();
         }
-        else if(it->type==write) {
-          msg(Atom::Debug)<<"HDF5Serie: set writer state=none, since a writer seem to have crashed"<<endl;
-          sharedData->writerState=WriterState::none;
-        }
-        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Decrement shmUseCount"<<endl;
-        sharedData->shmUseCount--;
-        it=sharedData->processes.erase(it);
-        sharedData->cond.notify_all();
+        else
+          it++;
       }
-      else
-        it++;
-    }
 
-    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unlock mutex"<<endl;
+      if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unlock mutex"<<endl;
+    }
+    // this is a boost thread interruption point
+    boost::this_thread::sleep_for(boost::chrono::milliseconds(Settings::getValue("keepAlive/pingFrequency", 1000)));
   }
 }
 
@@ -344,7 +378,7 @@ void File::flushIfRequested() {
 
   // flush file (and datasets) and reset flushRequest flag and notify
   if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": flush file"<<endl;
-  GroupBase::flush();
+  GroupBase::flush();//mfmf mutex is locked for this operation. this should not be needed
   if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": reset flush request flag notify and unlock"<<endl;
   sharedData->flushRequest=false;
   sharedData->cond.notify_all();
