@@ -368,20 +368,26 @@ void File::flushIfRequested() {
   if(type!=write)
     throw Exception(getPath(), "flushIfRequested() can only be called for writing files");
 
-  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex"<<endl;
-  ipc::scoped_lock lock(sharedData->mutex);
-  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, checking for fush request"<<endl;
-  if(!sharedData->flushRequest) {
-    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": no flush request, unlock mutex"<<endl;
-    return;
+  {
+    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex"<<endl;
+    ipc::scoped_lock lock(sharedData->mutex);
+    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, checking for fush request"<<endl;
+    if(!sharedData->flushRequest) {
+      if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": no flush request, unlock mutex"<<endl;
+      return;
+    }
+    if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": flush requested, unlock mutex and flush file"<<endl;
   }
 
   // flush file (and datasets) and reset flushRequest flag and notify
-  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": flush file"<<endl;
-  GroupBase::flush();//mfmf mutex is locked for this operation. this should not be needed
-  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": reset flush request flag notify and unlock"<<endl;
+  GroupBase::flush();
+
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex"<<endl;
+  ipc::scoped_lock lock(sharedData->mutex);
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, reset flush request flag and notify"<<endl;
   sharedData->flushRequest=false;
   sharedData->cond.notify_all();
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": unlock mutex"<<endl;
 }
 
 void File::enableSWMR() {
