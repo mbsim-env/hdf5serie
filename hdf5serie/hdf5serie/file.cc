@@ -81,6 +81,11 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
   refreshCallback(refreshCallback_),
   shmName(createShmName(filename)),
   processUUID(boost::uuids::random_generator()()) {
+  // HDF5 file locking seems not to work propably, so we dislabe it. We do not need it anyway since proper 
+  // file access is fully handled by this class.
+  // (with hdf5 >= 1.10.7 this is also possilbe using H5Pset_file_locking
+  // but setting this envvar works with hdf5 >= 1.10.0 and even overwrites H5Pset_file_locking
+  setenv("HDF5_USE_FILE_LOCKING", "FALSE", 1);
 
   if(getenv("HDF5SERIE_DEBUG"))
     setMessageStreamActive(Atom::Debug, true);
@@ -170,6 +175,7 @@ void File::openWriter() {
   // create file
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+  H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI);
   ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
   H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
   id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
@@ -262,7 +268,9 @@ void File::openReader() {
 
   // open file
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": open HDF5 file"<<endl;
-  id.reset(H5Fopen(filename.string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, H5P_DEFAULT), &H5Fclose);
+  ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
+  H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI);
+  id.reset(H5Fopen(filename.string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid), &H5Fclose);
 }
 
 File::~File() {
