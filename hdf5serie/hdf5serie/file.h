@@ -106,7 +106,7 @@ namespace H5 {
       const std::function<void()> refreshCallback;
       bool flushRequested { false };
       //! Name of the shared memory
-      const std::string shmName;
+      std::string shmName;
       //!< a globally unique identifier for this process
       const boost::uuids::uuid processUUID;
 

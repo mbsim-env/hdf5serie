@@ -31,7 +31,7 @@
 Curves::Curves(QWidget * parent) : QTabWidget(parent) {
   setUsesScrollButtons(true);
 
-  QString windowTitle = QString("Plot %1").arg(++numberOfWindows);
+  QString windowTitle = QString("Plot %1").arg(count()+1);
   addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
   static_cast<MainWindow*>(parent)->getPlotArea()->addPlotWindow(tabText(currentIndex()));
 }
@@ -79,7 +79,7 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
     }
   }
   else if (QString::compare(mode, "new", Qt::CaseSensitive)==0) {
-    QString windowTitle = QString("Plot %1").arg(++numberOfWindows);
+    QString windowTitle = QString("Plot %1").arg(count()+1);
     addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
     setCurrentWidget(widget(count()-1));
     static_cast<PlotDataTable*>(currentWidget())->addDataSet(pd);
@@ -94,29 +94,6 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
     }
   }
   plotCurrentTab();
-}
-
-void Curves::collectFilesToRefresh(std::set<H5::File*> &filesToRefresh) {
-  DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent())->getDataSelection();
-  auto *plotDataTable=static_cast<PlotDataTable*>(currentWidget());
-  for(int i=0; i<plotDataTable->rowCount(); i++) {
-    PlotData pd;
-    for (int j=0; j<pd.numberOfItems(); j++)
-      pd.setValue(j, plotDataTable->item(i, j)->text());
-    filesToRefresh.insert(
-      dataSelection->getH5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString()).get()
-    );
-  }
-}
-
-void Curves::refreshAllTabs() {
-  int currentTab=currentIndex();
-  int numberOfTabs=count();
-  for (int i=0; i<numberOfTabs; i++) {
-    setCurrentIndex(i);
-    plotCurrentTab();
-  }
-  setCurrentIndex(currentTab);
 }
 
 void Curves::plotCurrentTab() {
@@ -134,16 +111,16 @@ void Curves::plotCurrentTab() {
   plotWindow->replotPlot();
 }
 
-QString Curves::saveCurves() {
-  QDomDocument doc("h5PlotDataset");
-  QDomElement root = doc.createElement("h5PlotDataset");
-  doc.appendChild(root);
+std::shared_ptr<QDomDocument> Curves::saveCurves() {
+  auto doc=std::make_shared<QDomDocument>("h5PlotDataset");
+  QDomElement root = doc->createElement("h5PlotDataset");
+  doc->appendChild(root);
   for (int t=0; t<count(); t++) {
-    QDomElement tabTag = doc.createElement("tab");
+    QDomElement tabTag = doc->createElement("tab");
     root.appendChild(tabTag);
-    static_cast<PlotDataTable*>(widget(t))->savePlot(&doc, &tabTag);
+    static_cast<PlotDataTable*>(widget(t))->savePlot(doc.get(), &tabTag);
   }
-  return doc.toString();
+  return doc;
 }
 
 void Curves::initLoadCurve(const QString &fileName) {

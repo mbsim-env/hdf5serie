@@ -79,7 +79,6 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
   type(type_),
   closeRequestCallback(closeRequestCallback_),
   refreshCallback(refreshCallback_),
-  shmName(createShmName(filename)),
   processUUID(boost::uuids::random_generator()()) {
   // HDF5 file locking seems not to work propably, so we dislabe it. We do not need it anyway since proper 
   // file access is fully handled by this class.
@@ -105,8 +104,10 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
 void File::openOrCreateShm() {
   // create inter process shared memory atomically
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Touch file"<<endl;
-  // create file -> to ensure is exists for file locking
+  // create file -> to ensure is exists for file locking and canonical path
   { ofstream str(filename.string(), ios_base::app); }
+  // now the file exists and we can create the shm name (which uses boost::filesystem::canonical)
+  shmName=createShmName(filename);
   // exclusively lock the file to atomically create or open a shared memory associated with this file
   ipc::file_lock fileLock(filename.c_str());
   {
@@ -366,7 +367,7 @@ void File::refresh() {
 void File::requestFlush() {
   if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Lock mutex"<<endl;
   ipc::scoped_lock lock(sharedData->mutex);
-  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, set flushRequest flag and unlock mutex"<<endl;
+  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": mutex locked, set flushRequest flag, notify and unlock mutex"<<endl;
   sharedData->flushRequest=true;
   flushRequested=true;
   sharedData->cond.notify_all(); // not really needed since we assume that the writer is polling on this flag frequently.
@@ -524,7 +525,7 @@ void File::dumpSharedMemory(const boost::filesystem::path &filename) {
 
 string File::createShmName(const boost::filesystem::path &filename) {
   string shmName="hdf5serieShm_";
-  auto absFilename=boost::filesystem::absolute(filename).generic_string();
+  auto absFilename=boost::filesystem::canonical(filename).generic_string();
   for(const char &c : absFilename) {
     if(('a'<=c && c<='z') || ('A'<=c && c<='Z') || ('0'<=c && c<='9'))
       shmName+=c;

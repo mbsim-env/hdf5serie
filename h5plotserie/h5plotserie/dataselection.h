@@ -24,9 +24,9 @@
 #include <boost/filesystem.hpp>
 #include <list>
 #include "abstractviewfilter.h"
+#include "qobjectdefs.h"
 
 namespace H5 {
-  class H5File;
   class Group;
   class File;
 }
@@ -41,14 +41,18 @@ class QFileInfo;
 class QWidget;
 
 class DataSelection : public QSplitter {
+  Q_OBJECT
 
   public:
     DataSelection(QWidget * parent = nullptr);
     ~DataSelection() override;
     
     void addFile(const QString &name);
+    void reopenAll();
+    void refreshFile(const QString &name);
     QList<QFileInfo> * getFileInfo() {return &fileInfo; }
     std::shared_ptr<H5::File> getH5File(const boost::filesystem::path &p) const;
+    void requestFlush();
 
   private:
     void selectFromFileBrowser(QTreeWidgetItem* item, int col);
@@ -68,6 +72,10 @@ class DataSelection : public QSplitter {
     QList<QFileInfo> fileInfo;
 
     std::list<std::pair<boost::filesystem::path, std::shared_ptr<H5::File>>> h5File;
+
+  Q_SIGNALS:
+    void reopenAllSignal();
+    void refreshFileSignal(const QString &name);
 };
 
 #endif // DATASELECTION_H

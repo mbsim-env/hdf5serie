@@ -23,15 +23,12 @@
 #include <QTabWidget>
 #include <QTableWidget>
 #include <set>
+#include <memory>
 
 class QDomDocument;
 class QDomElement;
 class PlotData;
 class PlotDataTable;
-
-namespace H5 {
-  class File;
-}
 
 class Curves : public QTabWidget {
   
@@ -39,18 +36,12 @@ class Curves : public QTabWidget {
     Curves(QWidget * parent = nullptr);
 
     void modifyPlotData(PlotData pd, const QString &mode);
-    QString saveCurves();
+    std::shared_ptr<QDomDocument> saveCurves();
     void initLoadCurve(const QString &fileName);
     void loadCurve(QDomDocument * doc);
 
-    void collectFilesToRefresh(std::set<H5::File*> &filesToRefresh);
-    void refreshAllTabs();
-
   public:
     void plotCurrentTab();
-
-  private:
-    int numberOfWindows{0};
 };
 
 class PlotDataTable : public QTableWidget {

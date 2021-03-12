@@ -29,6 +29,7 @@
 #include "QTextStream"
 #include "QTimer"
 #include <QSettings>
+#include <QDomDocument>
 #include "mainwindow.h"
 #include "dataselection.h"
 #include "curves.h"
@@ -47,17 +48,6 @@ MainWindow::MainWindow(const QStringList &arg) {
   fileMenu->addAction("load plot windows", this, &MainWindow::loadPlotWindows);
   fileMenu->addAction("exit", this, &MainWindow::close, QKeySequence::Quit);
 
-  QMenu * refreshMenu = menuBar()->addMenu(tr("&Refresh"));
-  refreshMenu->addAction("Refresh", this, &MainWindow::refresh, QKeySequence::Refresh);
-  QAction *autoRefresh=new QAction("Auto refresh", this);
-  refreshMenu->addAction(autoRefresh);
-  autoRefresh->setCheckable(true);
-  autoRefresh->setShortcut(QKeySequence("Shift+F5"));
-  connect(autoRefresh, &QAction::toggled, this, &MainWindow::autoRefresh);
-
-  autoReloadTimer=new QTimer(this);
-  connect(autoReloadTimer, &QTimer::timeout, this, &MainWindow::refresh);
-
   menuBar()->addSeparator();
   QMenu * helpMenu = menuBar()->addMenu(tr("&About"));
   helpMenu->addAction("GUI Help", this, &MainWindow::help);
@@ -74,6 +64,10 @@ MainWindow::MainWindow(const QStringList &arg) {
   dataSelection = new DataSelection(this);
   dataSelectionDW->setWidget(dataSelection);
   dataSelectionDW->setFeatures(QDockWidget::NoDockWidgetFeatures);
+
+  requestFlushTimer=new QTimer(this);
+  connect(requestFlushTimer, &QTimer::timeout, dataSelection, &DataSelection::requestFlush);
+  requestFlushTimer->start(500);
 
   QDockWidget *curvesDW=new QDockWidget("Curves", this);
   curvesDW->setObjectName("dockWidget/curves");
@@ -165,7 +159,7 @@ void MainWindow::saveAllPlotWindows() {
   QFile file(fileName+".h5Layout.xml");
   file.open(QIODevice::WriteOnly | QIODevice::Text);
   QTextStream out(&file);
-  out << curves->saveCurves();
+  out << curves->saveCurves()->toString();
   file.close();
 }
 
@@ -173,20 +167,6 @@ void MainWindow::loadPlotWindows() {
   QStringList files=QFileDialog::getOpenFileNames(this, "Load saved plot windows", ".", "h5Layout Files (*.h5Layout.xml)");
   for (int i=0; i<files.size(); i++)
     curves->initLoadCurve(files[i]);
-}
-
-void MainWindow::refresh() {
-  set<H5::File*> filesToRefresh;
-  curves->collectFilesToRefresh(filesToRefresh);
-
-  curves->refreshAllTabs();
-}
-
-void MainWindow::autoRefresh(bool checked) {
-  if(checked)
-    autoReloadTimer->start(500);
-  else
-    autoReloadTimer->stop();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {

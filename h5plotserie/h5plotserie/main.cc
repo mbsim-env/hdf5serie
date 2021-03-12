@@ -22,7 +22,6 @@
 #include <cfenv>
 #include <QApplication>
 #include <QDir>
-#include <QTimer>
 #include <QSettings>
 #include "mainwindow.h"
 #include "dataselection.h"
@@ -90,9 +89,19 @@ int main(int argc, char** argv) {
   if(arg.contains("--fullscreen")) mainWindow.showFullScreen(); // must be done after mainWindow.show()
   if(arg.contains("--maximized")) mainWindow.showMaximized();
 
+  bool firstLayoutFile=true;
   for(int i=0; i<arg.size(); i++)
     if(arg[i].endsWith(".h5Layout.xml", Qt::CaseSensitive))
+    {
+      if(firstLayoutFile) { // remove the already added empty tab when at least one layout file is specified
+        delete mainWindow.getCurves()->widget(0);
+        firstLayoutFile=false;
+      }
       mainWindow.getCurves()->initLoadCurve(arg[i]);
+    }
+  for(int i=0; i<arg.size(); i++)
+    if(arg[i].endsWith(".h5Layout.xml", Qt::CaseSensitive))
+      continue;
     else if(arg[i][0]!='-')
       mainWindow.getDataSelection()->addFile(arg[i]);
   return app.exec();

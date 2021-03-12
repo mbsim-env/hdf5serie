@@ -22,6 +22,11 @@ noinst_HEADERS = curves.h \
   plotdata.h \
   treewidgetitem.h
 
+nodist_h5plotserie_SOURCES=$(QT_BUILT_SOURCES)
+# C++ source file to build automatically (e.g. abc.moc.cc by abc.h)
+QT_BUILT_SOURCES = dataselection.moc.cc
+BUILT_SOURCES = $(QT_BUILT_SOURCES)
+
 icondir = @datadir@/h5plotserie/icons
 dist_icon_DATA = h5plotserie.svg
 

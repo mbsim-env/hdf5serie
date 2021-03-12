@@ -42,13 +42,11 @@ class MainWindow : public QMainWindow {
     void addH5FileDialog();
     void saveAllPlotWindows();
     void loadPlotWindows();
-    void refresh();
-    void autoRefresh(bool checked);
 
     PlotArea * plotArea;
     DataSelection * dataSelection;
     Curves * curves;
-    QTimer *autoReloadTimer;
+    QTimer *requestFlushTimer;
     void closeEvent(QCloseEvent *event) override;
     void showEvent(QShowEvent *event) override;
 

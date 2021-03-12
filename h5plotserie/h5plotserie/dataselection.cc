@@ -24,18 +24,22 @@
 #include "QLineEdit"
 #include "QListWidget"
 #include "QFileInfo"
+#include <QDomDocument>
 #include "dataselection.h"
 
 #include <hdf5serie/vectorserie.h>
 
 #include "treewidgetitem.h"
 #include "plotdata.h"
+#include "plotarea.h"
 #include "curves.h"
 #include "mainwindow.h"
 
 using namespace std;
 
 DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
+  connect(this, &DataSelection::reopenAllSignal, this, &DataSelection::reopenAll);
+  connect(this, &DataSelection::refreshFileSignal, this, &DataSelection::refreshFile);
 
   QWidget* dummy=new QWidget(this);
   addWidget(dummy);
@@ -80,13 +84,18 @@ void DataSelection::addFile(const QString &name) {
   fileInfo.append(name);
   file.append(name);
   std::shared_ptr<H5::File> h5f;
-  h5f=std::make_shared<H5::File>(file.back().toStdString(), H5::File::read);
+  h5f=std::make_shared<H5::File>(file.back().toStdString(), H5::File::read, [this](){
+    // close request
+    reopenAllSignal();
+  }, [this, name](){
+    // refresh callback
+    refreshFileSignal(name);
+  });
   h5File.emplace_back(name.toStdString(), h5f);
 
   TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileInfo.back().fileName()));
   topitem->setToolTip(0, fileInfo.back().absoluteFilePath());
   fileBrowser->addTopLevelItem(topitem);
-  QList<QTreeWidgetItem *> items;
   list<string> names=h5f->getChildObjectNames();
   for(const auto & name : names) {
     QTreeWidgetItem *item = new TreeWidgetItem(QStringList(name.c_str()));
@@ -94,6 +103,48 @@ void DataSelection::addFile(const QString &name) {
     insertChildInTree(grp, item);
     topitem->addChild(item);
   }
+}
+
+void DataSelection::reopenAll() {
+  auto curves=static_cast<MainWindow*>(parent()->parent())->getCurves();
+
+  // save all opened content
+  auto doc=curves->saveCurves();
+
+  // close all
+  path->setText("");
+  currentData->clear();
+  // close plot MIDs
+  auto plotArea=static_cast<MainWindow*>(parent()->parent())->getPlotArea();
+  for(auto &sw : plotArea->subWindowList())
+    delete sw;
+  // close "Curves"
+  for(int tab=curves->count()-1; tab>=0; --tab)
+    delete curves->widget(tab);
+  // close "Data Selection"
+  for(int idx=fileBrowser->topLevelItemCount(); idx>=0; --idx)
+    delete fileBrowser->topLevelItem(idx);
+  // close files
+  h5File.clear();
+  file.clear();
+  fileInfo.clear();
+
+  // reload all previously saved content
+  curves->loadCurve(doc.get());
+}
+
+void DataSelection::refreshFile(const QString &name) {
+  auto it=find_if(h5File.begin(), h5File.end(), [&name](const std::pair<boost::filesystem::path, std::shared_ptr<H5::File>> &f){
+    return f.first==name.toStdString();
+  });
+  if(it==h5File.end())
+    return;
+  auto h5f=it->second;
+  h5f->refresh();
+  // MFMF missing
+  cout<<"MISSING new data availalbe in file "<<name.toStdString()<<". The plot should be refreshed now."<<endl;
+  // for every curve being plotted from the file name/h5f get the current number of rows VectorSerie<...>::getRows(),
+  // get the column VectorSerie<...>::getColumn(col, data) and update the Qwt plot with the new data.
 }
 
 shared_ptr<H5::File> DataSelection::getH5File(const boost::filesystem::path &p) const {
@@ -186,3 +237,8 @@ void DataSelection::updatePath(QTreeWidgetItem *cur) {
     str=item->text(0)+"/"+str;
   path->setText(str);
 };
+
+void DataSelection::requestFlush() {
+  for(auto [path, h5f] : h5File)
+    h5f->requestFlush();
+}
