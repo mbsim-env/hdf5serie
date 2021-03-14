@@ -2,12 +2,15 @@ include $(top_srcdir)/qt.mk
 
 if COND_WIN32
   MAYBE_WIN32_SRC = h5plotserie.rc
+else
+  MAYBE_SIGWATCH_SRC = qt-unix-signals/sigwatch.cpp
+  MAYBE_SIGWATCH_MOC = qt-unix-signals/sigwatch.moc.cc
 endif
 
 bin_PROGRAMS = h5plotserie
 h5plotserie_CPPFLAGS = -I$(top_srcdir) $(QT_CFLAGS) $(HDF5SERIE_CFLAGS) $(QWT_CFLAGS)
 h5plotserie_LDADD    = $(QT_LIBS) $(HDF5SERIE_LIBS) $(QWT_LIBS) $(LIBDL)
-h5plotserie_SOURCES = $(MAYBE_WIN32_SRC) main.cc \
+h5plotserie_SOURCES = $(MAYBE_WIN32_SRC) $(MAYBE_SIGWATCH_SRC) main.cc \
   curves.cc \
   dataselection.cc \
   mainwindow.cc \
@@ -25,7 +28,7 @@ noinst_HEADERS = curves.h \
 nodist_h5plotserie_SOURCES=$(QT_BUILT_SOURCES)
 # C++ source file to build automatically (e.g. abc.moc.cc by abc.h)
 QT_BUILT_SOURCES = dataselection.moc.cc
-BUILT_SOURCES = $(QT_BUILT_SOURCES)
+BUILT_SOURCES = $(QT_BUILT_SOURCES) $(MAYBE_SIGWATCH_MOC)
 
 icondir = @datadir@/h5plotserie/icons
 dist_icon_DATA = h5plotserie.svg
