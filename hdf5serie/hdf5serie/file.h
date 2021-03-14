@@ -36,6 +36,10 @@
 
 namespace H5 {
 
+  namespace Internal {
+    class ScopedLock;
+  }
+
   class Dataset;
 
   /* A wrapper around a HDF5 file.
@@ -46,6 +50,7 @@ namespace H5 {
    * - if readers are active and a writer wants to start writing the readers are notified by a reopen request.
    */
   class File : public GroupBase {
+    friend class Internal::ScopedLock;
     public:
       enum FileAccess {
         read,  //!< open file for reading
@@ -170,8 +175,8 @@ namespace H5 {
       //! On entry the lock lock is released and re-aquired if waiting ends (the pred() == true).
       //! If this call blocks (pred is not already true on entry) then the message blockingMsg is printed
       //! (use a empty string to avoid printing)
-      void wait(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &lock,
-                const std::string &blockingMsg, const std::function<bool()> &pred);
+      void wait(Internal::ScopedLock &lock,
+                std::string_view blockingMsg, const std::function<bool()> &pred);
 
       // still alive pings use boost::thread since interruption point of boost, which are not availabe for std::thread, are used
       boost::thread stillAlivePingThread; // the thread for still alive pings
@@ -182,7 +187,7 @@ namespace H5 {
       //! -> hence we implement it ourself using the exitThread flag
       std::thread listenForRequestThread;
       //! The worker function for the thread listenForRequestThread.
-      void listenForRequest(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &&lock);
+      void listenForRequest(Internal::ScopedLock &&lock);
       //! Flag which is set to true to enforce the thread to exit (on the next condition notify signal)
       bool exitThread { false }; // access is object is guarded by sharedData->mutex (interprocess wide)
 
