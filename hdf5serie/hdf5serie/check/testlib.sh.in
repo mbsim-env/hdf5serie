@@ -1,4 +1,5 @@
 #!/bin/bash
 
 export LD_LIBRARY_PATH=@prefix@/bin:@prefix@/lib:$LD_LIBRARY_PATH
+@XC_EXEC_PREFIX@ ../dump/h5lockserie --remove test.h5 test2d.h5 || exit # remove all shared memory to start from a consistent state
 @XC_EXEC_PREFIX@ ./testlib@EXEEXT@

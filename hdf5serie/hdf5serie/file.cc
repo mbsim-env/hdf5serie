@@ -62,6 +62,8 @@ class Settings {
       boost::property_tree::ptree pt;
       if(boost::filesystem::exists(getFileName()))
         boost::property_tree::ini_parser::read_ini(getFileName().string(), pt);
+      else
+        boost::filesystem::create_directories(getFileName().parent_path());
       boost::optional<T> v=pt.get_optional<T>(path);
       if(v)
         return v.get();
@@ -198,11 +200,14 @@ void File::deinitProcessInfo() {
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": deinit process info. Interrupt and join keep alive thread"<<endl;
   stillAlivePingThread.interrupt();
   stillAlivePingThread.join();
-  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": keep alive thread joined. Remove process info from shared memory"<<endl;
-  auto it=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
-    return pi.processUUID==processUUID;
-  });
-  sharedData->processes.erase(it);
+  {
+    ipc::scoped_lock lock(sharedData->mutex);
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": keep alive thread joined. Remove process info from shared memory"<<endl;
+    auto it=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
+      return pi.processUUID==processUUID;
+    });
+    sharedData->processes.erase(it);
+  }
 }
 
 void File::stillAlivePing() {
@@ -326,10 +331,10 @@ void File::closeWriter() {
     // close a writer
     // set the writer state to none and notify about this change
     sharedData->writerState=WriterState::none;
-    deinitProcessInfo();
     sharedData->cond.notify_all();
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": unlock mutex"<<endl;
   }
+  deinitProcessInfo();
 }
 
 void File::closeReader() {
@@ -344,13 +349,13 @@ void File::closeReader() {
     // close a reader
     // decrements the number of active readers and notify about this change
     sharedData->activeReaders--;
-    deinitProcessInfo();
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": decrement activeReaders to "<<sharedData->activeReaders<<
                                                     ", set thread exit flag and notify"<<endl;
     exitThread=true; // set the thread exit flag before notifying to ensure that the thread gets closed
     sharedData->cond.notify_all();
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": unlock mutex"<<endl;
   }
+  deinitProcessInfo();
   // the thread should close now and we wait for it to join.
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": join thread"<<endl;
   listenForRequestThread.join();
