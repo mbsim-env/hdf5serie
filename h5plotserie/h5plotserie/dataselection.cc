@@ -239,6 +239,6 @@ void DataSelection::updatePath(QTreeWidgetItem *cur) {
 };
 
 void DataSelection::requestFlush() {
-  for(auto [path, h5f] : h5File)
-    h5f->requestFlush();
+  for(auto h5f : h5File)
+    h5f.second->requestFlush();
 }

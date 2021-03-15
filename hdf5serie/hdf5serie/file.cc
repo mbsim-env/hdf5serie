@@ -119,7 +119,7 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
   // file access is fully handled by this class.
   // (with hdf5 >= 1.10.7 this is also possilbe using H5Pset_file_locking
   // but setting this envvar works with hdf5 >= 1.10.0 and even overwrites H5Pset_file_locking
-  setenv("HDF5_USE_FILE_LOCKING", "FALSE", 1);
+  putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
 
   if(getenv("HDF5SERIE_DEBUG"))
     setMessageStreamActive(Atom::Debug, true);
@@ -144,7 +144,7 @@ void File::openOrCreateShm() {
   // now the file exists and we can create the shm name (which uses boost::filesystem::canonical)
   shmName=createShmName(filename);
   // exclusively lock the file to atomically create or open a shared memory associated with this file
-  ipc::file_lock fileLock(filename.c_str());
+  ipc::file_lock fileLock(filename.string().c_str());
   {
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Trying to lock file: openOrCreateShm"<<endl;
     ipc::scoped_lock lock(fileLock);
@@ -306,7 +306,7 @@ File::~File() {
       case read:   closeReader(); break;
     }
 
-    ipc::file_lock fileLock(filename.c_str());//mfmf file_lock are not very portable -> use a named mutex (the mutex in the shm may be obsolte than)
+    ipc::file_lock fileLock(filename.string().c_str());//mfmf file_lock are not very portable -> use a named mutex (the mutex in the shm may be obsolte than)
     {
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Trying to lock file: dtor"<<endl;
       ipc::scoped_lock lockF(fileLock);
@@ -481,7 +481,7 @@ void File::listenForRequest(ScopedLock &&lock) {
 
 void File::dumpSharedMemory(const boost::filesystem::path &filename) {
   // exclusively lock the file to atomically open the shared memory associated with this file
-  ipc::file_lock fileLock(filename.c_str());
+  ipc::file_lock fileLock(filename.string().c_str());
   {
     msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Trying to lock file: dumpSharedMemory"<<endl;
     ipc::scoped_lock lock(fileLock);

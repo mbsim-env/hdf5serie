@@ -17,7 +17,7 @@ h5lsserie_LDADD = ../libhdf5serie.la $(FMATVEC_LIBS) -l@BOOST_FILESYSTEM_LIB@ -l
 h5lockserie_SOURCES = h5lockserie.cc
 
 h5lockserie_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/hdf5serie $(FMATVEC_CFLAGS)
-h5lockserie_LDADD = ../libhdf5serie.la -l@BOOST_PROGRAM_OPTIONS_LIB@ -l@BOOST_SYSTEM_LIB@ #$(FMATVEC_LIBS) -l@BOOST_FILESYSTEM_LIB@
+h5lockserie_LDADD = ../libhdf5serie.la $(FMATVEC_LIBS) -l@BOOST_FILESYSTEM_LIB@ -l@BOOST_PROGRAM_OPTIONS_LIB@ -l@BOOST_SYSTEM_LIB@
 
 
 octavedir = @datadir@/hdf5serie/octave
