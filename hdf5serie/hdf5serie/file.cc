@@ -23,7 +23,6 @@
 #define BOOST_PENDING_INTEGER_LOG2_HPP
 #include <boost/integer/integer_log2.hpp>
 
-#include <boost/interprocess/shared_memory_object.hpp>
 #include <config.h>
 #include <hdf5serie/file.h>
 #include <boost/interprocess/sync/file_lock.hpp>
@@ -153,15 +152,14 @@ void File::openOrCreateShm() {
     try {
       // try to open the shared memory ...
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Try to open shared memory named "<<shmName<<endl;
-      shm=ipc::shared_memory_object(ipc::open_only, shmName.c_str(), ipc::read_write);
+      shm=SharedMemory(ipc::open_only, shmName.c_str(), ipc::read_write);
       region=ipc::mapped_region(shm, ipc::read_write); // map memory
       sharedData=static_cast<SharedMemObject*>(region.get_address()); // get pointer
     }
     catch(...) {
       // ... if it failed, create the shared memory
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Opening shared memory failed, create now"<<endl;
-      shm=ipc::shared_memory_object(ipc::create_only, shmName.c_str(), ipc::read_write);
-      shm.truncate(sizeof(SharedMemObject)); // size the shared memory
+      shm=SharedMemoryCreate(shmName.c_str(), ipc::read_write, sizeof(SharedMemObject));
       region=ipc::mapped_region(shm, ipc::read_write); // map memory
       sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
     }
@@ -305,7 +303,7 @@ File::~File() {
       case write:  closeWriter(); break;
       case read:   closeReader(); break;
     }
-
+ 
     ipc::file_lock fileLock(filename.string().c_str());//mfmf file_lock are not very portable -> use a named mutex (the mutex in the shm may be obsolte than)
     {
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Trying to lock file: dtor"<<endl;
@@ -323,7 +321,7 @@ File::~File() {
         msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Shared memory is no longer used, remove it"<<endl;
         sharedData->~SharedMemObject(); // call destructor of SharedMemObject
         // region does not need destruction
-        ipc::shared_memory_object::remove(shmName.c_str()); // effectively destructs shm
+        SharedMemoryRemove(shmName.c_str()); // effectively destructs shm
       }
       msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unlock file: dtor"<<endl;
     }
@@ -488,13 +486,13 @@ void File::dumpSharedMemory(const boost::filesystem::path &filename) {
     msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": File locked: dumpSharedMemory"<<endl;
     // convert filename to valid boost interprocess name (cname)
     string shmName=createShmName(filename);
-    boost::interprocess::shared_memory_object shm;
+    SharedMemory shm;
     boost::interprocess::mapped_region region;
     SharedMemObject *sharedData=nullptr;
     try {
       // try to open the shared memory ...
       msgStatic(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Try to open shared memory named "<<shmName<<endl;
-      shm=ipc::shared_memory_object(ipc::open_only, shmName.c_str(), ipc::read_write);
+      shm=SharedMemory(ipc::open_only, shmName.c_str(), ipc::read_write);
       region=ipc::mapped_region(shm, ipc::read_write); // map memory
       sharedData=static_cast<SharedMemObject*>(region.get_address()); // get pointer
     }
@@ -549,7 +547,7 @@ void File::removeSharedMemory(const boost::filesystem::path &filename) {
   cout<<"Remove shared memory for HDF5Serie HDF5 file."<<endl;
   cout<<"filename: "<<filename.string()<<endl;
   cout<<"shared memory name: "<<shmName<<endl;
-  ipc::shared_memory_object::remove(shmName.c_str());
+  SharedMemoryRemove(shmName.c_str());
 }
 
 

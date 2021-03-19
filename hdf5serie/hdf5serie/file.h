@@ -26,7 +26,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <boost/interprocess/sync/interprocess_condition.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
+#ifdef _WIN32
+  #include <boost/interprocess/windows_shared_memory.hpp>
+#else
+  #include <boost/interprocess/shared_memory_object.hpp>
+#endif
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/container/static_vector.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -35,6 +39,28 @@
 #include <boost/thread/thread.hpp>
 
 namespace H5 {
+
+#ifdef _WIN32
+  using SharedMemory = boost::interprocess::windows_shared_memory;
+  inline void SharedMemoryRemove(const char* shmName) {
+  }
+  inline SharedMemory SharedMemoryCreate(const char *shmName, boost::interprocess::mode_t mode,
+                               size_t size) {
+    auto shm=SharedMemory(boost::interprocess::create_only, shmName, mode, size);
+    return shm;
+  }
+#else
+  using SharedMemory = boost::interprocess::shared_memory_object;
+  inline void SharedMemoryRemove(const char* shmName) {
+    SharedMemory::remove(shmName);
+  }
+  inline SharedMemory SharedMemoryCreate(const char *shmName, boost::interprocess::mode_t mode,
+                               size_t size) {
+    auto shm=SharedMemory(boost::interprocess::create_only, shmName, mode);
+    shm.truncate(size);
+    return shm;
+  }
+#endif
 
   namespace Internal {
     class ScopedLock;
@@ -151,7 +177,7 @@ namespace H5 {
 
       //! Shared memory object holding the shared memory
       //! Access to shm (and region) must bu guarded by locking the boost filelock of filename.
-      boost::interprocess::shared_memory_object shm;
+      SharedMemory shm;
       //! Memory region holding the shared memory map
       //! Access to region (and shm) must bu guarded by locking the boost filelock of filename.
       boost::interprocess::mapped_region region;
