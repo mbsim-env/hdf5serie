@@ -279,6 +279,7 @@ void File::openReader() {
     wait(lock, "Blocking until no writer exists or the writer is in SWMR state.", [this](){
       return sharedData->writerState==WriterState::none || sharedData->writerState==WriterState::swmr;
     });
+    lastWriterState=sharedData->writerState;
     // increment the active readers count and notify about this change
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Increment activeReaders and notify"<<endl;
     sharedData->activeReaders++;
@@ -445,12 +446,15 @@ void File::listenForRequest(ScopedLock &&lock) {
   while(1) {
     // ... waits until write request happens (or this thread is to be closed)
     wait(threadLock, "", [this](){
-      return sharedData->writerState==WriterState::writeRequest ||
-             (sharedData->flushRequest==false && flushRequested) ||
-             exitThread;
+      return sharedData->writerState==WriterState::writeRequest || // a writer wants to write
+             (flushRequested && sharedData->flushRequest==false) || // this object has requested a flush which is done now
+             (lastWriterState!=WriterState::none && sharedData->writerState==WriterState::none) || // writer has finished
+             exitThread; // this thread should exit
     });
-    // if a writer has done is flush after a reqeust ...
-    if(sharedData->flushRequest==false && flushRequested) {
+    // if a writer has done is flush after a reqeust OR
+    // a writer has finished ...
+    if((flushRequested && sharedData->flushRequest==false) ||
+       (lastWriterState!=WriterState::none && sharedData->writerState==WriterState::none)) {
       flushRequested=false;
       // ... call the callback to notify the caller of this reader about the finished flush
       if(refreshCallback) {
@@ -461,6 +465,7 @@ void File::listenForRequest(ScopedLock &&lock) {
         msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file but the reader does not handle such nofitications."<<endl;
       // do no exit the thread
     }
+    lastWriterState=sharedData->writerState;
     // if a write request has happen (we are not here due to a thread exit request) ...
     if(sharedData->writerState==WriterState::writeRequest) {
       // ... call the callback to notify the caller of this reader about this request

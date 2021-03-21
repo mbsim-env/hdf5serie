@@ -135,7 +135,7 @@ namespace H5 {
       const std::function<void()> closeRequestCallback;
       //! This callback is called when a writer has flushed
       const std::function<void()> refreshCallback;
-      bool flushRequested { false };
+
       //! Name of the shared memory
       std::string shmName;
       //!< a globally unique identifier for this process
@@ -172,7 +172,7 @@ namespace H5 {
         // the follwing members are only used for still-alive/crash detection handling
         boost::container::static_vector<ProcessInfo, MAXREADERS+1> processes; //<! a list of all processes accessing the shared memory
         // the follwing members are only used for flush/refresh handling
-        bool flushRequest; //<! Is set to true by reader if a flush of the writer should be done. The writer resets to false after a flush.
+        bool flushRequest { false }; //<! Is set to true by reader if a flush of the writer should be done. The writer resets to false after a flush.
       };
 
       //! Shared memory object holding the shared memory
@@ -184,6 +184,11 @@ namespace H5 {
 
       //! Pointer to the shared memory object
       SharedMemObject *sharedData {nullptr};
+
+      //! True if this reader has requested a flush.
+      bool flushRequested { false };
+      //! The last wrtierState known by this object.
+      WriterState lastWriterState { WriterState::none };
 
       //! transform filename to a valid boost interprocess name.
       static std::string createShmName(const boost::filesystem::path &filename);
