@@ -247,19 +247,27 @@ void File::stillAlivePing() {
       auto it=sharedData->processes.begin();
       while(it!=sharedData->processes.end()) {
         if(it->lastAliveTime+boost::posix_time::milliseconds(Settings::getValue("keepAlive/fixAfter", 3000))<curIt->lastAliveTime) {
-          msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
-                           " Assume that this process crashed. Remove it from shared memory."<<endl;
-          if(it->type==read) {
-            msg(Atom::Debug)<<"HDF5Serie: Decrement activeReaders and shmUseCount, since a reader seem to have crashed, and notify"<<endl;
-            sharedData->activeReaders--;
+          const static char* HDF5SERIE_NOCRASHFIX=getenv("HDF5SERIE_NOCRASHFIX");
+          if(!HDF5SERIE_NOCRASHFIX) {
+            msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
+                             " Assume that this process crashed. Remove it from shared memory."<<endl;
+            if(it->type==read) {
+              msg(Atom::Debug)<<"HDF5Serie: Decrement activeReaders and shmUseCount, since a reader seem to have crashed, and notify"<<endl;
+              sharedData->activeReaders--;
+            }
+            else if(it->type==write) {
+              msg(Atom::Debug)<<"HDF5Serie: Set writerState=none and decrement shmUseCount, since a writer seem to have crashed, and notify"<<endl;
+              sharedData->writerState=WriterState::none;
+            }
+            sharedData->shmUseCount--;
+            it=sharedData->processes.erase(it);
+            sharedData->cond.notify_all();
           }
-          else if(it->type==write) {
-            msg(Atom::Debug)<<"HDF5Serie: Set writerState=none and decrement shmUseCount, since a writer seem to have crashed, and notify"<<endl;
-            sharedData->writerState=WriterState::none;
+          else {
+            msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
+                             " Assume that this process crashed but DO NOT remove it from shared memory"
+                             " since the envvar HDF5SERIE_NOCRASHFIX is set."<<endl;
           }
-          sharedData->shmUseCount--;
-          it=sharedData->processes.erase(it);
-          sharedData->cond.notify_all();
         }
         else
           it++;
