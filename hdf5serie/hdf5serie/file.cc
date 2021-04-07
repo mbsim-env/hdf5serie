@@ -267,6 +267,7 @@ void File::stillAlivePing() {
             msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
                              " Assume that this process crashed but DO NOT remove it from shared memory"
                              " since the envvar HDF5SERIE_NOCRASHFIX is set."<<endl;
+            it++;
           }
         }
         else
