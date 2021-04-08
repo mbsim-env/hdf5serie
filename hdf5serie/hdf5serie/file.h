@@ -218,7 +218,7 @@ namespace H5 {
       //! -> hence we implement it ourself using the exitThread flag
       std::thread listenForRequestThread;
       //! The worker function for the thread listenForRequestThread.
-      void listenForRequest(Internal::ScopedLock &&lock);
+      void listenForRequest();
       //! Flag which is set to true to enforce the thread to exit (on the next condition notify signal)
       bool exitThread { false }; // access is object is guarded by sharedData->mutex (interprocess wide)
 

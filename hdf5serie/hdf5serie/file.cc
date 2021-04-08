@@ -43,18 +43,13 @@ int File::defaultCompression=1;
 int File::defaultChunkSize=100;
 
 namespace Internal {
-  // This class is exaclty like boost::interprocess::scoped_lock but prints debug messages.
+  // This class is similar to boost::interprocess::scoped_lock but prints debug messages.
   class ScopedLock : public ipc::scoped_lock<ipc::interprocess_mutex>  {
     public:
       ScopedLock(ipc::interprocess_mutex &mutex, File *self_, string_view msg_) :
                  ipc::scoped_lock<ipc::interprocess_mutex>((initMsg(self_, msg_), mutex)), self(self_), msg(msg_) {
         if(self->msgAct(Atom::Debug))
           self->msg(Atom::Debug)<<"HDF5Serie: "<<self->filename.string()<<": Mutex locked: "<<msg<<endl;
-      }
-      ScopedLock(ScopedLock &&src, string_view msg_="") :
-                 ipc::scoped_lock<ipc::interprocess_mutex>(move(src)), self(src.self), msg(msg_!="" ? msg_ : src.msg) {
-        if(self->msgAct(Atom::Debug))
-          self->msg(Atom::Debug)<<"HDF5Serie: "<<self->filename.string()<<": Move lock "<<src.msg<<" to "<<msg<<endl;
       }
       ~ScopedLock() {
         if(self->msgAct(Atom::Debug)) {
@@ -235,6 +230,7 @@ void File::deinitProcessInfo() {
   }
 }
 
+// executed in a thread
 void File::stillAlivePing() {
   while(1) {
     {
@@ -294,9 +290,9 @@ void File::openReader() {
     sharedData->activeReaders++;
     sharedData->cond.notify_all();
     // open a thread which listens for futher writer which want to start writing
-    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Start thread pass pass lock (openReader) to thread (listenForRequest)"<<endl;
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Start thread"<<endl;
     exitThread=false; // flag indicating that the thread should close -> false at thread start
-    listenForRequestThread=thread(&File::listenForRequest, this, move(lock));
+    listenForRequestThread=thread(&File::listenForRequest, this);
   }
 
   // open file
@@ -448,10 +444,11 @@ void File::wait(ScopedLock &lock,
   }
 }
 
-void File::listenForRequest(ScopedLock &&lock) {
-  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Thread started, move lock to thread scope"<<endl;
+// executed in a thread
+void File::listenForRequest() {
+  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Thread started"<<endl;
   // this thread just listens for all notifications and ...
-  ScopedLock threadLock(move(lock), "listenForRequest");
+  ScopedLock threadLock(sharedData->mutex, this, "listenForRequest");
   while(1) {
     // ... waits until write request happens (or this thread is to be closed)
     wait(threadLock, "", [this](){
