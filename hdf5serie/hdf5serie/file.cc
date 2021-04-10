@@ -26,7 +26,6 @@
 #include <config.h>
 #include <hdf5serie/file.h>
 #include <boost/interprocess/sync/file_lock.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -67,6 +66,43 @@ namespace Internal {
       File *self;
       string_view msg;
   };
+
+  template<int N>
+  void ConditionVariable<N>::wait(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
+                                  const function<bool()> &pred) {
+    if(!externLock)
+      throw boost::interprocess::lock_exception();
+    while(!pred()) {
+      auto curUUID=boost::uuids::random_generator()();
+      {
+        boost::interprocess::scoped_lock waiterLock(waiterMutex);
+        if(waiter.size()==N)
+          throw runtime_error("Too many waiter in ConditionVariable.");
+        waiter.emplace_back(curUUID);
+      }
+      externLock.unlock();
+      
+      bool exitLoop;
+      do {
+        using namespace chrono_literals;
+        this_thread::sleep_for(1000ms/25);
+        {
+          boost::interprocess::scoped_lock waiterLock(waiterMutex);
+          exitLoop = find(waiter.begin(), waiter.end(), curUUID)==waiter.end();
+        }
+      }
+      while(!exitLoop);
+
+      externLock.lock();
+    }
+  }
+
+  template<int N>
+  void ConditionVariable<N>::notify_all() {
+    boost::interprocess::scoped_lock waiterLock(waiterMutex);
+    // no wakeup of all others needed since polling is used
+    waiter.clear();
+  }
 }
 
 class Settings {
@@ -101,8 +137,8 @@ class Settings {
 };
 
 File::File(const boost::filesystem::path &filename_, FileAccess type_,
-           const std::function<void()> &closeRequestCallback_,
-           const std::function<void()> &refreshCallback_) :
+           const function<void()> &closeRequestCallback_,
+           const function<void()> &refreshCallback_) :
   GroupBase(nullptr, filename_.string()),
   filename(filename_),
   type(type_),
@@ -386,7 +422,8 @@ void File::refresh() {
 
 void File::requestFlush() {
   ScopedLock lock(sharedData->mutex, this, "requestFlush");
-  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Set flushRequest and notify"<<endl;
+  if(msgAct(Atom::Debug))
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Set flushRequest and notify"<<endl;
   sharedData->flushRequest=true;
   flushRequested=true;
   sharedData->cond.notify_all(); // not really needed since we assume that the writer is polling on this flag frequently.
@@ -399,17 +436,20 @@ void File::flushIfRequested() {
   {
     ScopedLock lock(sharedData->mutex, this, "flushIfRequested, before flush");
     if(!sharedData->flushRequest) {
-      if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": No flush request"<<endl;
+      if(msgAct(Atom::Debug))
+        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": No flush request"<<endl;
       return;
     }
   }
 
   // flush file (and datasets) and reset flushRequest flag and notify
-  if(msgAct(Atom::Debug)) msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Flushing now"<<endl;
+  if(msgAct(Atom::Debug))
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Flushing now"<<endl;
   GroupBase::flush();
 
   ScopedLock lock(sharedData->mutex, this, "flushIfRequested, after flush");
-  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unset flushRequest and notify"<<endl;
+  if(msgAct(Atom::Debug))
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Unset flushRequest and notify"<<endl;
   sharedData->flushRequest=false;
   sharedData->cond.notify_all();
 }
@@ -434,19 +474,18 @@ void File::enableSWMR() {
 
 void File::wait(ScopedLock &lock,
                 string_view blockingMsg, const function<bool()> &pred) {
-  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Waiting for: "<<blockingMsg<<endl;
-  // for for pred to become true but timeout immediately
-  if(!sharedData->cond.timed_wait(lock, boost::posix_time::microsec_clock::universal_time(), [&pred](){ return pred(); })) {
-    // if timed-out print the blocking message and wait again (for without a timeout)
-    if(!blockingMsg.empty())
-      msg(Atom::Info)<<"HDF5Serie: "<<filename.string()<<": "<<blockingMsg<<endl;
-    sharedData->cond.wait(lock, [&pred](){ return pred(); });
-  }
+  if(msgAct(Atom::Debug))
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Waiting for: "<<blockingMsg<<endl;
+  // print a message if this call will block
+  if(!blockingMsg.empty() && !pred())
+    msg(Atom::Info)<<"HDF5Serie: "<<filename.string()<<": "<<blockingMsg<<endl;
+  sharedData->cond.wait(lock, [&pred](){ return pred(); });
 }
 
 // executed in a thread
 void File::listenForRequest() {
-  msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Thread started"<<endl;
+  if(msgAct(Atom::Debug))
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Thread started"<<endl;
   // this thread just listens for all notifications and ...
   ScopedLock threadLock(sharedData->mutex, this, "listenForRequest");
   while(1) {
@@ -464,11 +503,14 @@ void File::listenForRequest() {
       flushRequested=false;
       // ... call the callback to notify the caller of this reader about the finished flush
       if(refreshCallback) {
-        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file. Notify the reader."<<endl;
+        if(msgAct(Atom::Debug))
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file. Notify the reader."<<endl;
         refreshCallback();
       }
-      else
-        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file but the reader does not handle such nofitications."<<endl;
+      else {
+        if(msgAct(Atom::Debug))
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file but the reader does not handle such nofitications."<<endl;
+      }
       // do no exit the thread
     }
     lastWriterState=sharedData->writerState;
@@ -476,11 +518,14 @@ void File::listenForRequest() {
     if(sharedData->writerState==WriterState::writeRequest) {
       // ... call the callback to notify the caller of this reader about this request
       if(closeRequestCallback) {
-        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file. Notify the reader."<<endl;
+        if(msgAct(Atom::Debug))
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file. Notify the reader."<<endl;
         closeRequestCallback();
       }
-      else
-        msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file but the reader does not handle such requests."<<endl;
+      else {
+        if(msgAct(Atom::Debug))
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file but the reader does not handle such requests."<<endl;
+      }
       break; // exit the thread
     }
     if(exitThread)

@@ -25,7 +25,7 @@
 #include <hdf5serie/group.h>
 #include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/interprocess_mutex.hpp>
-#include <boost/interprocess/sync/interprocess_condition.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 #ifdef _WIN32
   #include <boost/interprocess/windows_shared_memory.hpp>
 #else
@@ -40,30 +40,49 @@
 
 namespace H5 {
 
+  namespace Internal {
 #ifdef _WIN32
-  using SharedMemory = boost::interprocess::windows_shared_memory;
-  inline void SharedMemoryRemove(const char* shmName) {
-  }
-  inline SharedMemory SharedMemoryCreate(const char *shmName, boost::interprocess::mode_t mode,
-                               size_t size) {
-    auto shm=SharedMemory(boost::interprocess::create_only, shmName, mode, size);
-    return shm;
-  }
+    using SharedMemory = boost::interprocess::windows_shared_memory;
+    inline void SharedMemoryRemove(const char* shmName) {
+    }
+    inline SharedMemory SharedMemoryCreate(const char *shmName, boost::interprocess::mode_t mode,
+                                 size_t size) {
+      auto shm=SharedMemory(boost::interprocess::create_only, shmName, mode, size);
+      return shm;
+    }
 #else
-  using SharedMemory = boost::interprocess::shared_memory_object;
-  inline void SharedMemoryRemove(const char* shmName) {
-    SharedMemory::remove(shmName);
-  }
-  inline SharedMemory SharedMemoryCreate(const char *shmName, boost::interprocess::mode_t mode,
-                               size_t size) {
-    auto shm=SharedMemory(boost::interprocess::create_only, shmName, mode);
-    shm.truncate(size);
-    return shm;
-  }
+    using SharedMemory = boost::interprocess::shared_memory_object;
+    inline void SharedMemoryRemove(const char* shmName) {
+      SharedMemory::remove(shmName);
+    }
+    inline SharedMemory SharedMemoryCreate(const char *shmName, boost::interprocess::mode_t mode,
+                                 size_t size) {
+      auto shm=SharedMemory(boost::interprocess::create_only, shmName, mode);
+      shm.truncate(size);
+      return shm;
+    }
 #endif
 
-  namespace Internal {
     class ScopedLock;
+
+    // A simple robust condition variable.
+    // The robustness is simply achived by polling in constant time intervalls instead of putting thread to sleep and wakeup.
+    // This polling delay is no problem in this scope since its only used for user visible things.
+    // So a polling delay of 1/25 second (25 frames per second) is used which equal the human visible reaction time.
+    // The interface equals boost::interprocess::interprocess_condition but not with all member functions.
+    // However, only N threads (which may be from different processes) can be waiting.
+    // The implementation is similar to
+    // https://cseweb.ucsd.edu/classes/sp17/cse120-a/applications/ln/lecture7.html
+    template<int N>
+    class ConditionVariable {
+      public:
+        void wait(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
+                  const std::function<bool()> &pred);
+        void notify_all();
+      private:
+        boost::container::static_vector<boost::uuids::uuid, N> waiter;
+        boost::interprocess::interprocess_mutex waiterMutex;
+    };
   }
 
   class Dataset;
@@ -150,6 +169,8 @@ namespace H5 {
       };
       //! the maximal number of readers which can access the file simultanously
       constexpr static size_t MAXREADERS { 100 };
+      //! the maximal number of writers. Just need since only a fixed amount of readers+writers can wait for the ConditionVariable
+      constexpr static size_t MAXWRITERS { 10 };
       //! Information about a process accessing the shared memory (a process means here an instance of a File class)
       struct ProcessInfo {
         boost::uuids::uuid processUUID;         //!< a globally unique identifier for each process
@@ -164,7 +185,7 @@ namespace H5 {
         size_t shmUseCount { 0 }; //<! the number users of this shared memory object
         // the following members are used to synchronize the writer and all readers.
         boost::interprocess::interprocess_mutex mutex;    //<! mutex for synchronization handling.
-        boost::interprocess::interprocess_condition cond; //<! a condition variable for signaling state changes.
+        Internal::ConditionVariable<MAXREADERS+MAXWRITERS> cond; //<! a condition variable for signaling state changes.
         // the following members represent the state of the writer and readers
         // after setting any of these variables sharedData->cond.notify_all() must be called to notify all waiting process about the change
         WriterState writerState { WriterState::none }; //<! the current state of the write of this file.
@@ -177,7 +198,7 @@ namespace H5 {
 
       //! Shared memory object holding the shared memory
       //! Access to shm (and region) must bu guarded by locking the boost filelock of filename.
-      SharedMemory shm;
+      Internal::SharedMemory shm;
       //! Memory region holding the shared memory map
       //! Access to region (and shm) must bu guarded by locking the boost filelock of filename.
       boost::interprocess::mapped_region region;
@@ -214,7 +235,7 @@ namespace H5 {
       void stillAlivePing(); // the worker function
 
       //! A thread created for a reader to listen when a new writer process requests a write of has flushed the file.
-      //! boost thread interruption points does not help here since its not working with boost::interprocess::interprocess_condition
+      //! boost thread interruption points does not help here since its not working with ConditionVariable
       //! -> hence we implement it ourself using the exitThread flag
       std::thread listenForRequestThread;
       //! The worker function for the thread listenForRequestThread.
