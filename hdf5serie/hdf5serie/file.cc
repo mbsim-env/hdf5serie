@@ -72,13 +72,13 @@ namespace Internal {
                                   const function<bool()> &pred) {
     if(!externLock)
       throw boost::interprocess::lock_exception();
+    auto waiterUUID=boost::uuids::random_generator()();
     while(!pred()) {
-      auto curUUID=boost::uuids::random_generator()();
       {
         boost::interprocess::scoped_lock waiterLock(waiterMutex);
         if(waiter.size()==N)
-          throw runtime_error("Too many waiter in ConditionVariable.");
-        waiter.emplace_back(curUUID);
+          throw runtime_error("Too many threads are waiting in ConditionVariable.");
+        waiter.emplace_back(waiterUUID);
       }
       externLock.unlock();
       
@@ -88,7 +88,7 @@ namespace Internal {
         this_thread::sleep_for(1000ms/25);
         {
           boost::interprocess::scoped_lock waiterLock(waiterMutex);
-          exitLoop = find(waiter.begin(), waiter.end(), curUUID)==waiter.end();
+          exitLoop = find(waiter.begin(), waiter.end(), waiterUUID)==waiter.end();
         }
       }
       while(!exitLoop);
@@ -480,6 +480,8 @@ void File::wait(ScopedLock &lock,
   if(!blockingMsg.empty() && !pred())
     msg(Atom::Info)<<"HDF5Serie: "<<filename.string()<<": "<<blockingMsg<<endl;
   sharedData->cond.wait(lock, [&pred](){ return pred(); });
+  if(msgAct(Atom::Debug))
+    msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Waiting condition passed, continue: "<<blockingMsg<<endl;
 }
 
 // executed in a thread

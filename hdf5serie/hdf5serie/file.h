@@ -71,6 +71,7 @@ namespace H5 {
     // So a polling delay of 1/25 second (25 frames per second) is used which equal the human visible reaction time.
     // The interface equals boost::interprocess::interprocess_condition but not with all member functions.
     // However, only N threads (which may be from different processes) can be waiting.
+    // This class must be implemented in a address-free way since it is placed usually in shared memory.
     // The implementation is similar to
     // https://cseweb.ucsd.edu/classes/sp17/cse120-a/applications/ln/lecture7.html
     template<int N>
