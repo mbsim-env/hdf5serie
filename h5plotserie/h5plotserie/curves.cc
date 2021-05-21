@@ -28,7 +28,7 @@
 #include "mainwindow.h"
 #include "dataselection.h"
 
-Curves::Curves(QWidget * parent) : QTabWidget(parent) {
+Curves::Curves(QWidget *parent) : QTabWidget(parent) {
   setUsesScrollButtons(true);
 
   QString windowTitle = QString("Plot %1").arg(count()+1);
@@ -98,10 +98,10 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
 
 void Curves::plotCurrentTab() {
   const QString tabName = tabText(currentIndex());
-  auto * plotWindow = static_cast<MainWindow*>(parent()->parent())->getPlotArea()->findChild<PlotWindow*>(tabName);
+  auto *plotWindow = static_cast<MainWindow*>(parent()->parent())->getPlotArea()->findChild<PlotWindow*>(tabName);
 
   plotWindow->detachPlot();
-  auto * plotDataTable = static_cast<PlotDataTable*>(currentWidget());
+  auto *plotDataTable = static_cast<PlotDataTable*>(currentWidget());
   for (int i=0; i<plotDataTable->rowCount(); i++) {
     PlotData pd;
     for (int j=0; j<pd.numberOfItems(); j++)
@@ -109,6 +109,23 @@ void Curves::plotCurrentTab() {
     plotWindow->plotDataSet(pd, i);
   }
   plotWindow->replotPlot();
+}
+
+void Curves::plotAllTabs() {
+  for(int i=0; i<count(); i++) {
+    const QString tabName = tabText(i);
+    auto *plotWindow = static_cast<MainWindow*>(parent()->parent())->getPlotArea()->findChild<PlotWindow*>(tabName);
+
+    plotWindow->detachPlot();
+    auto *plotDataTable = static_cast<PlotDataTable*>(widget(i));
+    for (int i=0; i<plotDataTable->rowCount(); i++) {
+      PlotData pd;
+      for (int j=0; j<pd.numberOfItems(); j++)
+	pd.setValue(j, plotDataTable->item(i, j)->text());
+      plotWindow->plotDataSet(pd, i);
+    }
+    plotWindow->replotPlot();
+  }
 }
 
 std::shared_ptr<QDomDocument> Curves::saveCurves() {
@@ -136,7 +153,7 @@ void Curves::initLoadCurve(const QString &fileName) {
   file.close();
 }
 
-void Curves::loadCurve(QDomDocument * doc) {
+void Curves::loadCurve(QDomDocument *doc) {
   QDomElement docElem = doc->documentElement();
   QDomNode tabData = docElem.firstChildElement("tab");
   while(!tabData.isNull()) {
@@ -149,22 +166,6 @@ void Curves::loadCurve(QDomDocument * doc) {
         if (colData.isElement())
           pd.setValue(i, colData.toElement().text());
       }
-      
-      QList<QFileInfo> * loadedFiles=static_cast<MainWindow*>(parent()->parent())->getDataSelection()->getFileInfo();
-      bool alreadyLoaded=false;
-      int i=0;
-      while (i<loadedFiles->size() && (!alreadyLoaded)) {
-        if (QString::compare(pd.getValue("Filename"), (loadedFiles->at(i)).fileName(), Qt::CaseSensitive)==0)
-          alreadyLoaded=true;
-        i++;
-      }
-      if (!alreadyLoaded) {
-        if (QFile::exists("./"+pd.getValue("Filename"))) // in actual directory
-          static_cast<MainWindow*>(parent()->parent())->getDataSelection()->addFile("./"+pd.getValue("Filename"));
-        else // absolut path
-          static_cast<MainWindow*>(parent()->parent())->getDataSelection()->addFile(pd.getValue("Filepath")+"/"+pd.getValue("Filename"));
-      }
-      
       if (newTab) {
         modifyPlotData(pd, "new");
         newTab=false;
@@ -177,7 +178,7 @@ void Curves::loadCurve(QDomDocument * doc) {
   }
 }
 
-PlotDataTable::PlotDataTable(QWidget * parent, const QString &name) : QTableWidget(parent) {
+PlotDataTable::PlotDataTable(QWidget *parent, const QString &name) : QTableWidget(parent) {
   setObjectName(name);
   setWindowTitle(name);
 
@@ -213,7 +214,7 @@ void PlotDataTable::clearTable() {
     removeRow(i-1);
 }
 
-void PlotDataTable::savePlot(QDomDocument * doc, QDomElement * tab) {
+void PlotDataTable::savePlot(QDomDocument *doc, QDomElement *tab) {
   for (int r=0; r<rowCount(); r++) {
     QDomElement datasetTag=doc->createElement("data");
     tab->appendChild(datasetTag);

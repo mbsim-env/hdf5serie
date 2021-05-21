@@ -87,7 +87,13 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
   DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent()->parent())->getDataSelection();
   std::shared_ptr<H5::File> h5file=dataSelection->getH5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString());
 
-  auto *vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
+  H5::VectorSerie<double> *vs;
+  try {
+    vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
+  }
+  catch(...) {
+    return;
+  }
   size_t rows=vs->getRows();
   std::vector<double> xVal(rows);
   vs->getColumn(pd.getValue("x-Index").toInt(), xVal);

@@ -33,26 +33,27 @@ class PlotDataTable;
 class Curves : public QTabWidget {
   
   public:
-    Curves(QWidget * parent = nullptr);
+    Curves(QWidget *parent=nullptr);
 
     void modifyPlotData(PlotData pd, const QString &mode);
     std::shared_ptr<QDomDocument> saveCurves();
     void initLoadCurve(const QString &fileName);
-    void loadCurve(QDomDocument * doc);
+    void loadCurve(QDomDocument *doc);
 
   public:
     void plotCurrentTab();
+    void plotAllTabs();
 };
 
 class PlotDataTable : public QTableWidget {
 
   public:
-    PlotDataTable(QWidget * parent = nullptr, const QString &name = "");
+    PlotDataTable(QWidget *parent=nullptr, const QString &name="");
     
     void clearTable();
     void addDataSet(PlotData pd);
     void replaceDataSet(PlotData pd);
-    void savePlot(QDomDocument * doc, QDomElement * tab);
+    void savePlot(QDomDocument *doc, QDomElement *tab);
 };
 
 #endif // CURVES_H

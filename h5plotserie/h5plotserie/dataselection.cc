@@ -65,7 +65,7 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
 
   QObject::connect(fileBrowser, &QTreeWidget::itemClicked, this, &DataSelection::selectFromFileBrowser);
   QObject::connect(currentData, &QListWidget::itemClicked, this, &DataSelection::selectFromCurrentData);
-  QObject::connect(fileBrowser,&QTreeWidget::currentItemChanged, this, &DataSelection::updatePath);
+  QObject::connect(fileBrowser, &QTreeWidget::currentItemChanged, this, &DataSelection::updatePath);
 }
 
 DataSelection::~DataSelection() {
@@ -105,7 +105,41 @@ void DataSelection::addFile(const QString &name) {
   }
 }
 
+void DataSelection::rebuild(QTreeWidgetItem *item, Node &node) {
+  int i;
+  for(i=0; i<node.getNumberOfChilds(); i++) {
+    if(item->text(0) == node.getChild(i).getName()) {
+      item->setSelected(node.getChild(i).isSelected());
+      item->setExpanded(node.getChild(i).isExpanded());
+      break;
+    }
+  }
+  if(item->isExpanded()) {
+    for(int j=0; j<item->childCount(); j++)
+      rebuild(item->child(j),node.getChild(i));
+  }
+  if(item->isSelected()) {
+      fileBrowser->setCurrentItem(item);
+      selectFromFileBrowser(item,0);
+      updatePath(item);
+      currentData->setCurrentRow(node.getChild(i).getRow());
+  }
+}
+
+void DataSelection::save(QTreeWidgetItem *item, Node &node) {
+  node.addChild(Node(item->text(0),item->isExpanded(),item->isSelected(),item->isSelected()?currentData->currentRow():0,this));
+  for(int i=0; i<item->childCount(); i++)
+    save(item->child(i),node.getChild(node.getNumberOfChilds()-1));
+}
+
 void DataSelection::reopenAll() {
+
+  Node root("Root",false,false,0,this);
+  for(int i=0; i<fileBrowser->topLevelItemCount(); i++)
+    save(fileBrowser->topLevelItem(i),root);
+
+  QList<QFileInfo> info = fileInfo;
+
   auto curves=static_cast<MainWindow*>(parent()->parent())->getCurves();
 
   // save all opened content
@@ -129,8 +163,18 @@ void DataSelection::reopenAll() {
   file.clear();
   fileInfo.clear();
 
-  // reload all previously saved content
+  for(int i=0; i<info.size(); i++)
+    addFile(info.at(i).absoluteFilePath());
+
+
   curves->loadCurve(doc.get());
+  if(curves->count()==0) {
+    QString windowTitle = QString("Plot 1");
+    curves->addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
+    plotArea->addPlotWindow(curves->tabText(curves->currentIndex()));
+  }
+  for(int i=0; i<fileBrowser->topLevelItemCount(); i++)
+    rebuild(fileBrowser->topLevelItem(i),root);
 }
 
 void DataSelection::refreshFile(const QString &name) {
@@ -141,10 +185,8 @@ void DataSelection::refreshFile(const QString &name) {
     return;
   auto h5f=it->second;
   h5f->refresh();
-  // MFMF missing
-  cout<<"MISSING new data availalbe in file "<<name.toStdString()<<". The plot should be refreshed now."<<endl;
-  // for every curve being plotted from the file name/h5f get the current number of rows VectorSerie<...>::getRows(),
-  // get the column VectorSerie<...>::getColumn(col, data) and update the Qwt plot with the new data.
+  auto curves=static_cast<MainWindow*>(parent()->parent())->getCurves();
+  if(curves) curves->plotAllTabs();
 }
 
 shared_ptr<H5::File> DataSelection::getH5File(const boost::filesystem::path &p) const {
@@ -170,6 +212,12 @@ void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
         getPath(item,path,0);
         path += "/data";
         static_cast<TreeWidgetItem*>(child)->setPath(path);
+//	std::shared_ptr<H5::File> h5f=getH5File(file[0].toStdString());
+//	H5::VectorSerie<double> *vs = h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
+//	size_t rows=vs->getRows();
+//	std::vector<double> xVal(rows);
+//	vs->getColumn(0, xVal);
+//	cout << xVal[0] << " " << xVal[1] << endl;
       }
     }
   }

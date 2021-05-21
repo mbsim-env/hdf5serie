@@ -43,14 +43,35 @@ class QWidget;
 class DataSelection : public QSplitter {
   Q_OBJECT
 
+  class Node {
+    public:
+      Node(const QString &name_, bool expanded_, bool selected_, int row_, DataSelection *parent_) : name(name_), expanded(expanded_), selected(selected_), row(row_), parent(parent_) { };
+      void addChild(const Node &node) { child.push_back(node); }
+      int getNumberOfChilds() const { return child.size(); }
+      Node& getChild(int i) { return child[i]; }
+      const QString& getName() const { return name; }
+      bool isSelected() const { return selected; }
+      bool isExpanded() const { return expanded; }
+      int getRow() const { return row; }
+    private:
+      QString name;
+      bool expanded{false};
+      bool selected{false};
+      int row;
+      std::vector<Node> child;
+      DataSelection *parent;
+  };
+
   public:
     DataSelection(QWidget * parent = nullptr);
     ~DataSelection() override;
     
     void addFile(const QString &name);
+    void rebuild(QTreeWidgetItem *item, Node &node);
+    void save(QTreeWidgetItem *item, Node &node);
     void reopenAll();
     void refreshFile(const QString &name);
-    QList<QFileInfo> * getFileInfo() {return &fileInfo; }
+    QList<QFileInfo> * getFileInfo() { return &fileInfo; }
     std::shared_ptr<H5::File> getH5File(const boost::filesystem::path &p) const;
     void requestFlush();
 
@@ -61,8 +82,8 @@ class DataSelection : public QSplitter {
 
     OpenMBVGUI::AbstractViewFilter *dataSelectionFilter;
     QTreeWidget *fileBrowser; // treeWidget
-    QLineEdit * path;
-    QListWidget * currentData; //=listWidget;
+    QLineEdit *path;
+    QListWidget *currentData; // listWidget;
 
     void insertChildInTree(H5::Group *grp, QTreeWidgetItem *item);
     void getPath(QTreeWidgetItem* item, QString &s, int col);

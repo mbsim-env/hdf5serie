@@ -100,11 +100,10 @@ int main(int argc, char** argv) {
 
   bool firstLayoutFile=true;
   for(int i=0; i<arg.size(); i++)
-    if(arg[i].endsWith(".h5Layout.xml", Qt::CaseSensitive))
-    {
+    if(arg[i].endsWith(".h5Layout.xml", Qt::CaseSensitive)) {
       if(firstLayoutFile) { // remove the already added empty tab when at least one layout file is specified
-        delete mainWindow.getCurves()->widget(0);
-        firstLayoutFile=false;
+	delete mainWindow.getCurves()->widget(0);
+	firstLayoutFile=false;
       }
       mainWindow.getCurves()->initLoadCurve(arg[i]);
     }
