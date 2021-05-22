@@ -33,7 +33,10 @@ Curves::Curves(QWidget *parent) : QTabWidget(parent) {
 
   QString windowTitle = QString("Plot %1").arg(count()+1);
   addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
-  static_cast<MainWindow*>(parent)->getPlotArea()->addPlotWindow(tabText(currentIndex()));
+  auto plotArea = static_cast<MainWindow*>(parent)->getPlotArea();
+  plotArea->addPlotWindow(tabText(currentIndex()));
+  connect(this,&QTabWidget::tabBarClicked,this,[=](int i) { plotArea->setActiveSubWindow(plotArea->subWindowList().at(i)); });
+  connect(plotArea,&QMdiArea::subWindowActivated,this, [=](QMdiSubWindow* subwindow) { setCurrentIndex(plotArea->subWindowList().indexOf(subwindow)); });
 }
 
 void Curves::modifyPlotData(PlotData pd, const QString &mode) {
@@ -83,7 +86,10 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
     addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
     setCurrentWidget(widget(count()-1));
     static_cast<PlotDataTable*>(currentWidget())->addDataSet(pd);
-    static_cast<MainWindow*>(parent()->parent())->getPlotArea()->addPlotWindow(windowTitle);
+    auto plotArea = static_cast<MainWindow*>(parent()->parent())->getPlotArea();
+    plotArea->addPlotWindow(windowTitle);
+    connect(this,&QTabWidget::tabBarClicked,this,[=](int i) { plotArea->setActiveSubWindow(plotArea->subWindowList().at(i)); });
+    connect(plotArea,&QMdiArea::subWindowActivated,this, [=](QMdiSubWindow* subwindow) { setCurrentIndex(plotArea->subWindowList().indexOf(subwindow)); });
   }
   else if (QString::compare(mode, "replace", Qt::CaseSensitive)==0) {
     if (currentIndex()==-1)
