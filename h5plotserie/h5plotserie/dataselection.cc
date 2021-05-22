@@ -119,10 +119,10 @@ void DataSelection::rebuild(QTreeWidgetItem *item, Node &node) {
       rebuild(item->child(j),node.getChild(i));
   }
   if(item->isSelected()) {
-      fileBrowser->setCurrentItem(item);
-      selectFromFileBrowser(item,0);
-      updatePath(item);
-      currentData->setCurrentRow(node.getChild(i).getRow());
+    fileBrowser->setCurrentItem(item);
+    selectFromFileBrowser(item,0);
+    updatePath(item);
+    currentData->setCurrentRow(node.getChild(i).getRow());
   }
 }
 
@@ -140,22 +140,9 @@ void DataSelection::reopenAll() {
 
   QList<QFileInfo> info = fileInfo;
 
-  auto curves=static_cast<MainWindow*>(parent()->parent())->getCurves();
-
-  // save all opened content
-  auto doc=curves->saveCurves();
-
   // close all
   path->setText("");
   currentData->clear();
-  // close plot MIDs
-  auto plotArea=static_cast<MainWindow*>(parent()->parent())->getPlotArea();
-  for(auto &sw : plotArea->subWindowList())
-    delete sw;
-  // close "Curves"
-  for(int tab=curves->count()-1; tab>=0; --tab)
-    delete curves->widget(tab);
-  // close "Data Selection"
   for(int idx=fileBrowser->topLevelItemCount(); idx>=0; --idx)
     delete fileBrowser->topLevelItem(idx);
   // close files
@@ -166,15 +153,10 @@ void DataSelection::reopenAll() {
   for(int i=0; i<info.size(); i++)
     addFile(info.at(i).absoluteFilePath());
 
-
-  curves->loadCurve(doc.get());
-  if(curves->count()==0) {
-    QString windowTitle = QString("Plot 1");
-    curves->addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
-    plotArea->addPlotWindow(curves->tabText(curves->currentIndex()));
-  }
   for(int i=0; i<fileBrowser->topLevelItemCount(); i++)
     rebuild(fileBrowser->topLevelItem(i),root);
+
+  static_cast<MainWindow*>(parent()->parent())->getCurves()->plotAllTabs();
 }
 
 void DataSelection::refreshFile(const QString &name) {
@@ -212,12 +194,6 @@ void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
         getPath(item,path,0);
         path += "/data";
         static_cast<TreeWidgetItem*>(child)->setPath(path);
-//	std::shared_ptr<H5::File> h5f=getH5File(file[0].toStdString());
-//	H5::VectorSerie<double> *vs = h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
-//	size_t rows=vs->getRows();
-//	std::vector<double> xVal(rows);
-//	vs->getColumn(0, xVal);
-//	cout << xVal[0] << " " << xVal[1] << endl;
       }
     }
   }
