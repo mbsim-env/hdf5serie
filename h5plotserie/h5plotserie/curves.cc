@@ -31,7 +31,7 @@
 Curves::Curves(QWidget *parent) : QTabWidget(parent) {
   setUsesScrollButtons(true);
 
-  QString windowTitle = QString("Plot %1").arg(count()+1);
+  QString windowTitle = count()?"Plot "+QString::number(tabText(count()-1).mid(5).toInt()+1):"Plot 1";
   addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
   auto plotArea = static_cast<MainWindow*>(parent)->getPlotArea();
   plotArea->addPlotWindow(tabText(currentIndex()));
@@ -82,7 +82,7 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
     }
   }
   else if (QString::compare(mode, "new", Qt::CaseSensitive)==0) {
-    QString windowTitle = QString("Plot %1").arg(count()+1);
+    QString windowTitle = count()?"Plot "+QString::number(tabText(count()-1).mid(5).toInt()+1):"Plot 1";
     addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
     setCurrentWidget(widget(count()-1));
     static_cast<PlotDataTable*>(currentWidget())->addDataSet(pd);
