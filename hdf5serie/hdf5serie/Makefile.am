@@ -4,6 +4,7 @@ lib_LTLIBRARIES = libhdf5serie.la
 libhdf5serie_la_SOURCES = toh5type.cc file.cc group.cc interface.cc \
   simpleattribute.cc \
   simpledataset.cc \
+  complexdataset.cc \
   vectorserie.cc
 
 hdf5serieincludedir = $(includedir)/hdf5serie
@@ -14,6 +15,7 @@ hdf5serieinclude_HEADERS = toh5type.h file.h group.h interface.h \
   simple.h \
   simpleattribute.h \
   simpledataset.h\
+  complexdataset.h\
   vectorserie.h \
   knownpodtypes.def \
   knowntypes.def
