@@ -76,10 +76,12 @@ int main() {
 
 #include <hdf5.h>
 #include <string>
+#include <complex>
 
 namespace H5 {
 
 hid_t returnVarLenStrDatatypeID();
+template<typename T> hid_t returnComplexDoubleDatatypeID();
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   hid_t toH5Type(const CTYPE& dummy);

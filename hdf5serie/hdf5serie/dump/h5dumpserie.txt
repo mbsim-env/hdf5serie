@@ -27,6 +27,7 @@
 "      -d <string>: use <string> as column delimiter (Default ' ')\n"
 "      -s: suppress header\n"
 "      -q <quote>: use <quote> to quote strings in output (Default '\"')\n"
+"      -f <format>: use <format> to print complex numbers (%1% and %2% are the real and imag parts) (Default '%1%+%2%i')\n"
 "      -n <nan>: use <nan> for 'not a number' in output (Default 'nan')\n"
 "      -p <int>: use <int> precision for output (Default 17)\n"
 "\n"

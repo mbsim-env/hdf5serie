@@ -89,6 +89,26 @@ int main() {
 
 
 
+  { // scalar complex<double>
+  cout<<"scalar complex<double>\n";
+  File file("test.h5", File::write);
+
+  SimpleDataset<complex<double>> *dsd=file.createChildObject<SimpleDataset<complex<double>> >("dsd")();
+  complex<double> d{3.5,7.3};
+  dsd->write(d);
+  dsd->setDescription("testdesc");
+  cout<<dsd->read()<<endl;
+  file.enableSWMR();
+  }
+  {
+  File file("test.h5", File::read);
+  SimpleDataset<complex<double>> *dsd=file.openChildObject<SimpleDataset<complex<double>> >("dsd");
+  cout<<dsd->read()<<endl;
+  cout<<dsd->getDescription()<<endl;
+  }
+
+
+
 
 
 
@@ -136,6 +156,30 @@ int main() {
   File file("test.h5", File::read);
   SimpleDataset<vector<string> > *dsd=file.openChildObject<SimpleDataset<vector<string> > >("dsd");
   vector<string> dout;
+  dout=dsd->read();
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  cout<<dsd->getDescription()<<endl;
+  }
+
+
+
+  { // vector complex<double>
+  cout<<"vector complex<double>\n";
+  File file("test.h5", File::write);
+
+  SimpleDataset<vector<complex<double>> > *dsd=file.createChildObject<SimpleDataset<vector<complex<double>> > >("dsd")(2);
+  vector<complex<double>> d; d.push_back({3.6,7.5}); d.push_back({7.3,4.7});
+  dsd->write(d);
+  dsd->setDescription("testdesc");
+  vector<complex<double>> dout;
+  dout=dsd->read();
+  for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
+  file.enableSWMR();
+  }
+  {
+  File file("test.h5", File::read);
+  SimpleDataset<vector<complex<double>> > *dsd=file.openChildObject<SimpleDataset<vector<complex<double>> > >("dsd");
+  vector<complex<double>> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<dout.size(); i++) cout<<dout[i]<<endl;
   cout<<dsd->getDescription()<<endl;
@@ -194,6 +238,26 @@ int main() {
   File file("test.h5", File::read);
   Dataset *data=file.openChildObject<SimpleDataset<double> >("data");
   SimpleAttribute<string> *dsd=data->openChildAttribute<SimpleAttribute<string> >("dsd");
+  cout<<dsd->read()<<endl;
+  }
+
+
+
+  { // scalar complex<double>
+  cout<<"scalar complex<double>\n";
+  File file("test.h5", File::write);
+  SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
+
+  SimpleAttribute<complex<double>> *dsd=data->createChildAttribute<SimpleAttribute<complex<double>> >("dsd")();
+  complex<double> d{3.5,8.2};
+  dsd->write(d);
+  cout<<dsd->read()<<endl;
+  file.enableSWMR();
+  }
+  {
+  File file("test.h5", File::read);
+  Dataset *data=file.openChildObject<SimpleDataset<double> >("data");
+  SimpleAttribute<complex<double>> *dsd=data->openChildAttribute<SimpleAttribute<complex<double>> >("dsd");
   cout<<dsd->read()<<endl;
   }
 
@@ -260,6 +324,34 @@ int main() {
 
 
 
+  { // vector complex<double>
+  cout<<"vector complex<double>\n";
+  File file("test.h5", File::write);
+  SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
+
+  // test a large attribute (>64K). This should automatically switch to dense attribute storge
+  constexpr int size=5000;
+  SimpleAttribute<vector<complex<double>> > *dsd=data->createChildAttribute<SimpleAttribute<vector<complex<double>> > >("dsd")(size);
+  vector<complex<double>> d;
+  for(int i=0; i<size; ++i)
+    d.push_back({3.5+i,2.5+i});
+  dsd->write(d);
+  vector<complex<double>> dout;
+  dout=dsd->read();
+  for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
+  file.enableSWMR();
+  }
+  {
+  File file("test.h5", File::read);
+  Dataset *data=file.openChildObject<SimpleDataset<double> >("data");
+  SimpleAttribute<vector<complex<double>> > *dsd=data->openChildAttribute<SimpleAttribute<vector<complex<double>> > >("dsd");
+  vector<complex<double>> dout;
+  dout=dsd->read();
+  for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
+  }
+
+
+
   /***** MYTIMESERIE *****/
   cout<<"TIMESERIE\n";
   {
@@ -295,6 +387,12 @@ int main() {
   dataStr.push_back("b");
   dataStr.push_back("c");
   tsStr->append(dataStr);
+  VectorSerie<complex<double>> *tsComplex=file.createChildObject<VectorSerie<complex<double>> >("timeserieComplex")(3);
+  vector<complex<double>> dataComplex;
+  dataComplex.push_back({3.4,7.2});
+  dataComplex.push_back({4.4,8.2});
+  dataComplex.push_back({5.4,9.2});
+  tsComplex->append(dataComplex);
   file.enableSWMR();
   }
   {
@@ -360,6 +458,24 @@ int main() {
   file.enableSWMR();
   }
 
+  /***** Attribute vector<vector<complex<double>>> *****/
+  cout<<"Attribute vector<vector<complex<double>>>\n";
+  {
+  File file("test.h5", File::write);
+  SimpleDataset<double> *d=file.createChildObject<SimpleDataset<double> >("d")();
+  SimpleAttribute<vector<vector<complex<double>> > > *a=d->createChildAttribute<SimpleAttribute<vector<vector<complex<double>> > > >("a")(2,3);
+  vector<complex<double>> d1; d1.push_back({2.3,3.5}); d1.push_back({2.3,3.5}); d1.push_back({2.3,3.5});
+  vector<complex<double>> d2; d2.push_back({2.3,3.5}); d2.push_back({2.3,3.5}); d2.push_back({2.3,3.5});
+  vector<vector<complex<double>> > data; data.push_back(d1); data.push_back(d2);
+  a->write(data);
+  vector<vector<complex<double>> > out;
+  out=a->read();
+  for(unsigned int r=0; r<out.size(); r++)
+    for(unsigned int c=0; c<out[r].size(); c++)
+      cout<<out[r][c]<<endl;
+  file.enableSWMR();
+  }
+
   /***** Dataset vector<vector<double>> *****/
   cout<<"Dataset vector<vector<double>>\n";
   {
@@ -387,6 +503,23 @@ int main() {
   vector<vector<string> > data; data.push_back(d1); data.push_back(d2);
   d->write(data);
   vector<vector<string> > out;
+  out=d->read();
+  for(unsigned int r=0; r<out.size(); r++)
+    for(unsigned int c=0; c<out[r].size(); c++)
+      cout<<out[r][c]<<endl;
+  file.enableSWMR();
+  }
+
+  /***** Dataset vector<vector<complex<double>>> *****/
+  cout<<"Dataset vector<vector<complex<double>>>\n";
+  {
+  File file("test.h5", File::write);
+  SimpleDataset<vector<vector<complex<double>> > > *d=file.createChildObject<SimpleDataset<vector<vector<complex<double>> > > >("d")(2, 3);
+  vector<complex<double>> d1; d1.push_back({3.3,6.3}); d1.push_back({3.3,6.3}); d1.push_back({3.3,6.3});
+  vector<complex<double>> d2; d2.push_back({3.3,6.3}); d2.push_back({3.3,6.3}); d2.push_back({3.3,6.3});
+  vector<vector<complex<double>> > data; data.push_back(d1); data.push_back(d2);
+  d->write(data);
+  vector<vector<complex<double>> > out;
   out=d->read();
   for(unsigned int r=0; r<out.size(); r++)
     for(unsigned int c=0; c<out[r].size(); c++)

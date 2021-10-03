@@ -29,6 +29,7 @@
 #include <iomanip>
 #include <limits>
 #include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
 
 using namespace H5;
 using namespace std;
@@ -57,6 +58,7 @@ using namespace std;
 
 string comment="#";
 string quote="\"";
+string complexFormat="%1%+%2%i";
 string delim=" ";
 string mynan="nan";
 int precision=numeric_limits<double>::digits10+1;
@@ -105,6 +107,12 @@ int main(int argc, char* argv[]) {
   i=find(arg.begin(), arg.end(), "-q");
   if(i!=arg.end()) {
     quote=*(i+1);
+    arg.erase(i, i+2);
+  }
+
+  i=find(arg.begin(), arg.end(), "-f");
+  if(i!=arg.end()) {
+    complexFormat=*(i+1);
     arg.erase(i, i+2);
   }
 
@@ -275,10 +283,32 @@ int main(int argc, char* argv[]) {
 //      }
 //      else {
 
-string quoteString(hid_t type) {
-  if(type==returnVarLenStrDatatypeID())
-    return quote;
-  return "";
+template<typename T>
+class Format {
+  public:
+    Format(const T& data_) : data(data_) {}
+    const T& data;
+};
+template<typename T>
+ostream& operator<<(ostream& os, const Format<T>& format) {
+  os<<format.data;
+  return os;
+}
+template<>
+ostream& operator<<(ostream& os, const Format<string>& format) {
+  os<<quote<<format.data<<quote;
+  return os;
+}
+template<typename T>
+ostream& operator<<(ostream& os, const Format<complex<T>>& format) {
+  stringstream strR;
+  strR<<setprecision(precision)<<scientific;
+  strR<<format.data.real();
+  stringstream strI;
+  strI<<setprecision(precision)<<scientific;
+  strI<<format.data.imag();
+  os<<boost::format(complexFormat)%strR.str()%strI.str();
+  return os;
 }
 
 void printRow(Dataset *d, int row) {
@@ -289,7 +319,7 @@ void printRow(Dataset *d, int row) {
       vector<CTYPE> vec(dd->getColumns()); \
       dd->getRow(row, vec); \
       for(size_t i=0; i<vec.size(); ++i) \
-        cout<<(i==0?"":delim)<<quoteString(H5TYPE)<<vec[i]<<quoteString(H5TYPE); \
+        cout<<(i==0?"":delim)<<Format(vec[i]); \
     } \
   }
 # include "hdf5serie/knowntypes.def"
@@ -300,7 +330,7 @@ void printRow(Dataset *d, int row) {
     SimpleDataset<vector<CTYPE> > *dd=dynamic_cast<SimpleDataset<vector<CTYPE> >*>(d); \
     if(dd) { \
       vector<CTYPE> vec=dd->read(); \
-      cout<<quoteString(H5TYPE)<<vec[row]<<quoteString(H5TYPE); \
+      cout<<Format(vec[row]); \
     } \
   }
 # include "hdf5serie/knowntypes.def"
@@ -312,7 +342,7 @@ void printRow(Dataset *d, int row) {
     if(dd) { \
       vector<vector<CTYPE> > mat=dd->read(); \
       for(size_t i=0; i<mat[0].size(); ++i) \
-        cout<<(i==0?"":delim)<<quoteString(H5TYPE)<<mat[row][i]<<quoteString(H5TYPE); \
+        cout<<(i==0?"":delim)<<Format(mat[row][i]); \
     } \
   }
 # include "hdf5serie/knowntypes.def"

@@ -1,5 +1,11 @@
 #! /bin/sh
 
 export LD_LIBRARY_PATH=@prefix@/bin:@prefix@/lib:$LD_LIBRARY_PATH
+echo LSSERIE
 @XC_EXEC_PREFIX@ ../dump/h5lsserie@EXEEXT@ -d -l test2d.h5 || exit
+echo DUMPSERIE timeserie
 @XC_EXEC_PREFIX@ ../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserie || exit
+echo DUMPSERIE timeserieStr
+@XC_EXEC_PREFIX@ ../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserieStr || exit
+echo DUMPSERIE timeserieComplex
+@XC_EXEC_PREFIX@ ../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserieComplex
