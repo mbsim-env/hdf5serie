@@ -41,19 +41,19 @@ hid_t returnVarLenStrDatatypeID() {
 template<typename T>
 hid_t returnComplexDoubleDatatypeID() {
   static bool init=true;
-  static T x;
   static hid_t complexDataType;
   if(init) {
     complexDataType = H5Tcreate(H5T_COMPOUND, sizeof(complex<T>));
-    H5Tinsert(complexDataType, "real", 0, toH5Type(x));
-    H5Tinsert(complexDataType, "imag", sizeof(T), toH5Type(x));
+    H5Tinsert(complexDataType, "real", 0, toH5Type<T>());
+    H5Tinsert(complexDataType, "imag", sizeof(T), toH5Type<T>());
     init=false;
   }
   return complexDataType;
 }
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-  hid_t toH5Type(const CTYPE& dummy) { \
+  template<> \
+  hid_t toH5Type<CTYPE>() { \
     return H5TYPE; \
   }
 # include "hdf5serie/knowntypes.def"

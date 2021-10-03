@@ -37,8 +37,7 @@ namespace H5 {
 
   template<class T>
   VectorSerie<T>::VectorSerie(int dummy, GroupBase *parent_, const string &name_) : Dataset(parent_, name_) {
-    T dummy2;
-    memDataTypeID=toH5Type(dummy2);
+    memDataTypeID=toH5Type<T>();
 
     // open the dataset, get column size and chunk size, close dataset again
     id.reset(H5Dopen(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Dclose);
@@ -66,8 +65,7 @@ namespace H5 {
 
   template<class T>
   VectorSerie<T>::VectorSerie(GroupBase *parent_, const string &name_, int cols, int compression, int chunkSize) : Dataset(parent_, name_) {
-    T dummy;
-    memDataTypeID=toH5Type(dummy);
+    memDataTypeID=toH5Type<T>();
     // create dataset with chunk cache size = chunk size
     dims[0]=0;
     dims[1]=cols;

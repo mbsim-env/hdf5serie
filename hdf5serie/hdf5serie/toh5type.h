@@ -83,8 +83,10 @@ namespace H5 {
 hid_t returnVarLenStrDatatypeID();
 template<typename T> hid_t returnComplexDoubleDatatypeID();
 
+template<typename T> hid_t toH5Type();
+
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-  hid_t toH5Type(const CTYPE& dummy);
+  template<> hid_t toH5Type<CTYPE>();
 # include "hdf5serie/knowntypes.def"
 # undef FOREACHKNOWNTYPE
 
