@@ -17,5 +17,4 @@ hdf5serieinclude_HEADERS = toh5type.h file.h group.h interface.h \
   simpledataset.h\
   complexdataset.h\
   vectorserie.h \
-  knownpodtypes.def \
   knowntypes.def

@@ -240,49 +240,6 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
-//      if(dataSet[k].getDataType().getClass()==H5T_COMPOUND) {
-//        hsize_t dims[]={1};
-//        DataSpace memDataSpace(1, dims);
-//        DataSpace fileDataSpace=dataSet[k].getSpace();
-//        hsize_t start[]={row}, count[]={1};
-//        fileDataSpace.selectHyperslab(H5S_SELECT_SET, count, start);
-//        CompType memDataType=dataSet[k].getCompType();//////////
-//        char* buf=new char[memDataType.getSize()];
-//        dataSet[k].read(buf, memDataType, memDataSpace, fileDataSpace);
-//        for(unsigned int i=0; i<column[k].size(); i++) {
-//          DataType memberDataType=memDataType.getMemberDataType(column[k][i]-1);
-//          int memberOffset=memDataType.getMemberOffset(column[k][i]-1);
-//#         define FOREACHKNOWNTYPE(CTYPE, H5TYPE)
-//          if(memberDataType==H5TYPE)
-//            cout<<(k==0&&i==0?"":delim)<<*(CTYPE*)(buf+memberOffset);
-//#         include "hdf5serie/knownpodtypes.def"
-//#         undef FOREACHKNOWNTYPE
-//          if(memberDataType==StrType(PredType::C_S1, H5T_VARIABLE)) {
-//            char* str=*(char**)(buf+memberOffset);
-//            cout<<(k==0&&i==0?"":delim)<<quote<<str<<quote;
-//            free(str);
-//          }
-//          if(memberDataType.getClass()==H5T_ARRAY) {
-//            hsize_t dims[1];
-//            memDataType.getMemberArrayType(column[k][i]-1).getArrayDims(dims);
-//#           define FOREACHKNOWNTYPE(CTYPE, H5TYPE)
-//            if(memberDataType==ArrayType(H5TYPE,1,dims))
-//              for(unsigned int l=0; l<dims[0]; l++)
-//                cout<<(k==0&&i==0&&l==0?"":delim)<<*(CTYPE*)(buf+memberOffset+sizeof(CTYPE)*l);
-//#           include "hdf5serie/knownpodtypes.def"
-//#           undef FOREACHKNOWNTYPE
-//            if(memberDataType==ArrayType(StrType(PredType::C_S1, H5T_VARIABLE),1,dims))
-//              for(unsigned int l=0; l<dims[0]; l++) {
-//                char* str=*(char**)(buf+memberOffset+sizeof(char*)*l);
-//                cout<<(k==0&&i==0&&l==0?"":delim)<<quote<<str<<quote;
-//                free(str);
-//              }
-//          }
-//        }
-//        delete[]buf;
-//      }
-//      else {
-
 template<typename T>
 class Format {
   public:
