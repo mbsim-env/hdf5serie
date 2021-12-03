@@ -1,0 +1,8 @@
+R"=====(
+This software has the following direct dependencies:
+- boost C++ (https://www.boost.org/) [Boost Software License]
+- HDF5 (https://www.hdfgroup.org/solutions/hdf5) [HDF5]
+- hdf5serie (https://github.com/mbsim-env/hdf5serie) [LGPL]
+- Qt (https://www.qt.io/) [LGPL]
+- Qwt (https://qwt.sourceforge.io/) [LGPL]
+)====="

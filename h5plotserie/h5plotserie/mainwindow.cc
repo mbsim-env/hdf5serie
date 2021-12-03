@@ -135,14 +135,10 @@ void MainWindow::about() {
       "  <li>Markus Friedrich <tt>&lt;friedrich.at.gc@googlemail.com&gt;</tt> </li>"
       "  <li>Markus Schneider <tt>&lt;markus.ms.schneider@googlemail.com&gt;</tt> </li>"
       "</ul>"
-      "<h2>This program uses:</h2>"
-      "<ul>"
-      "  <li>'Qt - A cross-platform application and UI framework' by Nokia from <tt>http://www.qtsoftware.com</tt> (License: GPL/LGPL)</li>"
-      "  <li>'Qwt - Qt Widgets for Technical Applications' by Uwe Rathmann from <tt>http://qwt.sourceforge.net</tt> (Licence: Qwt/LGPL)</li>"
-      "  <li>'HDF5Serie - A HDF5 Wrapper for Time Series' by Markus Friedrich from <tt>https://www.mbsim-env.de/</tt> (License: LGPL)</li>"
-      "  <li>'HDF - Hierarchical Data Format' by The HDF Group from <tt>http://www.hdfgroup.org</tt> (License: NCSA-HDF)</li>"
-      "  <li>...</li>"
-      "</ul>"
+      "<h2>Dependencies:</h2>"
+      "<pre>"
+#include "../NOTICE"
+      "</pre>"
       "<p>A special thanks to all authors of these projects.</p>"
       );
 }

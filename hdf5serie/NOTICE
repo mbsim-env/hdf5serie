@@ -1,0 +1,4 @@
+This software has the following direct dependencies:
+- boost C++ (https://www.boost.org/) [Boost Software License]
+- fmatvec (https://github.com/mbsim-env/fmatvec) [LGPL]
+- HDF5 (https://www.hdfgroup.org/solutions/hdf5) [HDF5]

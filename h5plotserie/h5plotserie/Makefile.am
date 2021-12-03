@@ -33,6 +33,9 @@ BUILT_SOURCES = $(QT_BUILT_SOURCES) $(MAYBE_SIGWATCH_MOC)
 icondir = @datadir@/h5plotserie/icons
 dist_icon_DATA = h5plotserie.svg
 
+licdir = @datadir@/h5plotserie/qt-unix-signals
+lic_DATA = qt-unix-signals/LICENCE
+
 # plugins
 pluginsiconenginesdir = @bindir@/iconengines
 pluginsplatformsdir = @bindir@/platforms

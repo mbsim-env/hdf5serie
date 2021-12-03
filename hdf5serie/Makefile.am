@@ -4,6 +4,9 @@ DIST_SUBDIRS = hdf5serie doc
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = hdf5serie.pc
 
+licdir = @datadir@/hdf5serie
+lic_DATA = COPYING NOTICE
+
 
 
 # doxygen
