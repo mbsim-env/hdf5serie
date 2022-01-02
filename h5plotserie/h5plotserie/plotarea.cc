@@ -51,7 +51,6 @@ PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent) {
   setWidget(plot);
 
   plot->setCanvasBackground(QColor(255, 255, 255));
-  plot->replot();
 
   zoom = new QwtPlotZoomer(plot->canvas());
 
@@ -181,9 +180,10 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
 }
 
 void PlotWindow::replotPlot() {
+  QStack<QRectF> stack = zoom->zoomStack();
+  int index = zoom->zoomRectIndex();
   plot->setAxisAutoScale(QwtPlot::xBottom);
   plot->setAxisAutoScale(QwtPlot::yLeft);
-
   if (plotGrid) {
     auto *grid = new QwtPlotGrid;
     grid->enableXMin(true);
@@ -192,10 +192,9 @@ void PlotWindow::replotPlot() {
     grid->setMinorPen(QPen(Qt::gray, 0 , Qt::DotLine));
     grid->attach(plot);
   }
-
-  plot->replot();
-  //zoom->setZoomBase(QwtDoubleRect(xMinValue, yMaxValue, xMaxValue-xMinValue, yMaxValue-yMinValue));
   zoom->setZoomBase();
+  stack[0] = zoom->zoomStack()[0];
+  zoom->setZoomStack(stack,index);
 }
 
 void PlotWindow::closeEvent(QCloseEvent *) {
