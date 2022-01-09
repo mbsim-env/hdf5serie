@@ -136,9 +136,17 @@ int main(int argc, char* argv[]) {
   for(unsigned int k=0; k<arg.size(); k++) {
     string para=arg[k];
 
-    int i;
-    i=para.find('/');
-    string filename=para.substr(0, i);
+    int i=0;
+    string filename;
+    boost::filesystem::file_type ft;
+    do {
+      i=std::min(para.find('/', i+1), para.find('\\', i+1));
+      filename=para.substr(0, i);
+      ft=boost::filesystem::status(filename).type();
+    }
+    while(ft!=boost::filesystem::file_type::regular_file &&
+          ft!=boost::filesystem::file_type::symlink_file &&
+          ft!=boost::filesystem::file_type::fifo_file);
     file[k].reset(new File(filename, File::read));
 
     string dummy=para.substr(i);
