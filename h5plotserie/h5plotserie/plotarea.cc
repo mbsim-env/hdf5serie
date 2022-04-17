@@ -25,6 +25,8 @@
 #include "mainwindow.h"
 #include "dataselection.h"
 
+#include <QStack>
+
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_zoomer.h>
