@@ -45,7 +45,7 @@ class DataSelection : public QSplitter {
 
   class Node {
     public:
-      Node(const QString &name_, bool expanded_, bool selected_, int row_, DataSelection *parent_) : name(name_), expanded(expanded_), selected(selected_), row(row_), parent(parent_) { };
+      Node(const QString &name_, bool expanded_, bool selected_, int row_) : name(name_), expanded(expanded_), selected(selected_), row(row_) { }
       void addChild(const Node &node) { child.push_back(node); }
       int getNumberOfChilds() const { return child.size(); }
       Node& getChild(int i) { return child[i]; }
@@ -59,7 +59,6 @@ class DataSelection : public QSplitter {
       bool selected{false};
       int row;
       std::vector<Node> child;
-      DataSelection *parent;
   };
 
   public:

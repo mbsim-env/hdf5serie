@@ -127,14 +127,14 @@ void DataSelection::rebuild(QTreeWidgetItem *item, Node &node) {
 }
 
 void DataSelection::save(QTreeWidgetItem *item, Node &node) {
-  node.addChild(Node(item->text(0),item->isExpanded(),item->isSelected(),item->isSelected()?currentData->currentRow():0,this));
+  node.addChild(Node(item->text(0),item->isExpanded(),item->isSelected(),item->isSelected()?currentData->currentRow():0));
   for(int i=0; i<item->childCount(); i++)
     save(item->child(i),node.getChild(node.getNumberOfChilds()-1));
 }
 
 void DataSelection::reopenAll() {
 
-  Node root("Root",false,false,0,this);
+  Node root("Root",false,false,0);
   for(int i=0; i<fileBrowser->topLevelItemCount(); i++)
     save(fileBrowser->topLevelItem(i),root);
 
