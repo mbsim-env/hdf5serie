@@ -80,6 +80,31 @@ MainWindow::MainWindow(const QStringList &arg) {
   setWindowIcon(QIcon((boost::dll::program_location().parent_path().parent_path()/
                       "share"/"h5plotserie"/"icons"/"h5plotserie.svg").string().c_str()));
 
+  if(arg.contains("--maximized"))
+    showMaximized();
+
+  QString projectFile;
+  QRegExp filterProject(".+\\.mbsh5");
+  QDir dir;
+  dir.setFilter(QDir::Files);
+  for(auto & it : arg) {
+    if(it[0]=='-') continue;
+    dir.setPath(it);
+    if(dir.exists()) {
+      QStringList file=dir.entryList();
+      for(int j=0; j<file.size(); j++) {
+	if(projectFile.isEmpty() and filterProject.exactMatch(file[j]))
+	  getDataSelection()->addFile(dir.path()+"/"+file[j]);
+      }
+      continue;
+    }
+    if(QFile::exists(it)) {
+      if(projectFile.isEmpty())
+	getDataSelection()->addFile(it);
+      continue;
+    }
+  }
+
   // auto exit if everything is finished
   if(arg.contains("--autoExit")) {
     auto timer=new QTimer(this);
