@@ -55,11 +55,15 @@ int main(int argc, char** argv) {
         << "" << endl
         << "Licensed under the GNU Lesser General Public License (LGPL)" << endl
         << "" << endl
-        << "Usage:" << endl
-        << "  h5plotserie <file> | <file.h5Layout.xml>" << endl
-        << "    -h, --help: Show this help" << endl
-        << "    --fullscreen: Start in full screen mode" << endl
-        << "    --maximized: Show window maximized on startup." << endl;
+        << "Usage: h5plotserie [-h|--help]" << endl
+	<< "                   [--fullscreen] [--maximized]" << endl
+	<< "                   [<dir>] [<file>]" << endl
+        << "-h, --help:        Show this help." << endl
+        << "--fullscreen:      Start in full screen mode." << endl
+        << "--maximized:       Show window maximized on startup." << endl
+        << "<dir>              Open all *.mbsh5 file in dir." << endl
+        << "<file>             Open <file> (*.mbsh5)." << endl;
+
       return 0;
     }
 
