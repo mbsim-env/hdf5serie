@@ -44,7 +44,7 @@ void PlotArea::addPlotWindow(const QString &windowTitle) {
   q->setObjectName(windowTitle);
   q->setWindowTitle(windowTitle);
   q->setAttribute(Qt::WA_DeleteOnClose);
-  q->showMaximized();
+  q->show();
 }
 
 PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent) {
