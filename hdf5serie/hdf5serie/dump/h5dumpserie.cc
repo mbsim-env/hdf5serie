@@ -63,7 +63,7 @@ string delim=" ";
 string mynan="nan";
 int precision=numeric_limits<double>::digits10+1;
 
-void printRow(Dataset *d, int row);
+void printRow(Dataset *d, const vector<int> &cols, int row);
 
 int main(int argc, char* argv[]) {
 #ifndef _WIN32
@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
       }
       
       cout<<(k==0?"":delim);
-      printRow(dataSet[k], row);
+      printRow(dataSet[k], column[k], row);
     }
     cout<<endl;
   }
@@ -276,15 +276,18 @@ ostream& operator<<(ostream& os, const Format<complex<T>>& format) {
   return os;
 }
 
-void printRow(Dataset *d, int row) {
+void printRow(Dataset *d, const vector<int> &cols, int row) {
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   { \
     VectorSerie<CTYPE> *dd=dynamic_cast<VectorSerie<CTYPE>*>(d); \
     if(dd) { \
       vector<CTYPE> vec(dd->getColumns()); \
       dd->getRow(row, vec); \
-      for(size_t i=0; i<vec.size(); ++i) \
-        cout<<(i==0?"":delim)<<Format(vec[i]); \
+      bool first=true; \
+      for(auto i : cols) { \
+        cout<<(first?"":delim)<<Format(vec[i-1]); \
+        first=false; \
+      } \
     } \
   }
 # include "hdf5serie/knowntypes.def"

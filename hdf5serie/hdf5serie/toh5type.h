@@ -25,6 +25,8 @@
 
 /** \mainpage HDF5Serie - A HDF5 Wrapper for Time Series - API Documentation
  *
+ * \tableofcontents
+ *
  * \section purpse Purpose of this Project
  *
  * This project has the purpose to provide a template based high level C++
