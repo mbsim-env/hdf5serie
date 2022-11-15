@@ -1,4 +1,7 @@
-#! /bin/sh
+#! /bin/bash
+
+set -e
+set -o pipefail
 
 export LD_LIBRARY_PATH=@prefix@/bin:@prefix@/lib:$LD_LIBRARY_PATH
 echo LSSERIE
