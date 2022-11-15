@@ -21,6 +21,7 @@
 #define TREEWIDGETITEM_H
 
 #include <QTreeWidgetItem>
+#include <QApplication>
 
 class TreeWidgetItem : public QTreeWidgetItem {
 

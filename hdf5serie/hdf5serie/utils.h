@@ -2,6 +2,7 @@
 #define _HDF5SERIE_UTILS_H_
 
 #include <vector>
+#include <cstdlib>
 
 namespace H5 {
 
