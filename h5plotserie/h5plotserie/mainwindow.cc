@@ -58,7 +58,7 @@ MainWindow::MainWindow(const QStringList &arg) {
   plotArea = new PlotArea(this);
   setCentralWidget(plotArea);
 
-  QDockWidget * dataSelectionDW=new QDockWidget("Data Selection", this);
+  auto * dataSelectionDW=new QDockWidget("Data Selection", this);
   dataSelectionDW->setObjectName("dockWidget/dataSelection");
   addDockWidget(Qt::LeftDockWidgetArea,dataSelectionDW);
   dataSelection = new DataSelection(this);
@@ -69,7 +69,7 @@ MainWindow::MainWindow(const QStringList &arg) {
   connect(requestFlushTimer, &QTimer::timeout, dataSelection, &DataSelection::requestFlush);
   requestFlushTimer->start(500);
 
-  QDockWidget *curvesDW=new QDockWidget("Curves", this);
+  auto *curvesDW=new QDockWidget("Curves", this);
   curvesDW->setObjectName("dockWidget/curves");
   addDockWidget(Qt::LeftDockWidgetArea,curvesDW);
   curves = new Curves(this);

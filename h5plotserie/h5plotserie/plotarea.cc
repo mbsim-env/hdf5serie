@@ -167,7 +167,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
         yVal[i]=.5*(yMinValue+yMaxValue);
     }
 
-    QwtPlotCurve * c = new QwtPlotCurve();
+    auto * c = new QwtPlotCurve();
     c->attach(plot);
     while (penColor>pen.size()-1)
       penColor-=pen.size();

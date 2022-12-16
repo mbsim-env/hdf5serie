@@ -41,7 +41,7 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   connect(this, &DataSelection::reopenAllSignal, this, &DataSelection::reopenAll);
   connect(this, &DataSelection::refreshFileSignal, this, &DataSelection::refreshFile);
 
-  QWidget* dummy=new QWidget(this);
+  auto* dummy=new QWidget(this);
   addWidget(dummy);
 
   auto * fileSelection=new QGridLayout(this);
@@ -54,7 +54,7 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   dataSelectionFilter=new OpenMBVGUI::AbstractViewFilter(fileBrowser);
   fileSelection->addWidget(dataSelectionFilter, 0,0,1,2);
 
-  QLabel * pathLabel=new QLabel("Path:");
+  auto * pathLabel=new QLabel("Path:");
   fileSelection->addWidget(pathLabel,2,0);
   path=new QLineEdit(this);
   fileSelection->addWidget(path,2,1);
@@ -93,7 +93,7 @@ void DataSelection::addFile(const QString &name) {
   });
   h5File.emplace_back(name.toStdString(), h5f);
 
-  TreeWidgetItem *topitem = new TreeWidgetItem(QStringList(fileInfo.back().fileName()));
+  auto *topitem = new TreeWidgetItem(QStringList(fileInfo.back().fileName()));
   topitem->setToolTip(0, fileInfo.back().absoluteFilePath());
   fileBrowser->addTopLevelItem(topitem);
   list<string> names=h5f->getChildObjectNames();
@@ -150,8 +150,8 @@ void DataSelection::reopenAll() {
   file.clear();
   fileInfo.clear();
 
-  for(int i=0; i<info.size(); i++)
-    addFile(info.at(i).absoluteFilePath());
+  for(const auto & i : info)
+    addFile(i.absoluteFilePath());
 
   for(int i=0; i<fileBrowser->topLevelItemCount(); i++)
     rebuild(fileBrowser->topLevelItem(i),root);
@@ -263,6 +263,6 @@ void DataSelection::updatePath(QTreeWidgetItem *cur) {
 };
 
 void DataSelection::requestFlush() {
-  for(auto h5f : h5File)
+  for(const auto& h5f : h5File)
     h5f.second->requestFlush();
 }

@@ -82,7 +82,9 @@ void walkH5(const string &indent, const path &filename, const string &path, Grou
       // print and walk
       cout<<indent<<"+ "<<name<<endl;
       printDesc(indent, g);
-      walkH5(indent+"  ", filename, path+"/"+name, g);
+      auto pathName=path+"/";
+      pathName+=name;
+      walkH5(indent+"  ", filename, pathName, g);
       continue;
     }
 
