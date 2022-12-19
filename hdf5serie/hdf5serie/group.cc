@@ -34,7 +34,7 @@ namespace {
   herr_t getChildNamesLCB(hid_t, const char *name, const H5L_info_t *, void *op_data) {
     pair<std::optional<exception>, list<string>> &ret=*static_cast<pair<std::optional<exception>, list<string>>*>(op_data);
     try {
-      ret.second.push_back(name);
+      ret.second.emplace_back(name);
     }
     catch(exception &ex) {
       ret.first=ex;
@@ -173,8 +173,7 @@ Group::Group(GroupBase *parent_, const string &name_) : GroupBase(parent_, name_
  id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, group_creation_plist, H5P_DEFAULT), &H5Gclose);
 }
 
-Group::~Group() {
-}
+Group::~Group() = default;
 
 void Group::close() {
   GroupBase::close();

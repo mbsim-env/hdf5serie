@@ -46,7 +46,7 @@ namespace H5 {
 
   class ScopedHID {
     protected:
-      typedef herr_t (*CloseFunc)(hid_t id);
+      using CloseFunc = herr_t (*)(hid_t);
       hid_t id{-1};
       CloseFunc closeFunc{nullptr};
     public:

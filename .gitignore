@@ -6,6 +6,7 @@ h5plotserie/config.guess
 h5plotserie/config.h.in
 h5plotserie/config.sub
 h5plotserie/configure
+h5plotserie/compile_commands.json
 h5plotserie/depcomp
 h5plotserie/h5plotserie/Makefile.in
 h5plotserie/install-sh
@@ -20,6 +21,7 @@ hdf5serie/config.guess
 hdf5serie/config.h.in
 hdf5serie/config.sub
 hdf5serie/configure
+hdf5serie/compile_commands.json
 hdf5serie/depcomp
 hdf5serie/doc/Makefile.in
 hdf5serie/hdf5serie/Makefile.in

@@ -55,9 +55,9 @@ class PlotWindow : public QMdiSubWindow {
     void closeEvent(QCloseEvent * event) override;
   
   private:
-    QwtPlot * plot{0};
+    QwtPlot * plot{nullptr};
     QVector<QPen> pen;
-    QwtPlotZoomer * zoom{0};
+    QwtPlotZoomer * zoom{nullptr};
     double xMinValue{0}, yMinValue{0}, xMaxValue{0}, yMaxValue{0};
     bool plotGrid{true};
 };
