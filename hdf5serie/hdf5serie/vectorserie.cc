@@ -59,7 +59,7 @@ namespace H5 {
     // create mem space
     hsize_t memDims[]={1, dims[1]};
     memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
-    msg(Debug)<<"HDF5:\n"
+    msg(Debug)<<"HDF5:"<<endl
               <<"Opened object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
   }
 
@@ -83,7 +83,7 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1]};
     memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
-    msg(Debug)<<"HDF5:\n"
+    msg(Debug)<<"HDF5:"<<endl
               <<"Created object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
   }
 
@@ -123,7 +123,7 @@ namespace H5 {
       throw Exception(getPath(), "Size of data does not match");
     int rows=getRows();
     if(row<0 || row>=rows) {
-      msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
+      msg(Warn)<<"HDF5 object with id = "<<id<<":"<<endl
                <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
       for(size_t i=0; i<size; ++i)
          data[i]=T();
@@ -202,7 +202,7 @@ namespace H5 {
       throw Exception(getPath(), "Size of data does not match");
     int rows=getRows();
     if(row<0 || row>=rows) {
-      msg(Warn)<<"HDF5 object with id = "<<id<<":\n"
+      msg(Warn)<<"HDF5 object with id = "<<id<<":"<<endl
                <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
       for(size_t i=0; i<size; ++i)
          data[i]=string();
