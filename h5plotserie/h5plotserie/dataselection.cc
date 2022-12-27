@@ -28,6 +28,7 @@
 #include "dataselection.h"
 
 #include <hdf5serie/vectorserie.h>
+#include <hdf5serie/simpleattribute.h>
 
 #include "treewidgetitem.h"
 #include "plotdata.h"
@@ -213,9 +214,10 @@ void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
     int j = getTopLevelIndex(item);
     std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
     auto *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
+    vector<string> ret=vs->openChildAttribute<H5::SimpleAttribute<vector<string> > >("Column Label")->read();
     QStringList sl;
-    for(unsigned int i=0; i<vs->getColumns(); i++)
-      sl << vs->getColumnLabel()[i].c_str();
+    for(size_t i=0; i<ret.size(); i++)
+      sl << ret[i].c_str();
     currentData->addItems(sl);
   }
 }
