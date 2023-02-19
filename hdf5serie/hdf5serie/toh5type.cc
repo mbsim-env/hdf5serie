@@ -52,6 +52,11 @@ hid_t returnComplexDoubleDatatypeID() {
 }
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+  template hid_t returnComplexDoubleDatatypeID<CTYPE>();
+# include "hdf5serie/knowntypes.def"
+# undef FOREACHKNOWNTYPE
+
+# define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   template<> \
   hid_t toH5Type<CTYPE>() { \
     return H5TYPE; \
