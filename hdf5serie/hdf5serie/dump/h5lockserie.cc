@@ -75,16 +75,31 @@ int main(int argc, char* argv[]) {
 
     // run given task
     for(auto &fn : vm["filename"].as<vector<string>>()) {
-      if(vm.count("remove"))
-        // remove shared memory
-        File::removeSharedMemory(fn);
-      else
-        // dump shared memory
-        File::dumpSharedMemory(fn);
+      try {
+        if(vm.count("remove"))
+          // remove shared memory
+          File::removeSharedMemory(fn);
+        else
+          // dump shared memory
+          File::dumpSharedMemory(fn);
+      }
+      catch(exception &ex) {
+        cout<<"The following files created a exception:"<<endl;
+        cout<<ex.what()<<endl;
+        cout<<"filename: "<<fn<<endl;
+      }
+      catch(...) {
+        cout<<"Unknown exception while checking the following file:"<<endl;
+        cout<<"filename: "<<fn<<endl;
+      }
     }
   }
   catch(exception &ex) {
     cerr<<ex.what()<<endl;
+    return 1;
+  }
+  catch(...) {
+    cerr<<"Unknown exception"<<endl;
     return 1;
   }
 
