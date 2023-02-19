@@ -347,7 +347,9 @@ void File::openReader() {
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Open HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI);
-  id.reset(H5Fopen(filename.string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid), &H5Fclose);
+  auto hid=H5Fopen(filename.string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid);
+  if(hid>=0)
+    id.reset(hid, &H5Fclose);
 }
 
 File::~File() {
@@ -632,25 +634,27 @@ void File::close() {
   // close everything (except the file itself)
   GroupBase::close();
 
-  // check if all object are closed now: if not -> throw internal error (with details about the opened objects)
-  ssize_t count=H5Fget_obj_count(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
-  if(count<0)
-    throw Exception(getPath(), "Internal error: H5Fget_obj_count failed");
-  if(count>0) {
-    vector<hid_t> obj(count, 0);
-    ssize_t ret=H5Fget_obj_ids(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL, count, &obj[0]);
-    if(ret<0)
-      throw Exception(getPath(), "Internal error: H5Fget_obj_ids failed");
-    vector<char> name(1000+1);
-    stringstream err;
-    err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
-    for(auto it : obj) {
-      size_t ret=H5Iget_name(it, &name[0], 1000);
-      if(ret<=0)
-        throw Exception(getPath(), "Internal error: H5Iget_name");
-      err<<"type="<<H5Iget_type(it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
+  if(id>=0) {
+    // check if all object are closed now: if not -> throw internal error (with details about the opened objects)
+    ssize_t count=H5Fget_obj_count(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
+    if(count<0)
+      throw Exception(getPath(), "Internal error: H5Fget_obj_count failed");
+    if(count>0) {
+      vector<hid_t> obj(count, 0);
+      ssize_t ret=H5Fget_obj_ids(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL, count, &obj[0]);
+      if(ret<0)
+        throw Exception(getPath(), "Internal error: H5Fget_obj_ids failed");
+      vector<char> name(1000+1);
+      stringstream err;
+      err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
+      for(auto it : obj) {
+        size_t ret=H5Iget_name(it, &name[0], 1000);
+        if(ret<=0)
+          throw Exception(getPath(), "Internal error: H5Iget_name");
+        err<<"type="<<H5Iget_type(it)<<" name="<<(ret>0?&name[0]:"<no name>")<<endl;
+      }
+      throw Exception(getPath(), err.str());
     }
-    throw Exception(getPath(), err.str());
   }
 
   // now close also the file with is now the last opened identifier
