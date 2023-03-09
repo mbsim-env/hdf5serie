@@ -26,6 +26,7 @@
 #include "mainwindow.h"
 #include "dataselection.h"
 #include "curves.h"
+#include <fmatvec/atom.h>
 #include <iostream>
 #ifdef _WIN32
 #  define WIN32_LEAN_AND_MEAN
@@ -45,6 +46,11 @@ int main(int argc, char** argv) {
   for (int i=1; i<argc; i++)
     arg.push_back(argv[i]);
 
+  auto i=find(arg.begin(), arg.end(), "-v");
+  auto i2=find(arg.begin(), arg.end(), "--verbose");
+  if(i==arg.end() && i2==arg.end())
+    fmatvec::Atom::setCurrentMessageStream(fmatvec::Atom::Info, std::make_shared<bool>(false));
+
   for(int i=0; i<arg.size(); i++)
     if(arg[i].contains("-h", Qt::CaseSensitive) || arg[i].contains("--help", Qt::CaseSensitive)) {
       cout
@@ -56,10 +62,11 @@ int main(int argc, char** argv) {
         << "" << endl
         << "Licensed under the GNU Lesser General Public License (LGPL)" << endl
         << "" << endl
-        << "Usage: h5plotserie [-h|--help]" << endl
+        << "Usage: h5plotserie [-h|--help] [-v|--verbose]" << endl
 	<< "                   [--fullscreen] [--maximized]" << endl
 	<< "                   [<dir>] [<file>]" << endl
         << "-h, --help:        Show this help." << endl
+        << "-v, --verbose:     Print infromational messages to stdout." << endl
         << "--fullscreen:      Start in full screen mode." << endl
         << "--maximized:       Show window maximized on startup." << endl
         << "<dir>              Open all *.mbsh5 file in dir." << endl

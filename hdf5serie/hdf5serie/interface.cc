@@ -48,7 +48,8 @@ namespace {
 
   herr_t errorWalk(unsigned n, const H5E_error2_t *err, void *data) {
     try {
-      fmatvec::Atom::msgStatic(fmatvec::Atom::Error)<<"HDF5 error in file "<<err->file_name<<":"<<err->line<<" function "<<
+      // we usually handle all errors -> do not print these to fmatvec::Atom::Error
+      fmatvec::Atom::msgStatic(fmatvec::Atom::Info)<<"HDF5 error in file "<<err->file_name<<":"<<err->line<<" function "<<
         err->func_name<<endl<<err->desc<<endl;
     }
     catch(...) {
