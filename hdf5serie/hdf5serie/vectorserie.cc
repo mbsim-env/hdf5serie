@@ -55,6 +55,7 @@ namespace H5 {
     // reopen the dataset with chunk cache == chunk size
     H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*maxDims[0], 0.75);
     id.reset(H5Dopen(parent->getID(), name.c_str(), apl), &H5Dclose);
+    fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
 
     // create mem space
     hsize_t memDims[]={1, dims[1]};
@@ -70,7 +71,7 @@ namespace H5 {
     dims[0]=0;
     dims[1]=cols;
     hsize_t maxDims[]={H5S_UNLIMITED, dims[1]};
-    ScopedHID fileDataSpaceID(H5Screate_simple(2, dims, maxDims), &H5Sclose);
+    fileDataSpaceID.reset(H5Screate_simple(2, dims, maxDims), &H5Sclose);
     ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
     H5Pset_attr_phase_change(propID, 0, 0);
     hsize_t chunkDims[]={(hsize_t)chunkSize, (hsize_t)(dims[1])};
@@ -98,6 +99,12 @@ namespace H5 {
   }
 
   template<class T>
+  void VectorSerie<T>::refresh() {
+    Dataset::refresh();
+    fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
+  }
+
+  template<class T>
   void VectorSerie<T>::setDescription(const string& description) {
     SimpleAttribute<string> *desc=createChildAttribute<SimpleAttribute<string> >("Description")();
     desc->write(description);
@@ -107,11 +114,11 @@ namespace H5 {
   void VectorSerie<T>::append(const T data[], size_t size) {
     if(size!=dims[1]) throw Exception(getPath(), "dataset dimension does not match");
     dims[0]++;
-    H5Dset_extent(id, dims);
+    H5Dset_extent(id, dims); // this invalidates fileDataSpaceID -> get it again
+    fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
 
     hsize_t start[]={dims[0]-1,0};
     hsize_t count[]={1, dims[1]};
-    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
 
     H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, data);
@@ -132,7 +139,6 @@ namespace H5 {
 
     hsize_t start[]={(hsize_t)row,0};
     hsize_t count[]={1, dims[1]};
-    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
 
     H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]);
@@ -145,7 +151,6 @@ namespace H5 {
       throw Exception(getPath(), "dataset dimension does not match");
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
-    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
 
     ScopedHID colDataSpaceID(H5Screate_simple(2, count, nullptr), &H5Sclose);
@@ -181,11 +186,11 @@ namespace H5 {
   void VectorSerie<string>::append(const string data[], size_t size) {
     if(size!=dims[1]) throw Exception(getPath(), "dataset dimension does not match");
     dims[0]++;
-    H5Dset_extent(id, dims);
+    H5Dset_extent(id, dims); // this invalidates fileDataSpaceID -> get it again
+    fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
   
     hsize_t start[]={dims[0]-1,0};
     hsize_t count[]={1, dims[1]};
-    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
   
     VecStr dummy(dims[1]);
@@ -211,7 +216,6 @@ namespace H5 {
 
     hsize_t start[]={(hsize_t)row,0};
     hsize_t count[]={1, dims[1]};
-    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
   
     VecStr dummy(dims[1]);
@@ -227,7 +231,6 @@ namespace H5 {
       throw Exception(getPath(), "dataset dimension does not match");
     hsize_t start[]={0, (hsize_t)column};
     hsize_t count[]={rows, 1};
-    ScopedHID fileDataSpaceID(H5Dget_space(id), &H5Sclose);
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
   
     ScopedHID colDataSpaceID(H5Screate_simple(2, count, nullptr), &H5Sclose);

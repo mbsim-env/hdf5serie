@@ -65,6 +65,7 @@ namespace H5 {
     private:
       hid_t memDataTypeID; // no need to useScopedHID since only a static hid_t is stored here
       ScopedHID memDataSpaceID;
+      ScopedHID fileDataSpaceID;
       hsize_t dims[2];
     protected:
       VectorSerie(int dummy, GroupBase *parent_, const std::string &name_);
@@ -72,6 +73,7 @@ namespace H5 {
         int compression=File::getDefaultCompression(), int chunkSize=File::getDefaultChunkSize());
       ~VectorSerie() override;
       void close() override;
+      void refresh() override;
 
     public:
       /** \brief Sets a description for the dataset
@@ -171,8 +173,7 @@ namespace H5 {
 
   template<class T>
   int VectorSerie<T>::getRows() {
-    ScopedHID fileSpaceID(H5Dget_space(id), &H5Sclose);
-    H5Sget_simple_extent_dims(fileSpaceID, dims, nullptr);
+    H5Sget_simple_extent_dims(fileDataSpaceID, dims, nullptr);
     return dims[0];
   }
 
