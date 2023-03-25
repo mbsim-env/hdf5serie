@@ -116,6 +116,15 @@ namespace H5 {
   }
 
   template<class T>
+  void VectorSerie<T>::flush() {
+    int cacheSize=cache.shape()[0];
+    if(cacheSize>1 && cacheRow>0)
+      writeToHDF5(cacheRow, cacheSize, cache.data());
+
+    Dataset::flush();
+  }
+
+  template<class T>
   void VectorSerie<T>::setDescription(const string& description) {
     SimpleAttribute<string> *desc=createChildAttribute<SimpleAttribute<string> >("Description")();
     desc->write(description);

@@ -79,6 +79,7 @@ namespace H5 {
       ~VectorSerie() override;
       void close() override;
       void refresh() override;
+      void flush() override;
 
     public:
       /** \brief Sets a description for the dataset
