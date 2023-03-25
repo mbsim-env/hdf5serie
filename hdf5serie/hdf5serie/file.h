@@ -124,6 +124,8 @@ namespace H5 {
       static void setDefaultCompression(int comp) { defaultCompression=comp; }
       static int getDefaultChunkSize() { return defaultChunkSize; }
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
+      static int getDefaultCacheSize() { return defaultCacheSize; }
+      static void setDefaultCacheSize(int cache) { defaultCacheSize=cache; }
 
       //! Refresh the dataset of a reader
       void refresh() override;
@@ -144,6 +146,7 @@ namespace H5 {
     private:
       static int defaultCompression;
       static int defaultChunkSize;
+      static int defaultCacheSize;
 
       void close() override;
 

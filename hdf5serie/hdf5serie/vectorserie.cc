@@ -65,7 +65,7 @@ namespace H5 {
   }
 
   template<class T>
-  VectorSerie<T>::VectorSerie(GroupBase *parent_, const string &name_, int cols, int compression, int chunkSize) : Dataset(parent_, name_) {
+  VectorSerie<T>::VectorSerie(GroupBase *parent_, const string &name_, int cols, int compression, int chunkSize, int cacheSize) : Dataset(parent_, name_) {
     memDataTypeID=toH5Type<T>();
     // create dataset with chunk cache size = chunk size
     dims[0]=0;
@@ -84,6 +84,12 @@ namespace H5 {
 
     hsize_t memDims[]={1, dims[1]};
     memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
+    if(cacheSize>1) {
+      cache.resize(boost::extents[cacheSize][cols]);
+      cacheRow=0;
+      memDims[0]=cacheSize;
+      memDataSpaceCacheID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
+    }
     msg(Debug)<<"HDF5:"<<endl
               <<"Created object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
   }
@@ -93,8 +99,13 @@ namespace H5 {
 
   template<class T>
   void VectorSerie<T>::close() {
+    int cacheSize=cache.shape()[0];
+    if(cacheSize>1 && cacheRow>0)
+      writeToHDF5(cacheRow, cacheSize, cache.data());
+
     Dataset::close();
     memDataSpaceID.reset();
+    memDataSpaceCacheID.reset();
     id.reset();
   }
 
@@ -111,17 +122,42 @@ namespace H5 {
   }
 
   template<class T>
-  void VectorSerie<T>::append(const T data[], size_t size) {
-    if(size!=dims[1]) throw Exception(getPath(), "dataset dimension does not match");
-    dims[0]++;
+  void VectorSerie<T>::writeToHDF5(size_t nrRows, size_t cacheSize, const T* data) {
+    dims[0]+=nrRows;
     H5Dset_extent(id, dims); // this invalidates fileDataSpaceID -> get it again
     fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
 
-    hsize_t start[]={dims[0]-1,0};
-    hsize_t count[]={1, dims[1]};
+    hsize_t start[]={dims[0]-nrRows,0};
+    hsize_t count[]={nrRows, dims[1]};
     H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr);
 
-    H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, data);
+    if(nrRows==1) // use memDataSpeceID (1 row)
+      H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, data);
+    else if(nrRows==cacheSize) // use memDataSpaceCacheID (cacheSize rows)
+      H5Dwrite(id, memDataTypeID, memDataSpaceCacheID, fileDataSpaceID, H5P_DEFAULT, data);
+    else { // create new memDataSpaceLocalID (nrRows rows) (this is only called once by close())
+      hsize_t memDims[]={nrRows, dims[1]};
+      ScopedHID memDataSpaceLocalID(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
+      H5Dwrite(id, memDataTypeID, memDataSpaceLocalID, fileDataSpaceID, H5P_DEFAULT, data);
+    }
+  }
+
+  template<class T>
+  void VectorSerie<T>::append(const T data[], size_t size) {
+    if(size!=dims[1]) throw Exception(getPath(), "dataset dimension does not match");
+
+    auto cacheSize=cache.shape()[0];
+    if(cacheSize>1) {
+      for(size_t i=0; i<size; ++i)
+        cache[cacheRow][i]=data[i];
+      cacheRow++;
+      if(cacheRow>=cacheSize) {
+        cacheRow=0;
+        writeToHDF5(cacheSize, cacheSize, cache.data());
+      }
+    }
+    else
+      writeToHDF5(1, cacheSize, data);
   }
 
   template<class T>

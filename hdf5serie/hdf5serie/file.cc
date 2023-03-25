@@ -40,6 +40,7 @@ namespace H5 {
 
 int File::defaultCompression=1;
 int File::defaultChunkSize=100;
+int File::defaultCacheSize=0;
 
 namespace Internal {
   // This class is similar to boost::interprocess::scoped_lock but prints debug messages.

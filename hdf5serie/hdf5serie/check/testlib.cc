@@ -357,47 +357,47 @@ int main() {
 
   /***** MYTIMESERIE *****/
   cout<<"TIMESERIE\n";
-  {
-  File file("test2d.h5", File::write);
-  VectorSerie<double> *ts=file.createChildObject<VectorSerie<double> >("timeserie")(3);
-  vector<string> colhead;
-  colhead.emplace_back("col1");
-  colhead.emplace_back("col22");
-  colhead.emplace_back("col333");
-  ts->setColumnLabel(colhead);
-  ts->setDescription("mydesctipsldfk");
-  vector<double> data;
-  data.push_back(1.2);
-  data.push_back(2.3);
-  data.push_back(3.4);
-  ts->append(data);
-  ts->append(data);
-//  fmatvec::Vec v(3);
-//  ts->append(v);
-  vector<double> out;
-  out=ts->getRow(1);
-  ts->getRow(2, out);
-  for(double d : out) cout<<d<<endl;
-  out=ts->getColumn(1);
-  for(double d : out) cout<<d<<endl;
-  cout<<ts->getDescription()<<endl;
-  vector<string> outhead;
-  outhead=ts->getColumnLabel();
-  for(auto & d : outhead) cout<<d<<endl;
-  VectorSerie<string> *tsStr=file.createChildObject<VectorSerie<string> >("timeserieStr")(3);
-  vector<string> dataStr;
-  dataStr.emplace_back("a");
-  dataStr.emplace_back("b");
-  dataStr.emplace_back("c");
-  tsStr->append(dataStr);
-  VectorSerie<complex<double>> *tsComplex=file.createChildObject<VectorSerie<complex<double>> >("timeserieComplex")(3);
-  vector<complex<double>> dataComplex;
-  dataComplex.emplace_back(3.4,7.2);
-  dataComplex.emplace_back(4.4,8.2);
-  dataComplex.emplace_back(5.4,9.2);
-  tsComplex->append(dataComplex);
-  file.enableSWMR();
-  }
+  auto write = [](const string &filename) {
+    File file(filename, File::write);
+    VectorSerie<double> *ts=file.createChildObject<VectorSerie<double> >("timeserie")(3);
+    vector<string> colhead;
+    colhead.emplace_back("col1");
+    colhead.emplace_back("col22");
+    colhead.emplace_back("col333");
+    ts->setColumnLabel(colhead);
+    ts->setDescription("mydesctipsldfk");
+    vector<double> data(3);
+    for(int i=0; i<15; ++i) {
+      data[0]=1.2+i;
+      data[1]=2.3+i;
+      data[2]=3.4+i;
+      ts->append(data);
+    }
+    vector<double> out;
+    out=ts->getRow(1);
+    ts->getRow(2, out);
+    for(double d : out) cout<<d<<endl;
+    out=ts->getColumn(1);
+    for(double d : out) cout<<d<<endl;
+    cout<<ts->getDescription()<<endl;
+    vector<string> outhead;
+    outhead=ts->getColumnLabel();
+    for(auto & d : outhead) cout<<d<<endl;
+    VectorSerie<string> *tsStr=file.createChildObject<VectorSerie<string> >("timeserieStr")(3);
+    vector<string> dataStr;
+    dataStr.emplace_back("a");
+    dataStr.emplace_back("b");
+    dataStr.emplace_back("c");
+    tsStr->append(dataStr);
+    VectorSerie<complex<double>> *tsComplex=file.createChildObject<VectorSerie<complex<double>> >("timeserieComplex")(3);
+    vector<complex<double>> dataComplex;
+    dataComplex.emplace_back(3.4,7.2);
+    dataComplex.emplace_back(4.4,8.2);
+    dataComplex.emplace_back(5.4,9.2);
+    tsComplex->append(dataComplex);
+    file.enableSWMR();
+  };
+  write("test2d.h5");
   {
   File file("test2d.h5", File::read);
   auto *ts=file.openChildObject<VectorSerie<double> >("timeserie");
@@ -408,6 +408,29 @@ int main() {
   vector<string> outhead;
   outhead=ts->getColumnLabel();
   for(auto & d : outhead) cout<<d<<endl;
+  }
+  {
+  File::setDefaultCacheSize(6);
+  write("test2dcache.h5");
+  File::setDefaultCacheSize(0);
+  }
+  {
+  File file("test2dcache.h5", File::read);
+  auto *ts=file.openChildObject<VectorSerie<double> >("timeserie");
+  if(ts->getRows()!=15) {
+    cerr<<"Wrong h5 file content"<<endl;
+    return 1;
+  }
+  auto row=ts->getRow(0);
+  if(row[0]!=1.2 || row[1]!=2.3 || row[2]!=3.4) {
+    cerr<<"Wrong h5 file content"<<endl;
+    return 1;
+  }
+  row=ts->getRow(14);
+  if(row[0]!=1.2+14 || row[1]!=2.3+14 || row[2]!=3.4+14) {
+    cerr<<"Wrong h5 file content"<<endl;
+    return 1;
+  }
   }
 
 
