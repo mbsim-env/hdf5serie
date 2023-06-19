@@ -175,8 +175,8 @@ namespace H5 {
       throw Exception(getPath(), "Size of data does not match");
     int rows=getRows();
     if(row<0 || row>=rows) {
-      msg(Warn)<<"HDF5 object with id = "<<id<<":"<<endl
-               <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
+      msg(Debug)<<"HDF5 object with id = "<<id<<":"<<endl
+                <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
       for(size_t i=0; i<size; ++i)
          data[i]=T();
       return;
@@ -252,8 +252,8 @@ namespace H5 {
       throw Exception(getPath(), "Size of data does not match");
     int rows=getRows();
     if(row<0 || row>=rows) {
-      msg(Warn)<<"HDF5 object with id = "<<id<<":"<<endl
-               <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
+      msg(Debug)<<"HDF5 object with id = "<<id<<":"<<endl
+                <<"Requested row number "<<row<<" is out of range [0.."<<rows<<"[, returning a dummy vector."<<endl;
       for(size_t i=0; i<size; ++i)
          data[i]=string();
       return;
