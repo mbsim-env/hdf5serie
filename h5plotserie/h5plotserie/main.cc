@@ -28,6 +28,8 @@
 #include "curves.h"
 #include <fmatvec/atom.h>
 #include <iostream>
+#include <boost/filesystem.hpp>
+#include "set_current_path.h"
 #ifdef _WIN32
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
@@ -45,6 +47,32 @@ int main(int argc, char** argv) {
   QStringList arg;
   for (int i=1; i<argc; i++)
     arg.push_back(argv[i]);
+
+  // current directory and adapt paths
+  boost::filesystem::path dirFile;
+  if(!arg.empty())
+    dirFile=(--arg.end())->toStdString();
+  boost::filesystem::path newCurrentPath;
+  if(auto i=std::find(arg.begin(), arg.end(), "--CC"); !dirFile.empty() && i!=arg.end()) {
+    if(boost::filesystem::is_directory(dirFile))
+      newCurrentPath=dirFile;
+    else
+      newCurrentPath=dirFile.parent_path();
+    arg.erase(i);
+  }
+  if(auto i=std::find(arg.begin(), arg.end(), "-C"); i!=arg.end()) {
+    auto i2=i; i2++;
+    if(boost::filesystem::is_directory(i2->toStdString()))
+      newCurrentPath=i2->toStdString();
+    else
+      newCurrentPath=boost::filesystem::path(i2->toStdString()).parent_path();
+    arg.erase(i);
+    arg.erase(i2);
+  }
+  SetCurrentPath currentPath(newCurrentPath);
+  for(auto i=arg.rbegin(); i!=arg.rend(); ++i)
+    if(currentPath.existsInOrg(i->toStdString()))
+      *i=currentPath.adaptPath(i->toStdString()).string().c_str();
 
   auto i=find(arg.begin(), arg.end(), "-v");
   auto i2=find(arg.begin(), arg.end(), "--verbose");
@@ -69,8 +97,14 @@ int main(int argc, char** argv) {
         << "-v, --verbose:     Print infromational messages to stdout." << endl
         << "--fullscreen:      Start in full screen mode." << endl
         << "--maximized:       Show window maximized on startup." << endl
+        <<"-C <dir/file>       Change current to dir to <dir>/dir of <file> first."<<endl
+        <<"                    All arguments are still relative to the original current dir."<<endl
+        <<"--CC                Change current dir to dir of <mbsimprjfile> first."<<endl
+        <<"                    All arguments are still relative to the original current dir."<<endl
         << "<dir>              Open all *.mbsh5 file in dir." << endl
-        << "<file>             Open <file> (*.mbsh5)." << endl;
+        <<"                    <dir> and <file> must be the last arguments."<<endl
+        << "<file>             Open <file> (*.mbsh5)." << endl
+        <<"                    <dir> and <file> must be the last arguments."<<endl;
 
       return 0;
     }
@@ -84,18 +118,15 @@ int main(int argc, char** argv) {
 #endif
   QCoreApplication::setLibraryPaths(QStringList(QFileInfo(moduleName).absolutePath())); // do not load plugins from buildin defaults
 
+  auto argSaved=arg; // save arguments (QApplication removes all arguments known by Qt)
   QApplication app(argc, argv);
+  arg=argSaved; // restore arguments
 #ifndef _WIN32
   UnixSignalWatcher sigwatch;
   sigwatch.watchForSignal(SIGINT);
   sigwatch.watchForSignal(SIGTERM);
   QObject::connect(&sigwatch, &UnixSignalWatcher::unixSignal, &app, &QApplication::quit);
 #endif
-
-  // regenerate arg: QApplication removes all arguments known by Qt
-  arg.clear();
-  for (int i=1; i<argc; i++)
-    arg.push_back(argv[i]);
 
   app.setOrganizationName("mbsim-env");
   app.setApplicationName("h5plotserie");
