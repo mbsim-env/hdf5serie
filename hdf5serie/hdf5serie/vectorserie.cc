@@ -100,8 +100,10 @@ namespace H5 {
   template<class T>
   void VectorSerie<T>::close() {
     int cacheSize=cache.shape()[0];
-    if(cacheSize>1 && cacheRow>0)
+    if(cacheSize>1 && cacheRow>0) {
       writeToHDF5(cacheRow, cacheSize, cache.data());
+      cacheRow=0;
+    }
 
     Dataset::close();
     memDataSpaceID.reset();
@@ -118,8 +120,10 @@ namespace H5 {
   template<class T>
   void VectorSerie<T>::flush() {
     int cacheSize=cache.shape()[0];
-    if(cacheSize>1 && cacheRow>0)
+    if(cacheSize>1 && cacheRow>0) {
       writeToHDF5(cacheRow, cacheSize, cache.data());
+      cacheRow=0;
+    }
 
     Dataset::flush();
   }
@@ -161,8 +165,8 @@ namespace H5 {
         cache[cacheRow][i]=data[i];
       cacheRow++;
       if(cacheRow>=cacheSize) {
-        cacheRow=0;
         writeToHDF5(cacheSize, cacheSize, cache.data());
+        cacheRow=0;
       }
     }
     else
