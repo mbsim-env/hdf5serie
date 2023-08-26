@@ -36,6 +36,12 @@
 
 namespace OpenMBVGUI {
 
+class DLL_PUBLIC AbstractViewFilterStatic : public QObject {
+  Q_OBJECT
+  Q_SIGNALS:
+    void optionsChanged();
+};
+
 /*! A filter for QTreeView classes (like QTreeWidget) */
 class DLL_PUBLIC AbstractViewFilter : public QWidget {
   public:
@@ -64,7 +70,17 @@ class DLL_PUBLIC AbstractViewFilter : public QWidget {
     //! This is automatically done when using setFilter.
     void applyFilter();
 
+    enum class FilterType { RegEx, Glob };
+    static void setFilterType(FilterType filtertype_);
+    static void setCaseSensitive(bool cs);
+    static FilterType getFilterType() { return filterType; }
+    static bool getCaseSensitive() { return caseSensitive; }
+    static AbstractViewFilterStatic* staticObject();
+
   protected:
+    void updateTooltip();
+    void setColor(const QModelIndex &index);
+
     // update the match varaible
     void updateMatch(const QModelIndex &index, const QRegExp &filter);
     void setChildMatchOfParent(const QModelIndex &index);
@@ -72,6 +88,9 @@ class DLL_PUBLIC AbstractViewFilter : public QWidget {
 
     // update the view using the current match variable
     void updateView(const QModelIndex &index);
+
+    static FilterType filterType;
+    static bool caseSensitive;
 
     QLineEdit *filterLE;
     QString oldFilterValue;

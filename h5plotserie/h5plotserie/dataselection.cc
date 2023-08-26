@@ -24,6 +24,7 @@
 #include "QLineEdit"
 #include "QListWidget"
 #include "QFileInfo"
+#include "QSettings"
 #include <QDomDocument>
 #include "dataselection.h"
 
@@ -39,6 +40,7 @@
 using namespace std;
 
 DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
+  QSettings settings;
   connect(this, &DataSelection::reopenAllSignal, this, &DataSelection::reopenAll);
   connect(this, &DataSelection::refreshFileSignal, this, &DataSelection::refreshFile);
 
@@ -47,6 +49,15 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
 
   auto * fileSelection=new QGridLayout(this);
   dummy->setLayout(fileSelection);
+
+  // filter settings
+  OpenMBVGUI::AbstractViewFilter::setFilterType(static_cast<OpenMBVGUI::AbstractViewFilter::FilterType>(settings.value("mainwindow/filter/type", 0).toInt()));
+  OpenMBVGUI::AbstractViewFilter::setCaseSensitive(settings.value("mainwindow/filter/casesensitivity", false).toBool());
+  connect(OpenMBVGUI::AbstractViewFilter::staticObject(), &OpenMBVGUI::AbstractViewFilterStatic::optionsChanged, [](){
+    QSettings settings;
+    settings.setValue("mainwindow/filter/type", static_cast<int>(OpenMBVGUI::AbstractViewFilter::getFilterType()));
+    settings.setValue("mainwindow/filter/casesensitivity", OpenMBVGUI::AbstractViewFilter::getCaseSensitive());
+  });
 
   fileBrowser = new QTreeWidget(this);
   fileSelection->addWidget(fileBrowser,1,0,1,2);

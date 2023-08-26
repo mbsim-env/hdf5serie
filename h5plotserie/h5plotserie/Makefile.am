@@ -27,7 +27,8 @@ noinst_HEADERS = curves.h \
 
 nodist_h5plotserie_SOURCES=$(QT_BUILT_SOURCES)
 # C++ source file to build automatically (e.g. abc.moc.cc by abc.h)
-QT_BUILT_SOURCES = dataselection.moc.cc
+QT_BUILT_SOURCES = dataselection.moc.cc \
+  abstractviewfilter.moc.cc
 BUILT_SOURCES = $(QT_BUILT_SOURCES) $(MAYBE_SIGWATCH_MOC)
 
 icondir = @datadir@/h5plotserie/icons
