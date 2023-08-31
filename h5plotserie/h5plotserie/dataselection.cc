@@ -201,11 +201,15 @@ void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
     if(g)
       insertChildInTree(g, child);
     else {
-      if(name == "data") {
-        QString path; 
-        getPath(item,path,0);
-        path += "/data";
+      QString path; 
+      getPath(item,path,0);
+      path += QString("/") + name.c_str();
+      H5::ElementType et;
+      hid_t t;
+      grp->openChildObject(path.toStdString(), &et, &t);
+      if(et==H5::vectorSerie && H5Tequal(t, H5T_NATIVE_DOUBLE)) {
         static_cast<TreeWidgetItem*>(child)->setPath(path);
+        static_cast<TreeWidgetItem*>(child)->setIsVectorSerieDouble(true);
       }
     }
   }
@@ -220,15 +224,20 @@ void DataSelection::getPath(QTreeWidgetItem* item, QString &s, int col) {
 
 void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
   currentData->clear();
-  if( item->text(col) == "data") {
+  if( static_cast<TreeWidgetItem*>(item)->getIsVectorSerieDouble()) {
     QString path = static_cast<TreeWidgetItem*>(item)->getPath();
     int j = getTopLevelIndex(item);
     std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
     auto *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
-    vector<string> ret=vs->openChildAttribute<H5::SimpleAttribute<vector<string> > >("Column Label")->read();
     QStringList sl;
-    for(size_t i=0; i<ret.size(); i++)
-      sl << ret[i].c_str();
+    if(vs->hasChildAttribute("Column Label")) {
+      auto ret=vs->openChildAttribute<H5::SimpleAttribute<vector<string> > >("Column Label")->read();
+      for(auto &i : ret)
+        sl << i.c_str();
+    }
+    else
+      for(size_t i=1; i<=vs->getColumns(); ++i)
+        sl << QString("Column %1").arg(i);
     currentData->addItems(sl);
   }
 }

@@ -29,7 +29,10 @@ class TreeWidgetItem : public QTreeWidgetItem {
     QString path;
     QStringList list;
     bool searchMatched;
+    bool isVectorSerieDouble { false };
   public:
+    void setIsVectorSerieDouble(bool b) { isVectorSerieDouble = b; }
+    bool getIsVectorSerieDouble() { return isVectorSerieDouble; }
     TreeWidgetItem ( const QStringList & strings) : QTreeWidgetItem(strings), searchMatched(true) {}
     void setPath(const QString& p) {path = p;}
     void setStringList(QStringList &list_) {list = list_;}
