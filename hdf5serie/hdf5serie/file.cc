@@ -184,7 +184,7 @@ void File::openOrCreateShm() {
   // create inter process shared memory atomically
   msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Touch file"<<endl;
   // at least using wine we cannot use filename as lock file itself, its crashing
-  boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.leaf().string()+".lock"));
+  boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
   { std::ofstream dummy(filenameLock.string()); } // create the file
   // now the file exists and we can create the shm name (which uses boost::filesystem::canonical)
   shmName=createShmName(filename);
@@ -363,7 +363,7 @@ File::~File() {
  
     if(sharedData) {
       // at least using wine we cannot use filename as lock file itself, its crashing
-      boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.leaf().string()+".lock"));
+      boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
       ipc::file_lock fileLock(filenameLock.string().c_str());//MISSING file_lock are not very portable -> use a named mutex (the mutex in the shm may be obsolte than)
       {
         msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Trying to lock file: dtor"<<endl;
