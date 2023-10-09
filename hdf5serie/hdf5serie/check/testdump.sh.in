@@ -3,7 +3,11 @@
 set -e
 set -o pipefail
 
-export LD_LIBRARY_PATH=@prefix@/bin:@prefix@/lib:$LD_LIBRARY_PATH
+if [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+  export PATH="$PATH:$(cygpath -u @prefix@/bin)"
+else
+  export LD_LIBRARY_PATH=@prefix@/bin:@prefix@/lib:$LD_LIBRARY_PATH
+fi
 echo LSSERIE
 @XC_EXEC_PREFIX@ ../dump/h5lsserie@EXEEXT@ -d -l test2d.h5 || exit
 echo DUMPSERIE timeserie
