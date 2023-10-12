@@ -226,7 +226,7 @@ void File::openWriter() {
   {
     ScopedLock lock(sharedData->mutex, this, "openWriter");
     initProcessInfo();
-    // open a writer
+    // open the writer
     // wait until no other writer is active
     wait(lock, "Blocking until other writer has finished.", [this](){
       return sharedData->writerState==WriterState::none;
@@ -307,7 +307,7 @@ void File::stillAlivePing() {
             sharedData->activeReaders--;
           }
           else if(it->type==write) {
-            msg(Atom::Debug)<<"HDF5Serie: Set writerState=none and decrement shmUseCount, since a writer seem to have crashed, and notify"<<endl;
+            msg(Atom::Debug)<<"HDF5Serie: Set writerState=none and decrement shmUseCount, since the writer seem to have crashed, and notify"<<endl;
             sharedData->writerState=WriterState::none;
           }
           sharedData->shmUseCount--;
@@ -402,7 +402,7 @@ void File::closeWriter() {
 
   {
     ScopedLock lock(sharedData->mutex, this, "closeWriter");
-    // close a writer
+    // close the writer
     // set the writer state to none and notify about this change
     msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": Set writerState=none and notify"<<endl;
     sharedData->writerState=WriterState::none;
@@ -515,25 +515,25 @@ void File::listenForRequest() {
   while(true) {
     // ... waits until write request happens (or this thread is to be closed)
     wait(threadLock, "", [this](){
-      return sharedData->writerState==WriterState::writeRequest || // a writer wants to write
+      return sharedData->writerState==WriterState::writeRequest || // the writer wants to write
              (flushRequested && sharedData->flushRequest==false) || // this object has requested a flush which is done now
              (lastWriterState!=WriterState::none && sharedData->writerState==WriterState::none) || // writer has finished
              exitThread; // this thread should exit
     });
-    // if a writer has done is flush after a reqeust OR
-    // a writer has finished ...
+    // if the writer has done is flush after a reqeust OR
+    // the writer has finished ...
     if((flushRequested && sharedData->flushRequest==false) ||
        (lastWriterState!=WriterState::none && sharedData->writerState==WriterState::none)) {
       flushRequested=false;
       // ... call the callback to notify the caller of this reader about the finished flush
       if(refreshCallback) {
         if(msgAct(Atom::Debug))
-          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file. Notify the reader."<<endl;
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": The writer has flushed this file. Notify the reader."<<endl;
         refreshCallback();
       }
       else {
         if(msgAct(Atom::Debug))
-          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer has flushed this file but the reader does not handle such nofitications."<<endl;
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": The writer has flushed this file but the reader does not handle such nofitications."<<endl;
       }
       // do no exit the thread
     }
@@ -543,12 +543,12 @@ void File::listenForRequest() {
       // ... call the callback to notify the caller of this reader about this request
       if(closeRequestCallback) {
         if(msgAct(Atom::Debug))
-          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file. Notify the reader."<<endl;
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": The writer wants to write this file. Notify the reader."<<endl;
         closeRequestCallback();
       }
       else {
         if(msgAct(Atom::Debug))
-          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": A writer wants to write this file but the reader does not handle such requests."<<endl;
+          msg(Atom::Debug)<<"HDF5Serie: "<<filename.string()<<": The writer wants to write this file but the reader does not handle such requests."<<endl;
       }
       break; // exit the thread
     }
