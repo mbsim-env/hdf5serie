@@ -40,11 +40,12 @@ PlotArea::PlotArea(QWidget * parent) : QMdiArea(parent) {
 }
 
 void PlotArea::addPlotWindow(const QString &windowTitle) {
-  QMdiSubWindow * q = addSubWindow(new PlotWindow(this));
+  QMdiSubWindow *q = addSubWindow(new PlotWindow(this));
   q->setObjectName(windowTitle);
   q->setWindowTitle(windowTitle);
   q->setAttribute(Qt::WA_DeleteOnClose);
-  q->showMaximized();
+  q->show();
+  if(subWindowList().size()==1 and showMaximized) q->setWindowState(Qt::WindowMaximized);
 }
 
 PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent) {

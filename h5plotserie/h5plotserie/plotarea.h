@@ -38,6 +38,10 @@ class PlotArea : public QMdiArea {
     PlotArea(QWidget * parent = nullptr);
 
     void addPlotWindow(const QString &windowTitle);
+    void setShowMaximized(bool showMaximized_) { showMaximized = showMaximized_; }
+
+  private:
+    bool showMaximized{false};
 };
 
 class PlotWindow : public QMdiSubWindow {

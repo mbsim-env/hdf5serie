@@ -42,14 +42,14 @@ using namespace std;
 
 MainWindow::MainWindow(const QStringList &arg) {
 
-  QMenu * fileMenu = menuBar()->addMenu(tr("&File"));
-  fileMenu->addAction("add h5-File", this, &MainWindow::addH5FileDialog);
-  fileMenu->addAction("save all plot windows", this, &MainWindow::saveAllPlotWindows);
-  fileMenu->addAction("load plot windows", this, &MainWindow::loadPlotWindows);
-  fileMenu->addAction("exit", this, &MainWindow::close, QKeySequence::Quit);
+  QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
+  fileMenu->addAction("Add h5-File", this, &MainWindow::addH5FileDialog);
+  fileMenu->addAction("Save all plot windows", this, &MainWindow::saveAllPlotWindows);
+  fileMenu->addAction("Load plot windows", this, &MainWindow::loadPlotWindows);
+  fileMenu->addSeparator();
+  fileMenu->addAction("Exit", this, &MainWindow::close, QKeySequence::Quit);
 
-  menuBar()->addSeparator();
-  QMenu * helpMenu = menuBar()->addMenu(tr("&About"));
+  QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
   helpMenu->addAction("GUI Help", this, &MainWindow::help);
   helpMenu->addAction("About", this, &MainWindow::about);
 
@@ -57,8 +57,10 @@ MainWindow::MainWindow(const QStringList &arg) {
 
   plotArea = new PlotArea(this);
   setCentralWidget(plotArea);
+  QSettings settings;
+  plotArea->setShowMaximized(settings.value("plotwindow/showmaximized", true).toBool());
 
-  auto * dataSelectionDW=new QDockWidget("Data Selection", this);
+  auto *dataSelectionDW=new QDockWidget("Data Selection", this);
   dataSelectionDW->setObjectName("dockWidget/dataSelection");
   addDockWidget(Qt::LeftDockWidgetArea,dataSelectionDW);
   dataSelection = new DataSelection(this);
@@ -194,6 +196,8 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   QSettings settings;
   settings.setValue("mainwindow/geometry", saveGeometry());
   settings.setValue("mainwindow/state", saveState());
+  auto c = plotArea->currentSubWindow();
+  if(c) settings.setValue("plotwindow/showmaximized", (c->windowState()&Qt::WindowMaximized)==Qt::WindowMaximized);
   QMainWindow::closeEvent(event);
 }
 
