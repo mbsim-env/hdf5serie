@@ -76,7 +76,7 @@ class DataSelection : public QSplitter {
 
   private:
     void selectFromFileBrowser(QTreeWidgetItem* item, int col);
-    void selectFromCurrentData(QListWidgetItem *item); //=plot
+    void selectFromCurrentData(QListWidgetItem *item, const QString &mode); //=plot
     void updatePath(QTreeWidgetItem *);
 
     OpenMBVGUI::AbstractViewFilter *dataSelectionFilter;
@@ -87,6 +87,8 @@ class DataSelection : public QSplitter {
     void insertChildInTree(H5::Group *grp, QTreeWidgetItem *item);
     void getPath(QTreeWidgetItem* item, QString &s, int col);
     int getTopLevelIndex(QTreeWidgetItem* item);
+
+    void currentDataClicked(QListWidgetItem *item);
 
     QList<QString> file;
     QList<QFileInfo> fileInfo;

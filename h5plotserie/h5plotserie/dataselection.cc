@@ -26,6 +26,7 @@
 #include "QFileInfo"
 #include "QSettings"
 #include <QDomDocument>
+#include <QMenu>
 #include "dataselection.h"
 
 #include <hdf5serie/vectorserie.h>
@@ -76,8 +77,9 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   addWidget(currentData);
 
   QObject::connect(fileBrowser, &QTreeWidget::itemClicked, this, &DataSelection::selectFromFileBrowser);
-  QObject::connect(currentData, &QListWidget::itemClicked, this, &DataSelection::selectFromCurrentData);
   QObject::connect(fileBrowser, &QTreeWidget::currentItemChanged, this, &DataSelection::updatePath);
+  QObject::connect(currentData, &QListWidget::itemPressed, this, &DataSelection::currentDataClicked);
+
 }
 
 DataSelection::~DataSelection() {
@@ -169,6 +171,7 @@ void DataSelection::reopenAll() {
     rebuild(fileBrowser->topLevelItem(i),root);
 
   static_cast<MainWindow*>(parent()->parent())->getCurves()->plotAllTabs();
+  dataSelectionFilter->applyFilter();
 }
 
 void DataSelection::refreshFile(const QString &name) {
@@ -250,7 +253,7 @@ int DataSelection::getTopLevelIndex(QTreeWidgetItem* item) {
     return fileBrowser->indexOfTopLevelItem(item); 
 }
 
-void DataSelection::selectFromCurrentData(QListWidgetItem* item) {
+void DataSelection::selectFromCurrentData(QListWidgetItem* item, const QString &mode) {
   QString path = static_cast<TreeWidgetItem*>(fileBrowser->currentItem())->getPath();
   int col = currentData->row(item);
   int j = getTopLevelIndex(fileBrowser->currentItem());
@@ -269,12 +272,7 @@ void DataSelection::selectFromCurrentData(QListWidgetItem* item) {
   pd.setValue("x-Index", QString("%1").arg(0));
   pd.setValue("y-Index", QString("%1").arg(col));
 
-  if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
-    static_cast<MainWindow*>(parent()->parent())->getCurves()->modifyPlotData(pd, "add");
-  else if (QApplication::keyboardModifiers() & Qt::ControlModifier)
-    static_cast<MainWindow*>(parent()->parent())->getCurves()->modifyPlotData(pd, "new");
-  else
-    static_cast<MainWindow*>(parent()->parent())->getCurves()->modifyPlotData(pd, "replace");
+  static_cast<MainWindow*>(parent()->parent())->getCurves()->modifyPlotData(pd, mode);
 }
 
 void DataSelection::updatePath(QTreeWidgetItem *cur) {
@@ -287,4 +285,29 @@ void DataSelection::updatePath(QTreeWidgetItem *cur) {
 void DataSelection::requestFlush() {
   for(const auto& h5f : h5File)
     h5f.second->requestFlush();
+}
+
+void DataSelection::currentDataClicked(QListWidgetItem *item) {
+  if(QApplication::mouseButtons()==Qt::LeftButton) {
+    if (QApplication::keyboardModifiers() & Qt::ShiftModifier)
+      selectFromCurrentData(item,"add");
+    else if (QApplication::keyboardModifiers() & Qt::ControlModifier)
+      selectFromCurrentData(item,"new");
+    else
+      selectFromCurrentData(item,"replace");
+  }
+  if(QApplication::mouseButtons()==Qt::RightButton) {
+    QMenu *menu = new QMenu;
+    QAction *action=new QAction("Open in new window", menu);
+    connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"new"); });
+    menu->addAction(action);
+    action=new QAction("Add to current window", menu);
+    connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"add"); });
+    menu->addAction(action);
+    action=new QAction("Replace in current window", menu);
+    connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"replace"); });
+    menu->addAction(action);
+    menu->exec(QCursor::pos());
+    delete menu;
+  }
 }
