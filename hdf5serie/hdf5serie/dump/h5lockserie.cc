@@ -23,12 +23,20 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <hdf5serie/file.h>
+#ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#endif
 
 using namespace std;
 using namespace H5;
 namespace po = boost::program_options;
 
 int main(int argc, char* argv[]) {
+#ifdef _WIN32
+  SetConsoleCP(CP_UTF8);
+  SetConsoleOutputCP(CP_UTF8);
+#endif
   try {
     // positional filename options (1 more more times
     po::positional_options_description posArg;

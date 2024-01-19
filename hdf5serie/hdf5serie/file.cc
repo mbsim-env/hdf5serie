@@ -30,6 +30,11 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/locale.hpp>
+#ifdef _WIN32
+  #define WIN32_LEAN_AND_MEAN
+  #include <windows.h>
+#endif
 
 using namespace std;
 using namespace fmatvec;
@@ -186,6 +191,14 @@ void File::openOrCreateShm() {
   // at least using wine we cannot use filename as lock file itself, its crashing
   boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
   { std::ofstream dummy(filenameLock.string()); } // create the file
+#ifdef _WIN32
+  { // make lock file hidden on windows
+    std::wstring filenameU16=boost::locale::conv::utf_to_utf<wchar_t>(filenameLock.generic_string());
+    auto attrs = GetFileAttributesW(filenameU16.c_str());
+    if(attrs != INVALID_FILE_ATTRIBUTES)
+      SetFileAttributesW(filenameU16.c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
+  }
+#endif
   // now the file exists and we can create the shm name (which uses boost::filesystem::canonical)
   shmName=createShmName(filename);
   // exclusively lock the file to atomically create or open a shared memory associated with this file
