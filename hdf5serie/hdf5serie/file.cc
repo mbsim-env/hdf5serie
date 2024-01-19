@@ -30,7 +30,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
-#include <boost/locale.hpp>
+#include <boost/locale/encoding_utf.hpp> // gcc does not support <codecvt> yet -> use boost
 #ifdef _WIN32
   #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
