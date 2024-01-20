@@ -20,6 +20,8 @@
  */
 
 #include <config.h>
+#include <clocale>
+#include <cfenv>
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <hdf5serie/file.h>
@@ -36,7 +38,12 @@ int main(int argc, char* argv[]) {
 #ifdef _WIN32
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
+  setlocale(LC_ALL, "ACP.UTF-8");
+#else
+  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
+  setlocale(LC_ALL, "C");
 #endif
+
   try {
     // positional filename options (1 more more times
     po::positional_options_description posArg;

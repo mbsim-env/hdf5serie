@@ -18,6 +18,7 @@
    */
 
 #include <config.h>
+#include <clocale>
 #include <cassert>
 #include <cfenv>
 #include <QApplication>
@@ -40,13 +41,15 @@
 using namespace std;
 
 int main(int argc, char** argv) {
-#ifndef _WIN32
-//MISSING Qt seems to generate some FPE, hence disabled  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
-#endif
 #ifdef _WIN32
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
+  setlocale(LC_ALL, "ACP.UTF-8");
+#else
+  //assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1); // Qt seems to generate some FPE, hence not activated  
+  setlocale(LC_ALL, "C");
 #endif
+  QLocale::setDefault(QLocale::C);
 
   QStringList arg;
   for (int i=1; i<argc; i++)
@@ -136,8 +139,6 @@ int main(int argc, char** argv) {
   app.setApplicationName("h5plotserie");
   app.setOrganizationDomain("www.mbsim-env.de");
   QSettings::setDefaultFormat(QSettings::IniFormat);
-  QLocale::setDefault(QLocale::C);
-  setlocale(LC_ALL, "C");
 
   MainWindow mainWindow(arg);
   mainWindow.show();

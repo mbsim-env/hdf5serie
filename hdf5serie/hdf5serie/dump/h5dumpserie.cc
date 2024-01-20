@@ -20,6 +20,8 @@
  */
 
 #include <config.h>
+#include <clocale>
+#include <cfenv>
 #include <cassert>
 #include <cfenv>
 #include <string>
@@ -70,12 +72,13 @@ int precision=numeric_limits<double>::digits10+1;
 void printRow(Dataset *d, const vector<int> &cols, int row);
 
 int main(int argc, char* argv[]) {
-#ifndef _WIN32
-  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
-#endif
 #ifdef _WIN32
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
+  setlocale(LC_ALL, "ACP.UTF-8");
+#else
+  assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
+  setlocale(LC_ALL, "C");
 #endif
 
   vector<string> arg;
