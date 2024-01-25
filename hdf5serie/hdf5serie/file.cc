@@ -30,7 +30,6 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
-#include <boost/locale/encoding_utf.hpp> // gcc does not support <codecvt> yet -> use boost
 #ifdef _WIN32
   #define WIN32_LEAN_AND_MEAN
   #include <windows.h>
@@ -193,10 +192,9 @@ void File::openOrCreateShm() {
   { std::ofstream dummy(filenameLock.string()); } // create the file
 #ifdef _WIN32
   { // make lock file hidden on windows
-    std::wstring filenameU16=boost::locale::conv::utf_to_utf<wchar_t>(filenameLock.generic_string());
-    auto attrs = GetFileAttributesW(filenameU16.c_str());
+    auto attrs = GetFileAttributesA(filenameLock.string().c_str());
     if(attrs != INVALID_FILE_ATTRIBUTES)
-      SetFileAttributesW(filenameU16.c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
+      SetFileAttributesA(filenameLock.string().c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
   }
 #endif
   // now the file exists and we can create the shm name (which uses boost::filesystem::canonical)

@@ -38,11 +38,10 @@ int main(int argc, char* argv[]) {
 #ifdef _WIN32
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
-  setlocale(LC_ALL, "ACP.UTF-8");
 #else
   assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
-  setlocale(LC_ALL, "C");
 #endif
+  setlocale(LC_ALL, "C");
 
   try {
     // positional filename options (1 more more times

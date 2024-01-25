@@ -50,11 +50,10 @@ int main(int argc, char *argv[]) {
 #ifdef _WIN32
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
-  setlocale(LC_ALL, "ACP.UTF-8");
 #else
   assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
-  setlocale(LC_ALL, "C");
 #endif
+  setlocale(LC_ALL, "C");
 
   for(int i=1; i<argc; i++) {
     if(strcmp(argv[i], "-d")==0) d=true;

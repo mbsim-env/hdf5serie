@@ -21,6 +21,13 @@ AC_FUNC_ERROR_AT_LINE
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 
+# windres
+AC_ARG_WITH(windres,
+  [  --with-windres=prog  The windres program (defaults to windres)],
+  [WINDRES="$withval"],
+  [WINDRES="windres"])
+AC_SUBST([WINDRES])
+
 dnl force strict standard conformance
 CPPFLAGS="$CPPFLAGS -Wall -Werror -pedantic-errors -Wno-long-long"
 CFLAGS="$CFLAGS -std=iso9899:1990"
