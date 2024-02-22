@@ -19,9 +19,15 @@
  *
  */
 
+#ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#  undef __STRICT_ANSI__ // to define _controlfp which is not part of ANSI and hence not defined in mingw
+#  include <cfloat>
+#  define __STRICT_ANSI__
+#endif
 #include <config.h>
 #include <clocale>
-#include <cfenv>
 #include <cassert>
 #include <cfenv>
 #include <string>
@@ -32,10 +38,6 @@
 #include <limits>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
-#ifdef _WIN32
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-#endif
 
 using namespace H5;
 using namespace std;
@@ -75,6 +77,7 @@ int main(int argc, char* argv[]) {
 #ifdef _WIN32
   SetConsoleCP(CP_UTF8);
   SetConsoleOutputCP(CP_UTF8);
+  _controlfp(~(_EM_ZERODIVIDE | _EM_INVALID | _EM_OVERFLOW), _MCW_EM);
 #else
   assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
 #endif
