@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     fmatvec::Atom::setCurrentMessageStream(fmatvec::Atom::Info, std::make_shared<bool>(false));
 
   for(int i=0; i<arg.size(); i++)
-    if(arg[i].contains("-h", Qt::CaseSensitive) || arg[i].contains("--help", Qt::CaseSensitive)) {
+    if(arg[i].toLower()=="-h" || arg[i].toLower()=="--help") {
       cout
         << "h5plotserie - plot the data of a hdf5 file" << endl
         << "" << endl
