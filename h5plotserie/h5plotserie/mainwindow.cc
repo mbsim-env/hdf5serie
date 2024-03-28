@@ -49,6 +49,9 @@ MainWindow::MainWindow(const QStringList &arg) {
   fileMenu->addSeparator();
   fileMenu->addAction("Exit", this, &MainWindow::close, QKeySequence::Quit);
 
+  auto *dockMenu=new QMenu("Docks", menuBar());
+  menuBar()->addMenu(dockMenu);
+
   QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
   helpMenu->addAction("GUI Help", this, &MainWindow::help);
   helpMenu->addAction("About", this, &MainWindow::about);
@@ -61,22 +64,24 @@ MainWindow::MainWindow(const QStringList &arg) {
   plotArea->setShowMaximized(settings.value("plotwindow/showmaximized", true).toBool());
 
   auto *dataSelectionDW=new QDockWidget("Data Selection", this);
+  dockMenu->addAction(dataSelectionDW->toggleViewAction());
   dataSelectionDW->setObjectName("dockWidget/dataSelection");
   addDockWidget(Qt::LeftDockWidgetArea,dataSelectionDW);
   dataSelection = new DataSelection(this);
   dataSelectionDW->setWidget(dataSelection);
-  dataSelectionDW->setFeatures(QDockWidget::NoDockWidgetFeatures);
+  dataSelectionDW->setFeatures(dataSelectionDW->features() | QDockWidget::DockWidgetVerticalTitleBar);
 
   requestFlushTimer=new QTimer(this);
   connect(requestFlushTimer, &QTimer::timeout, dataSelection, &DataSelection::requestFlush);
   requestFlushTimer->start(500);
 
   auto *curvesDW=new QDockWidget("Curves", this);
+  dockMenu->addAction(curvesDW->toggleViewAction());
   curvesDW->setObjectName("dockWidget/curves");
-  addDockWidget(Qt::LeftDockWidgetArea,curvesDW);
+  addDockWidget(Qt::BottomDockWidgetArea,curvesDW);
   curves = new Curves(this);
   curvesDW->setWidget(curves);
-  curvesDW->setFeatures(QDockWidget::NoDockWidgetFeatures);
+  curvesDW->setFeatures(curvesDW->features() | QDockWidget::DockWidgetVerticalTitleBar);
 
   setWindowTitle(tr("h5Plotserie Improved"));
   setWindowIcon(QIcon((boost::dll::program_location().parent_path().parent_path()/
