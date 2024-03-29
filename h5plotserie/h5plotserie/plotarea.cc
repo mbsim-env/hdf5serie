@@ -31,6 +31,7 @@
 #include <qwt_plot_curve.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_plot_grid.h>
+#include <qwt_legend.h>
 
 #include <hdf5serie/vectorserie.h>
 
@@ -53,7 +54,7 @@ PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent) {
   plot = new QwtPlot();
   setWidget(plot);
 
-  plot->setCanvasBackground(QColor(255, 255, 255));
+  plot->setCanvasBackground(Qt::white);
 
   zoom = new QwtPlotZoomer(plot->canvas());
 
@@ -72,6 +73,9 @@ PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent) {
   pen.append(QPen(Qt::darkMagenta, linewidth));
   pen.append(QPen(Qt::darkYellow, linewidth));
   pen.append(QPen(Qt::darkGray, linewidth));
+
+  auto *legend = new QwtLegend;
+  plot->insertLegend(legend,QwtPlot::BottomLegend);
 }
 
 void PlotWindow::detachPlot() {
@@ -168,12 +172,12 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
         yVal[i]=.5*(yMinValue+yMaxValue);
     }
 
-    auto * c = new QwtPlotCurve();
-    c->attach(plot);
+    auto *curve = new QwtPlotCurve("Curve "+QString::number(plot->itemList().size()+1));
+    curve->attach(plot);
     while (penColor>pen.size()-1)
       penColor-=pen.size();
-    c->setPen(pen[penColor]);
-    c->setSamples(&xVal[0], &yVal[0], xVal.size());
+    curve->setPen(pen[penColor]);
+    curve->setSamples(&xVal[0], &yVal[0], xVal.size());
   }
   else {
     QMessageBox msgBox;
