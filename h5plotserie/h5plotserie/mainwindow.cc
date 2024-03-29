@@ -110,7 +110,7 @@ MainWindow::MainWindow(const QStringList &arg) {
   // auto exit if everything is finished
   if(arg.contains("--autoExit")) {
     auto timer=new QTimer(this);
-    connect(timer, &QTimer::timeout, [this, timer](){
+    connect(timer, &QTimer::timeout, this, [this, timer](){
       timer->stop();
       if(!close())
         timer->start(100);
