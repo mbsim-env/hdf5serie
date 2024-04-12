@@ -287,6 +287,23 @@ void DataSelection::requestFlush() {
     h5f.second->requestFlush();
 }
 
+void DataSelection::expandToDepth(int depth) {
+  expandToDepth(fileBrowser->currentItem(), depth);
+}
+
+void DataSelection::expandToDepth(QTreeWidgetItem *item, int depth) {
+  item->setExpanded(depth>-1);
+  for(int i=0; i<item->childCount(); i++) {
+    if(depth>0) {
+      if(item->child(i)->childCount()>0) item->child(i)->setExpanded(true);
+    }
+    else {
+      if(item->child(i)->childCount()>0) item->child(i)->setExpanded(false);
+    }
+    expandToDepth(item->child(i), depth-1);
+  }
+}
+
 void DataSelection::currentDataClicked(QListWidgetItem *item) {
   if(QApplication::mouseButtons()==Qt::LeftButton) {
     if (QApplication::keyboardModifiers() & Qt::ShiftModifier)

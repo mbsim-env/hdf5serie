@@ -32,9 +32,10 @@ class MainWindow : public QMainWindow {
     MainWindow(const QStringList &arg);
     ~MainWindow() override;
 
-    Curves * getCurves() {return curves; }
-    PlotArea * getPlotArea() {return plotArea; }
-    DataSelection * getDataSelection() {return dataSelection; }
+    Curves* getCurves() { return curves; }
+    PlotArea* getPlotArea() { return plotArea; }
+    DataSelection* getDataSelection() { return dataSelection; }
+    void expandToDepth(int depth);
 
   private:
     void about();
@@ -43,9 +44,9 @@ class MainWindow : public QMainWindow {
     void saveAllPlotWindows();
     void loadPlotWindows();
 
-    PlotArea * plotArea;
-    DataSelection * dataSelection;
-    Curves * curves;
+    PlotArea *plotArea;
+    DataSelection *dataSelection;
+    Curves *curves;
     QTimer *requestFlushTimer;
     void closeEvent(QCloseEvent *event) override;
     void showEvent(QShowEvent *event) override;

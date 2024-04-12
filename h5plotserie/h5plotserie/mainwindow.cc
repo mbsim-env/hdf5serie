@@ -30,6 +30,7 @@
 #include "QTimer"
 #include <QSettings>
 #include <QDomDocument>
+#include <QShortcut>
 #include "mainwindow.h"
 #include "dataselection.h"
 #include "curves.h"
@@ -70,6 +71,15 @@ MainWindow::MainWindow(const QStringList &arg) {
   dataSelection = new DataSelection(this);
   dataSelectionDW->setWidget(dataSelection);
   dataSelectionDW->setFeatures(dataSelectionDW->features() | QDockWidget::DockWidgetVerticalTitleBar);
+
+  connect(new QShortcut(QKeySequence("0"),this), &QShortcut::activated, this, [=](){ dataSelection->expandToDepth(-1); });
+  connect(new QShortcut(QKeySequence("1"),this), &QShortcut::activated, this, [=](){ dataSelection->expandToDepth(0); });
+  connect(new QShortcut(QKeySequence("2"),this), &QShortcut::activated, this, [=](){ dataSelection->expandToDepth(1); });
+  connect(new QShortcut(QKeySequence("3"),this), &QShortcut::activated, this, [=](){ dataSelection->expandToDepth(2); });
+  connect(new QShortcut(QKeySequence("4"),this), &QShortcut::activated, this, [=](){ dataSelection->expandToDepth(3); });
+  connect(new QShortcut(QKeySequence("5"),this), &QShortcut::activated, this, [=](){ dataSelection->expandToDepth(4); });
+  connect(new QShortcut(QKeySequence("Shift++"),this), &QShortcut::activated, this, [=](){ dataSelection->expandToDepth(1000); });
+  connect(new QShortcut(QKeySequence("Shift+-"),this), &QShortcut::activated, this, [=](){ dataSelection->expandToDepth(-1); });
 
   requestFlushTimer=new QTimer(this);
   connect(requestFlushTimer, &QTimer::timeout, dataSelection, &DataSelection::requestFlush);

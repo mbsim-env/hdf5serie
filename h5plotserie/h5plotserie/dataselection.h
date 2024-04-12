@@ -73,6 +73,7 @@ class DataSelection : public QSplitter {
     QList<QFileInfo> * getFileInfo() { return &fileInfo; }
     std::shared_ptr<H5::File> getH5File(const boost::filesystem::path &p) const;
     void requestFlush();
+    void expandToDepth(int depth);
 
   private:
     void selectFromFileBrowser(QTreeWidgetItem* item, int col);
@@ -87,6 +88,8 @@ class DataSelection : public QSplitter {
     void insertChildInTree(H5::Group *grp, QTreeWidgetItem *item);
     void getPath(QTreeWidgetItem* item, QString &s, int col);
     int getTopLevelIndex(QTreeWidgetItem* item);
+
+    void expandToDepth(QTreeWidgetItem *item, int depth);
 
     void currentDataClicked(QListWidgetItem *item);
 
