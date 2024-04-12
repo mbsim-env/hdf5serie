@@ -78,6 +78,7 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
 
   QObject::connect(fileBrowser, &QTreeWidget::itemClicked, this, &DataSelection::selectFromFileBrowser);
   QObject::connect(fileBrowser, &QTreeWidget::currentItemChanged, this, &DataSelection::updatePath);
+  QObject::connect(fileBrowser, &QTreeWidget::itemPressed, this, &DataSelection::currentItemClicked);
   QObject::connect(currentData, &QListWidget::itemPressed, this, &DataSelection::currentDataClicked);
 
 }
@@ -301,6 +302,47 @@ void DataSelection::expandToDepth(QTreeWidgetItem *item, int depth) {
       if(item->child(i)->childCount()>0) item->child(i)->setExpanded(false);
     }
     expandToDepth(item->child(i), depth-1);
+  }
+}
+
+void DataSelection::currentItemClicked(QTreeWidgetItem *item) {
+  if(QApplication::mouseButtons()==Qt::RightButton) {
+    QMenu *menu = new QMenu;
+//    auto iconPath(boost::dll::program_location().parent_path().parent_path()/"share"/"mbsimgui"/"icons");
+    auto *action = new QAction("Expand to depth 0", this);
+    action->setShortcut(QKeySequence("0"));
+    connect(action,&QAction::triggered,this,[=](){ expandToDepth(-1); });
+    menu->addAction(action);
+    action = new QAction("Expand to depth 1", this);
+    action->setShortcut(QKeySequence("1"));
+    connect(action,&QAction::triggered,this,[=](){ expandToDepth(0); });
+    menu->addAction(action);
+    action = new QAction("Expand to depth 2", this);
+    action->setShortcut(QKeySequence("2"));
+    connect(action,&QAction::triggered,this,[=](){ expandToDepth(1); });
+    menu->addAction(action);
+    action = new QAction("Expand to depth 3", this);
+    action->setShortcut(QKeySequence("3"));
+    connect(action,&QAction::triggered,this,[=](){ expandToDepth(2); });
+    menu->addAction(action);
+    action = new QAction("Expand to depth 4", this);
+    action->setShortcut(QKeySequence("4"));
+    connect(action,&QAction::triggered,this,[=](){ expandToDepth(3); });
+    menu->addAction(action);
+    action = new QAction("Expand to depth 5", this);
+    action->setShortcut(QKeySequence("5"));
+    connect(action,&QAction::triggered,this,[=](){ expandToDepth(4); });
+    menu->addAction(action);
+    action = new QAction("Expand all", this);
+    action->setShortcut(QKeySequence("Shift++"));
+    connect(action,&QAction::triggered,this,[=](){ expandToDepth(1000); });
+    menu->addAction(action);
+    action = new QAction("Collapse all", this);
+    action->setShortcut(QKeySequence("Shift+-"));
+    connect(action,&QAction::triggered,this,[=](){ expandToDepth(-1); });
+    menu->addAction(action);
+    menu->exec(QCursor::pos());
+    delete menu;
   }
 }
 

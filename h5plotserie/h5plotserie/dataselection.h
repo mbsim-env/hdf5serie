@@ -91,6 +91,7 @@ class DataSelection : public QSplitter {
 
     void expandToDepth(QTreeWidgetItem *item, int depth);
 
+    void currentItemClicked(QTreeWidgetItem *item);
     void currentDataClicked(QListWidgetItem *item);
 
     QList<QString> file;
