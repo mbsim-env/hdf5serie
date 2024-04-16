@@ -35,7 +35,7 @@ class QwtPlotZoomer;
 class PlotArea : public QMdiArea {
 
   public:
-    PlotArea(QWidget * parent = nullptr);
+    PlotArea(QWidget *parent=nullptr);
 
     void addPlotWindow(const QString &windowTitle);
     void setShowMaximized(bool showMaximized_) { showMaximized = showMaximized_; }
@@ -47,21 +47,21 @@ class PlotArea : public QMdiArea {
 class PlotWindow : public QMdiSubWindow {
 
   public:
-    PlotWindow(QWidget * parent = nullptr);
+    PlotWindow(QWidget *parent=nullptr);
 
     void detachPlot();
     void plotDataSet(PlotData pd, int penColor);
     void replotPlot();
 
-    void setPlotGrid(bool grid_=true) {plotGrid=grid_; }
+    void setPlotGrid(bool grid_=true) { plotGrid=grid_; }
 
   protected:
-    void closeEvent(QCloseEvent * event) override;
+    void closeEvent(QCloseEvent *event) override;
   
   private:
-    QwtPlot * plot{nullptr};
+    QwtPlot *plot{nullptr};
     QVector<QPen> pen;
-    QwtPlotZoomer * zoom{nullptr};
+    QwtPlotZoomer *zoom{nullptr};
     double xMinValue{0}, yMinValue{0}, xMaxValue{0}, yMaxValue{0};
     bool plotGrid{true};
 };

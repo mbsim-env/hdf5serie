@@ -30,13 +30,6 @@
 
 Curves::Curves(QWidget *parent) : QTabWidget(parent) {
   setUsesScrollButtons(true);
-
-  QString windowTitle = count()?"Plot "+QString::number(tabText(count()-1).mid(5).toInt()+1):"Plot 1";
-  addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
-  auto plotArea = static_cast<MainWindow*>(parent)->getPlotArea();
-  plotArea->addPlotWindow(tabText(currentIndex()));
-  connect(this,&QTabWidget::tabBarClicked,this,[=](int i) { plotArea->setActiveSubWindow(plotArea->subWindowList().at(i)); });
-  connect(plotArea,&QMdiArea::subWindowActivated,this, [=](QMdiSubWindow* subwindow) { setCurrentIndex(plotArea->subWindowList().indexOf(subwindow)); });
 }
 
 void Curves::modifyPlotData(PlotData pd, const QString &mode) {
@@ -184,6 +177,16 @@ void Curves::loadCurve(QDomDocument *doc) {
   }
 }
 
+void Curves::removeTab(const QString &name) {
+  for(int i=0; i<count(); i++) {
+    if(widget(i)->windowTitle()==name) {
+      auto *tabWidget = widget(i);
+      QTabWidget::removeTab(indexOf(tabWidget));
+      delete tabWidget;
+    }
+  }
+}
+
 PlotDataTable::PlotDataTable(QWidget *parent, const QString &name) : QTableWidget(parent) {
   setObjectName(name);
   setWindowTitle(name);
@@ -233,4 +236,3 @@ void PlotDataTable::savePlot(QDomDocument *doc, QDomElement *tab) {
     }
   }
 }
-

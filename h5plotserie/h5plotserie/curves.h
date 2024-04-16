@@ -39,6 +39,7 @@ class Curves : public QTabWidget {
     std::shared_ptr<QDomDocument> saveCurves();
     void initLoadCurve(const QString &fileName);
     void loadCurve(QDomDocument *doc);
+    void removeTab(const QString &name);
 
   public:
     void plotCurrentTab();

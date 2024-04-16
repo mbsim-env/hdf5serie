@@ -35,7 +35,6 @@ class MainWindow : public QMainWindow {
     Curves* getCurves() { return curves; }
     PlotArea* getPlotArea() { return plotArea; }
     DataSelection* getDataSelection() { return dataSelection; }
-    void expandToDepth(int depth);
 
   private:
     void about();

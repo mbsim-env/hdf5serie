@@ -26,6 +26,7 @@
 #include "dataselection.h"
 
 #include <QStack>
+#include <QCloseEvent>
 
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
@@ -35,7 +36,7 @@
 
 #include <hdf5serie/vectorserie.h>
 
-PlotArea::PlotArea(QWidget * parent) : QMdiArea(parent) {
+PlotArea::PlotArea(QWidget *parent) : QMdiArea(parent) {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 }
@@ -49,7 +50,7 @@ void PlotArea::addPlotWindow(const QString &windowTitle) {
   if(subWindowList().size()==1 and showMaximized) q->setWindowState(Qt::WindowMaximized);
 }
 
-PlotWindow::PlotWindow(QWidget * parent) : QMdiSubWindow(parent) {
+PlotWindow::PlotWindow(QWidget *parent) : QMdiSubWindow(parent) {
 
   plot = new QwtPlot();
   setWidget(plot);
@@ -196,7 +197,7 @@ void PlotWindow::replotPlot() {
     grid->enableXMin(true);
     grid->enableYMin(true);
     grid->setMajorPen(QPen(Qt::black, 0, Qt::DotLine));
-    grid->setMinorPen(QPen(Qt::gray, 0 , Qt::DotLine));
+    grid->setMinorPen(QPen(Qt::gray, 0, Qt::DotLine));
     grid->attach(plot);
   }
   zoom->setZoomBase();
@@ -204,12 +205,7 @@ void PlotWindow::replotPlot() {
   zoom->setZoomStack(stack,index);
 }
 
-void PlotWindow::closeEvent(QCloseEvent *) {
-  Curves * c = (static_cast<MainWindow*>(parent()->parent()->parent()))->getCurves();
-  auto * pd=c->findChild<PlotDataTable*>(windowTitle());
-  if (pd) {
-    int index=c->indexOf(pd);
-    pd->close();
-    c->removeTab(index);
-  }
+void PlotWindow::closeEvent(QCloseEvent *event) {
+  (static_cast<MainWindow*>(parent()->parent()->parent()))->getCurves()->removeTab(windowTitle());
+  event->accept();
 }
