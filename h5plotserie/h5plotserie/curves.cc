@@ -197,18 +197,20 @@ PlotDataTable::PlotDataTable(QWidget *parent, const QString &name) : QTableWidge
   for (int i=0; i<pd.numberOfItems(); i++) 
     setHorizontalHeaderItem(i, new QTableWidgetItem(pd.string(i)));
 
-  QObject::connect(this, &PlotDataTable::currentItemChanged, static_cast<Curves*>(parent), &Curves::plotCurrentTab);
+  QObject::connect(this, &PlotDataTable::cellChanged, static_cast<Curves*>(parent), &Curves::plotCurrentTab);
 
   horizontalHeader()->setSectionsClickable(true);
   horizontalHeader()->installEventFilter(this);
 }
 
 void PlotDataTable::addDataSet(PlotData pd) {
+  blockSignals(true);
   insertRow(rowCount());
   for (int i=0; i<pd.numberOfItems(); i++)
     setItem(rowCount()-1, i, new QTableWidgetItem(pd.getValue(pd.string(i))));
   resizeColumnsToContents();
   resizeRowsToContents();
+  blockSignals(false);
 }
 
 void PlotDataTable::replaceDataSet(PlotData pd) {

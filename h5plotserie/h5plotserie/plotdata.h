@@ -36,13 +36,13 @@ class PlotData {
     PlotData() {
       dataset d;
 
-      d.string = "Filename";
-      d.xmlString = "filename";
+      d.string = "x-Label";
+      d.xmlString = "xLabel";
       d.value = "";
       plotdata.push_back(d);
 
-      d.string = "x-Label";
-      d.xmlString = "xLabel";
+      d.string = "x-Path";
+      d.xmlString = "xPath";
       d.value = "";
       plotdata.push_back(d);
 
@@ -56,13 +56,13 @@ class PlotData {
       d.value = "";
       plotdata.push_back(d);
 
-      d.string = "y-Index";
-      d.xmlString = "yIndex";
+      d.string = "y-Path";
+      d.xmlString = "yPath";
       d.value = "";
       plotdata.push_back(d);
 
-      d.string = "offset";
-      d.xmlString = "offset";
+      d.string = "y-Index";
+      d.xmlString = "yIndex";
       d.value = "";
       plotdata.push_back(d);
 
@@ -71,18 +71,8 @@ class PlotData {
       d.value = "";
       plotdata.push_back(d);
 
-      d.string = "x-Path";
-      d.xmlString = "xPath";
-      d.value = "";
-      plotdata.push_back(d);
-
-      d.string = "y-Path";
-      d.xmlString = "yPath";
-      d.value = "";
-      plotdata.push_back(d);
-
-      d.string = "y2-Path";
-      d.xmlString = "y2Path";
+      d.string = "offset";
+      d.xmlString = "offset";
       d.value = "";
       plotdata.push_back(d);
 
@@ -91,8 +81,18 @@ class PlotData {
       d.value = "";
       plotdata.push_back(d);
 
+      d.string = "y2-Path";
+      d.xmlString = "y2Path";
+      d.value = "";
+      plotdata.push_back(d);
+
       d.string = "y2-Index";
       d.xmlString = "y2Index";
+      d.value = "";
+      plotdata.push_back(d);
+
+      d.string = "y2gain";
+      d.xmlString = "y2gain";
       d.value = "";
       plotdata.push_back(d);
 
@@ -101,8 +101,8 @@ class PlotData {
       d.value = "";
       plotdata.push_back(d);
 
-      d.string = "y2gain";
-      d.xmlString = "y2gain";
+      d.string = "Filename";
+      d.xmlString = "filename";
       d.value = "";
       plotdata.push_back(d);
 

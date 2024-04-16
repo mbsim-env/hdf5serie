@@ -143,7 +143,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
         const double y2gain=pd.getValue("y2gain").toDouble();
         for (double & i : y2Val)
           if (!std::isnan(i)) // y2Value
-            i=y2gain*(i+y2offset);
+            i=y2gain*i+y2offset;
       }
       else {
         useY2=false;
@@ -157,7 +157,7 @@ void PlotWindow::plotDataSet(PlotData pd, int penColor) {
     const double gain=pd.getValue("gain").toDouble();
     for (unsigned int i=0; i<yVal.size(); i++)
       if (!std::isnan(yVal[i])) { // yValue
-        yVal[i]=gain*(yVal[i]+offset);
+        yVal[i]=gain*yVal[i]+offset;
         if (useY2)
           yVal[i]+=y2Val[i];
         if (yVal[i]<yMinValue)
