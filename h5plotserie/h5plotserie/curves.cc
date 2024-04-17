@@ -27,6 +27,8 @@
 #include "plotdata.h"
 #include "mainwindow.h"
 #include "dataselection.h"
+#include <QApplication>
+#include <QMenu>
 
 Curves::Curves(QWidget *parent) : QTabWidget(parent) {
   setUsesScrollButtons(true);
@@ -76,7 +78,7 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
   }
   else if (QString::compare(mode, "new", Qt::CaseSensitive)==0) {
     QString windowTitle = count()?"Plot "+QString::number(tabText(count()-1).mid(5).toInt()+1):"Plot 1";
-    addTab(new PlotDataTable((QWidget*)(this), windowTitle), windowTitle);
+    addTab(new PlotDataTable(this, windowTitle), windowTitle);
     setCurrentWidget(widget(count()-1));
     static_cast<PlotDataTable*>(currentWidget())->addDataSet(pd);
     auto plotArea = static_cast<MainWindow*>(parent()->parent())->getPlotArea();
@@ -197,7 +199,8 @@ PlotDataTable::PlotDataTable(QWidget *parent, const QString &name) : QTableWidge
   for (int i=0; i<pd.numberOfItems(); i++) 
     setHorizontalHeaderItem(i, new QTableWidgetItem(pd.string(i)));
 
-  QObject::connect(this, &PlotDataTable::cellChanged, static_cast<Curves*>(parent), &Curves::plotCurrentTab);
+  connect(this, &PlotDataTable::cellChanged, static_cast<Curves*>(parent), &Curves::plotCurrentTab);
+  connect(this, &QTableWidget::cellPressed, this, &PlotDataTable::dataSetClicked);
 
   horizontalHeader()->setSectionsClickable(true);
   horizontalHeader()->installEventFilter(this);
@@ -236,5 +239,17 @@ void PlotDataTable::savePlot(QDomDocument *doc, QDomElement *tab) {
       QDomText t = doc->createTextNode(item(r, c)->text());
       dataTag.appendChild(t);
     }
+  }
+}
+
+void PlotDataTable::dataSetClicked(int row, int col) {
+  if(QApplication::mouseButtons()==Qt::RightButton) {
+    QMenu *menu = new QMenu;
+    QAction *action=new QAction("Remove curve", menu);
+//    action->setShortcut(QKeySequence("Del"));
+    connect(action,&QAction::triggered,this,[=](){ removeRow(row); static_cast<Curves*>(parent()->parent())->plotCurrentTab(); });
+    menu->addAction(action);
+    menu->exec(QCursor::pos());
+    delete menu;
   }
 }

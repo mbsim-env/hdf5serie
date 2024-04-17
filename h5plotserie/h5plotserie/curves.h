@@ -55,6 +55,7 @@ class PlotDataTable : public QTableWidget {
     void addDataSet(PlotData pd);
     void replaceDataSet(PlotData pd);
     void savePlot(QDomDocument *doc, QDomElement *tab);
+    void dataSetClicked(int row, int col);
 };
 
 #endif // CURVES_H
