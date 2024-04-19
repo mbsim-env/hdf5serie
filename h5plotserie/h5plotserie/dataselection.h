@@ -74,6 +74,7 @@ class DataSelection : public QSplitter {
     std::shared_ptr<H5::File> getH5File(const boost::filesystem::path &p) const;
     void requestFlush();
     void expandToDepth(int depth);
+    void keyPressed(int key);
 
   private:
     void selectFromFileBrowser(QTreeWidgetItem* item, int col);

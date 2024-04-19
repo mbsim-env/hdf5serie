@@ -40,6 +40,7 @@ class Curves : public QTabWidget {
     void initLoadCurve(const QString &fileName);
     void loadCurve(QDomDocument *doc);
     void removeTab(const QString &name);
+    void deletePressed();
 
   public:
     void plotCurrentTab();

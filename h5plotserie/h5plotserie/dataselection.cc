@@ -18,25 +18,24 @@
 */
 
 #include <config.h>
-#include "QApplication"
-#include "QGridLayout"
-#include "QLabel"
-#include "QLineEdit"
-#include "QListWidget"
-#include "QFileInfo"
-#include "QSettings"
-#include <QDomDocument>
-#include <QMenu>
 #include "dataselection.h"
-
-#include <hdf5serie/vectorserie.h>
-#include <hdf5serie/simpleattribute.h>
-
 #include "treewidgetitem.h"
 #include "plotdata.h"
 #include "plotarea.h"
 #include "curves.h"
 #include "mainwindow.h"
+#include <QApplication>
+#include <QGridLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListWidget>
+#include <QFileInfo>
+#include <QSettings>
+#include <QDomDocument>
+#include <QMenu>
+#include <QShortcut>
+#include <hdf5serie/vectorserie.h>
+#include <hdf5serie/simpleattribute.h>
 
 using namespace std;
 
@@ -76,11 +75,21 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   currentData=new QListWidget(this);
   addWidget(currentData);
 
-  QObject::connect(fileBrowser, &QTreeWidget::itemClicked, this, &DataSelection::selectFromFileBrowser);
-  QObject::connect(fileBrowser, &QTreeWidget::currentItemChanged, this, &DataSelection::updatePath);
-  QObject::connect(fileBrowser, &QTreeWidget::itemPressed, this, &DataSelection::currentItemClicked);
-  QObject::connect(currentData, &QListWidget::itemPressed, this, &DataSelection::currentDataClicked);
-
+  connect(fileBrowser, &QTreeWidget::itemClicked, this, &DataSelection::selectFromFileBrowser);
+  connect(fileBrowser, &QTreeWidget::currentItemChanged, this, &DataSelection::updatePath);
+  connect(fileBrowser, &QTreeWidget::itemPressed, this, &DataSelection::currentItemClicked);
+  connect(currentData, &QListWidget::itemPressed, this, &DataSelection::currentDataClicked);
+  connect(new QShortcut(QKeySequence("Return"),this), &QShortcut::activated, this, [=]() { keyPressed(0); });
+  connect(new QShortcut(QKeySequence("Shift+Return"),this), &QShortcut::activated, this, [=]() { keyPressed(1); });
+  connect(new QShortcut(QKeySequence("Ctrl+Return"),this), &QShortcut::activated, this, [=]() { keyPressed(2); });
+  connect(new QShortcut(QKeySequence("0"),this), &QShortcut::activated, this, [=](){ expandToDepth(-1); });
+  connect(new QShortcut(QKeySequence("1"),this), &QShortcut::activated, this, [=](){ expandToDepth(0); });
+  connect(new QShortcut(QKeySequence("2"),this), &QShortcut::activated, this, [=](){ expandToDepth(1); });
+  connect(new QShortcut(QKeySequence("3"),this), &QShortcut::activated, this, [=](){ expandToDepth(2); });
+  connect(new QShortcut(QKeySequence("4"),this), &QShortcut::activated, this, [=](){ expandToDepth(3); });
+  connect(new QShortcut(QKeySequence("5"),this), &QShortcut::activated, this, [=](){ expandToDepth(4); });
+  connect(new QShortcut(QKeySequence("Shift++"),this), &QShortcut::activated, this, [=](){ expandToDepth(1000); });
+  connect(new QShortcut(QKeySequence("Shift+-"),this), &QShortcut::activated, this, [=](){ expandToDepth(-1); });
 }
 
 DataSelection::~DataSelection() {
@@ -228,7 +237,7 @@ void DataSelection::getPath(QTreeWidgetItem* item, QString &s, int col) {
 
 void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
   currentData->clear();
-  if( static_cast<TreeWidgetItem*>(item)->getIsVectorSerieDouble()) {
+  if(static_cast<TreeWidgetItem*>(item)->getIsVectorSerieDouble()) {
     QString path = static_cast<TreeWidgetItem*>(item)->getPath();
     int j = getTopLevelIndex(item);
     std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
@@ -359,14 +368,40 @@ void DataSelection::currentDataClicked(QListWidgetItem *item) {
     QMenu *menu = new QMenu;
     QAction *action=new QAction("Open in new window", menu);
     connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"new"); });
+    action->setShortcut(QKeySequence("Ctrl+Return"));
     menu->addAction(action);
     action=new QAction("Add to current window", menu);
     connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"add"); });
+    action->setShortcut(QKeySequence("Shift+Return"));
     menu->addAction(action);
     action=new QAction("Replace in current window", menu);
     connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"replace"); });
+    action->setShortcut(QKeySequence("Return"));
     menu->addAction(action);
     menu->exec(QCursor::pos());
     delete menu;
+  }
+}
+
+void DataSelection::keyPressed(int key) {
+  if(fileBrowser->hasFocus() and key==0) {
+    auto *item = fileBrowser->currentItem();
+    if(item) {
+      selectFromFileBrowser(item,0);
+      if(currentData->count()) {
+	currentData->setCurrentRow(0);
+	currentData->setFocus();
+      }
+    }
+  }
+  else if(currentData->hasFocus()) {
+    auto *item = currentData->currentItem();
+    if(key==0)
+      selectFromCurrentData(item,"replace");
+    else if(key==1)
+      selectFromCurrentData(item,"add");
+    else
+      selectFromCurrentData(item,"new");
+    currentData->setFocus();
   }
 }

@@ -18,22 +18,34 @@
 */
 
 #include <config.h>
-#include "QFile"
-#include "QFileInfo"
-#include "QHeaderView"
-#include "QDomNode"
 #include "curves.h"
 #include "plotarea.h"
 #include "plotdata.h"
 #include "mainwindow.h"
 #include "dataselection.h"
+#include <QFile>
+#include <QFileInfo>
+#include <QHeaderView>
+#include <QDomNode>
 #include <QApplication>
 #include <QMenu>
+#include <QShortcut>
 
 Curves::Curves(QWidget *parent) : QTabWidget(parent) {
   setUsesScrollButtons(true);
+  connect(new QShortcut(QKeySequence::Delete,this), &QShortcut::activated, this, &Curves::deletePressed);
 }
 
+void Curves::deletePressed() {
+  if(count()) {
+    auto *widget = static_cast<QTableWidget*>(currentWidget());
+    int row = widget->currentRow();
+    if(row>=0) {
+      widget->removeRow(row);
+      plotCurrentTab();
+    }
+  }
+}
 void Curves::modifyPlotData(PlotData pd, const QString &mode) {
   if (QString::compare(mode, "add", Qt::CaseSensitive)==0) {
     if (currentIndex()==-1)
@@ -246,7 +258,7 @@ void PlotDataTable::dataSetClicked(int row, int col) {
   if(QApplication::mouseButtons()==Qt::RightButton) {
     QMenu *menu = new QMenu;
     QAction *action=new QAction("Remove curve", menu);
-//    action->setShortcut(QKeySequence("Del"));
+    action->setShortcut(QKeySequence::Delete);
     connect(action,&QAction::triggered,this,[=](){ removeRow(row); static_cast<Curves*>(parent()->parent())->plotCurrentTab(); });
     menu->addAction(action);
     menu->exec(QCursor::pos());
