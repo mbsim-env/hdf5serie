@@ -143,16 +143,24 @@ MainWindow::~MainWindow() {
 void MainWindow::help() {
   QMessageBox::information(this, "h5plotserie - GUI Help", 
       "<h1>GUI Help</h1>"
+      "<h2>Actions in model tree</h2>"
+      "<ul>"
+      "  <dt>Left-Click</dt><dd>Select data set</dd>"
+      "  <dt>Right-Click</dt><dd>Open context menu</dd>"
+      "</ul>"
       "<h2>Actions in data list</h2>"
       "<ul>"
-      "  <dt>Left-Click</dt><dd> Plot curve (x = first, y = selected) </dd>"
-      "  <dt>Shift+Left-Click</dt><dd> Add curve (x = first, y = selected)</dd>"
-      "  <dt>Shift+Left-Click and ONE cell selected</dt><dd> replace selected cell with selected data</dd>"
-      "  <dt>Ctrl+Left-Click</dt><dd> Plot curve in new window </dd>"
+      "  <dt>Left-Click</dt><dd>Replace curve in current window (x = first, y = selected)</dd>"
+      "  <dt>Shift+Left-Click</dt><dd>Add curve to current window (x = first, y = selected)</dd>"
+      "  <dt>Ctrl+Left-Click</dt><dd>Plot curve in new window (x = first, y = selected)</dd>"
+      "  <dt>Shift+Left-Click</dt><dd>Replace selected cell with selected data</dd>"
+      "  <dt>Right-Click</dt><dd>Open context menu</dd>"
       "</ul>"
       "<h2>Actions in curve list</h2>"
-      "  <dt>Left-Click</dt><dd> Choose current curve </dd>"
-      "  <dt>Right-Click</dt><dd> Remove curve </dd>"
+      "<ul>"
+      "  <dt>Left-Click</dt><dd>Select cell</dd>"
+      "  <dt>Right-Click</dt><dd>Open context menu</dd>"
+      "</ul>"
       );
 }
 

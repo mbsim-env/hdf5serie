@@ -366,7 +366,7 @@ void DataSelection::currentDataClicked(QListWidgetItem *item) {
   }
   if(QApplication::mouseButtons()==Qt::RightButton) {
     QMenu *menu = new QMenu;
-    QAction *action=new QAction("Open in new window", menu);
+    QAction *action=new QAction("Plot in new window", menu);
     connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"new"); });
     action->setShortcut(QKeySequence("Ctrl+Return"));
     menu->addAction(action);
