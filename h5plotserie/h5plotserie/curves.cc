@@ -110,9 +110,7 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
 }
 
 void Curves::plotCurrentTab() {
-  const QString tabName = tabText(currentIndex());
-  auto *plotWindow = static_cast<MainWindow*>(parent()->parent())->getPlotArea()->findChild<PlotWindow*>(tabName);
-
+  auto *plotWindow = static_cast<PlotWindow*>(static_cast<PlotArea*>(static_cast<MainWindow*>(parent()->parent())->getPlotArea())->activeSubWindow());
   plotWindow->detachPlot();
   auto *plotDataTable = static_cast<PlotDataTable*>(currentWidget());
   for (int i=0; i<plotDataTable->rowCount(); i++) {
@@ -125,10 +123,9 @@ void Curves::plotCurrentTab() {
 }
 
 void Curves::plotAllTabs() {
+  auto list = static_cast<PlotArea*>(static_cast<MainWindow*>(parent()->parent())->getPlotArea())->subWindowList();
   for(int i=0; i<count(); i++) {
-    const QString tabName = tabText(i);
-    auto *plotWindow = static_cast<MainWindow*>(parent()->parent())->getPlotArea()->findChild<PlotWindow*>(tabName);
-
+    auto *plotWindow = static_cast<PlotWindow*>(list.at(i));
     plotWindow->detachPlot();
     auto *plotDataTable = static_cast<PlotDataTable*>(widget(i));
     for (int i=0; i<plotDataTable->rowCount(); i++) {
