@@ -161,6 +161,10 @@ void MainWindow::help() {
       "  <dt>Left-Click</dt><dd>Select cell</dd>"
       "  <dt>Right-Click</dt><dd>Open context menu</dd>"
       "</ul>"
+      "<h2>Actions in tab bar</h2>"
+      "<ul>"
+      "  <dt>Left-Doubleclick</dt><dd>Change plot window name</dd>"
+      "</ul>"
       );
 }
 
