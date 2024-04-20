@@ -39,12 +39,14 @@ class Curves : public QTabWidget {
     std::shared_ptr<QDomDocument> saveCurves();
     void initLoadCurve(const QString &fileName);
     void loadCurve(QDomDocument *doc);
-    void removeTab(const QString &name);
-    void deletePressed();
-
-  public:
     void plotCurrentTab();
     void plotAllTabs();
+    void removeTab(const QString &name);
+
+  private:
+    void changeTabName(int i, const QString &name);
+    void deletePressed();
+    void tabBarDoubleClicked(int i);
 };
 
 class PlotDataTable : public QTableWidget {

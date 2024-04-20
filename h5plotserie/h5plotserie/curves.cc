@@ -23,6 +23,7 @@
 #include "plotdata.h"
 #include "mainwindow.h"
 #include "dataselection.h"
+#include "dialogs.h"
 #include <QFile>
 #include <QFileInfo>
 #include <QHeaderView>
@@ -34,18 +35,12 @@
 Curves::Curves(QWidget *parent) : QTabWidget(parent) {
   setUsesScrollButtons(true);
   connect(new QShortcut(QKeySequence::Delete,this), &QShortcut::activated, this, &Curves::deletePressed);
+  auto plotArea = static_cast<MainWindow*>(parent)->getPlotArea();
+  connect(this,&QTabWidget::tabBarClicked,this,[=](int i) { plotArea->setActiveSubWindow(plotArea->subWindowList().at(i)); });
+  connect(plotArea,&QMdiArea::subWindowActivated,this, [=](QMdiSubWindow* subwindow) { setCurrentIndex(plotArea->subWindowList().indexOf(subwindow)); });
+  connect(this, &QTabWidget::tabBarDoubleClicked, this, &Curves::tabBarDoubleClicked);
 }
 
-void Curves::deletePressed() {
-  if(count()) {
-    auto *widget = static_cast<QTableWidget*>(currentWidget());
-    int row = widget->currentRow();
-    if(row>=0) {
-      widget->removeRow(row);
-      plotCurrentTab();
-    }
-  }
-}
 void Curves::modifyPlotData(PlotData pd, const QString &mode) {
   if (QString::compare(mode, "add", Qt::CaseSensitive)==0) {
     if (currentIndex()==-1)
@@ -89,14 +84,11 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
     }
   }
   else if (QString::compare(mode, "new", Qt::CaseSensitive)==0) {
-    QString windowTitle = count()?"Plot "+QString::number(tabText(count()-1).mid(5).toInt()+1):"Plot 1";
-    addTab(new PlotDataTable(this, windowTitle), windowTitle);
+    QString label = count()?"Plot "+QString::number(tabText(count()-1).mid(5).toInt()+1):"Plot 1";
+    addTab(new PlotDataTable(this, label), label);
     setCurrentWidget(widget(count()-1));
     static_cast<PlotDataTable*>(currentWidget())->addDataSet(pd);
-    auto plotArea = static_cast<MainWindow*>(parent()->parent())->getPlotArea();
-    plotArea->addPlotWindow(windowTitle);
-    connect(this,&QTabWidget::tabBarClicked,this,[=](int i) { plotArea->setActiveSubWindow(plotArea->subWindowList().at(i)); });
-    connect(plotArea,&QMdiArea::subWindowActivated,this, [=](QMdiSubWindow* subwindow) { setCurrentIndex(plotArea->subWindowList().indexOf(subwindow)); });
+    static_cast<MainWindow*>(parent()->parent())->getPlotArea()->addPlotWindow(label);
   }
   else if (QString::compare(mode, "replace", Qt::CaseSensitive)==0) {
     if (currentIndex()==-1)
@@ -190,13 +182,36 @@ void Curves::loadCurve(QDomDocument *doc) {
 
 void Curves::removeTab(const QString &name) {
   for(int i=0; i<count(); i++) {
-    if(widget(i)->windowTitle()==name) {
+    if(tabText(i)==name) {
       auto *tabWidget = widget(i);
       QTabWidget::removeTab(indexOf(tabWidget));
       delete tabWidget;
     }
   }
 }
+
+void Curves::changeTabName(int i, const QString &name) {
+  setTabText(i,name);
+  static_cast<PlotWindow*>(static_cast<MainWindow*>(parent()->parent())->getPlotArea()->subWindowList().at(i))->setWindowTitle(name);
+}
+
+void Curves::deletePressed() {
+  if(count()) {
+    auto *widget = static_cast<QTableWidget*>(currentWidget());
+    int row = widget->currentRow();
+    if(row>=0) {
+      widget->removeRow(row);
+      plotCurrentTab();
+    }
+  }
+}
+
+void Curves::tabBarDoubleClicked(int i) {
+  auto *dialog = new LineEditDialog("Edit plot window name", tabText(i), this);
+  connect(dialog, &LineEditDialog::accepted, this, [=]() { changeTabName(i,dialog->getText()); });
+  dialog->exec();
+}
+
 
 PlotDataTable::PlotDataTable(QWidget *parent, const QString &name) : QTableWidget(parent) {
   setObjectName(name);

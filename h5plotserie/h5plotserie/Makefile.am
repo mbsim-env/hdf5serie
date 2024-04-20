@@ -19,7 +19,8 @@ h5plotserie_SOURCES = $(MAYBE_SIGWATCH_SRC) main.cc \
   dataselection.cc \
   mainwindow.cc \
   abstractviewfilter.cc \
-  plotarea.cc
+  plotarea.cc \
+  dialogs.cc
 
 noinst_HEADERS = curves.h \
   dataselection.h \
@@ -27,7 +28,8 @@ noinst_HEADERS = curves.h \
   abstractviewfilter.h \
   plotarea.h \
   plotdata.h \
-  treewidgetitem.h
+  treewidgetitem.h \
+  dialogs.h
 
 nodist_h5plotserie_SOURCES=$(QT_BUILT_SOURCES)
 # C++ source file to build automatically (e.g. abc.moc.cc by abc.h)
