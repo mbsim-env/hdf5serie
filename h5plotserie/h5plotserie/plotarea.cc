@@ -28,11 +28,19 @@
 #include <QStack>
 #include <QCloseEvent>
 
+#if __GNUC__ >= 14
+  // qwt it not (yet) gcc >= 14 save
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wtemplate-id-cdtor"
+#endif
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_zoomer.h>
 #include <qwt_plot_grid.h>
 #include <qwt_legend.h>
+#if __GNUC__ >= 14
+  #pragma GCC diagnostic pop
+#endif
 
 #include <hdf5serie/vectorserie.h>
 
