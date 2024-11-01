@@ -160,11 +160,6 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
   closeRequestCallback(closeRequestCallback_),
   refreshCallback(refreshCallback_),
   processUUID(boost::uuids::random_generator()()) {
-  // HDF5 file locking seems not to work propably, so we dislabe it. We do not need it anyway since proper 
-  // file access is fully handled by this class.
-  // (with hdf5 >= 1.10.7 this is also possilbe using H5Pset_file_locking
-  // but setting this envvar works with hdf5 >= 1.10.0 and even overwrites H5Pset_file_locking
-  putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
 
   if(getenv("HDF5SERIE_DEBUG"))
     setMessageStreamActive(Atom::Debug, true);
@@ -270,6 +265,14 @@ void File::openWriter() {
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
   H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI);
+  // Disable file locking: we use our own locking mechanism
+  #if H5_VERSION_LE(1, 10, 6)                                                                         \
+    // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> use this
+    putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
+  #else
+    // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
+    H5Pset_file_locking(faid, false, true);
+  #endif
   ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
   H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
   id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
@@ -365,6 +368,14 @@ void File::openReader() {
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Open HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI);
+  // Disable file locking: we use our own locking mechanism
+  #if H5_VERSION_LE(1, 10, 6)                                                                         \
+    // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> use this
+    putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
+  #else
+    // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
+    H5Pset_file_locking(faid, false, true);
+  #endif
   auto hid=H5Fopen(filename.string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid);
   if(hid>=0)
     id.reset(hid, &H5Fclose);
