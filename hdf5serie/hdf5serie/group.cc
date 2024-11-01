@@ -77,7 +77,7 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
   hsize_t ndim=H5Sget_simple_extent_ndims(sd);
   vector<hsize_t> dims(ndim);
   vector<hsize_t> maxDims(ndim);
-  H5Sget_simple_extent_dims(sd, &dims[0], &maxDims[0]);
+  checkCall(H5Sget_simple_extent_dims(sd, &dims[0], &maxDims[0]));
   ScopedHID td(H5Dget_type(d), &H5Tclose);
   ScopedHID ntd(H5Tget_native_type(td, H5T_DIR_ASCEND), &H5Tclose);
   if(type) *type=ntd;
@@ -131,7 +131,7 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
 list<string> GroupBase::getChildObjectNames() {
   pair<std::optional<exception>, list<string>> ret;
   hsize_t idx=0;
-  H5Literate(id, H5_INDEX_CRT_ORDER, H5_ITER_INC, &idx, &getChildNamesLCB, &ret);
+  checkCall(H5Literate(id, H5_INDEX_CRT_ORDER, H5_ITER_INC, &idx, &getChildNamesLCB, &ret));
   if(ret.first)
     throw ret.first.value();
   return ret.second;
@@ -169,8 +169,8 @@ Group::Group(int dummy, GroupBase *parent_, const string &name_) : GroupBase(par
 
 Group::Group(GroupBase *parent_, const string &name_) : GroupBase(parent_, name_) {
   ScopedHID group_creation_plist(H5Pcreate(H5P_GROUP_CREATE), &H5Pclose);
-  H5Pset_link_creation_order(group_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
- id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, group_creation_plist, H5P_DEFAULT), &H5Gclose);
+  checkCall(H5Pset_link_creation_order(group_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED));
+  id.reset(H5Gcreate2(parent->getID(), name.c_str(), H5P_DEFAULT, group_creation_plist, H5P_DEFAULT), &H5Gclose);
 }
 
 Group::~Group() = default;

@@ -44,8 +44,8 @@ hid_t returnComplexDoubleDatatypeID() {
   static hid_t complexDataType;
   if(init) {
     complexDataType = H5Tcreate(H5T_COMPOUND, sizeof(complex<T>));
-    H5Tinsert(complexDataType, "real", 0, toH5Type<T>());
-    H5Tinsert(complexDataType, "imag", sizeof(T), toH5Type<T>());
+    checkCall(H5Tinsert(complexDataType, "real", 0, toH5Type<T>()));
+    checkCall(H5Tinsert(complexDataType, "imag", sizeof(T), toH5Type<T>()));
     init=false;
   }
   return complexDataType;

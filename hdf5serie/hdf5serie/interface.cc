@@ -53,13 +53,14 @@ namespace {
         err->func_name<<endl<<err->desc<<endl;
     }
     catch(...) {
-      cerr<<"Error printing error message. This should neven happen."<<endl;
+      cerr<<"Error printing error message. This should never happen."<<endl;
     }
     return 0;
   }
 
   herr_t errorHandler(hid_t estack, void *client_data) {
-    H5Ewalk2(H5E_DEFAULT, H5E_WALK_UPWARD, &errorWalk, nullptr);
+    if(H5Ewalk2(H5E_DEFAULT, H5E_WALK_UPWARD, &errorWalk, nullptr)<0)
+      cerr<<"Error printing error message (H5Ewalk2 failed). This should never happen."<<endl;
     return 0;
   }
 }
@@ -79,7 +80,7 @@ Element::Element(std::string name_) :  name(std::move(name_)) {
   // print errors as exceptions
   static bool firstCall=true;
   if(firstCall) {
-    H5Eset_auto2(H5E_DEFAULT, &errorHandler, nullptr);
+    checkCall(H5Eset_auto2(H5E_DEFAULT, &errorHandler, nullptr));
     firstCall=false;
   }
 }
@@ -110,7 +111,7 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
   hsize_t ndim=H5Sget_simple_extent_ndims(sd);
   vector<hsize_t> dims(ndim);
   vector<hsize_t> maxDims(ndim);
-  H5Sget_simple_extent_dims(sd, &dims[0], &maxDims[0]);
+  checkCall(H5Sget_simple_extent_dims(sd, &dims[0], &maxDims[0]));
   ScopedHID td(H5Dget_type(d), &H5Tclose);
   ScopedHID ntd(H5Tget_native_type(td, H5T_DIR_ASCEND), &H5Tclose);
   if(type) *type=ntd;
@@ -154,7 +155,7 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
 set<string> Object::getChildAttributeNames() {
   pair<std::optional<exception>, set<string>> ret;
   hsize_t idx=0;
-  H5Aiterate2(id, H5_INDEX_NAME, H5_ITER_NATIVE, &idx, &getChildNamesACB, &ret);
+  checkCall(H5Aiterate2(id, H5_INDEX_NAME, H5_ITER_NATIVE, &idx, &getChildNamesACB, &ret));
   if(ret.first)
     throw ret.first;
   return ret.second;
@@ -230,12 +231,12 @@ Dataset::~Dataset() = default;
 
 void Dataset::refresh() {
   Object::refresh();
-  H5Drefresh(id);
+  checkCall(H5Drefresh(id));
 }
 
 void Dataset::flush() {
   Object::flush();
-  H5Dflush(id);
+  checkCall(H5Dflush(id));
 }
 
 void Dataset::enableSWMR() {
@@ -251,7 +252,7 @@ vector<hsize_t> Dataset::getExtentDims() {
   hsize_t ndim=H5Sget_simple_extent_ndims(ds);
   vector<hsize_t> dims(ndim);
   vector<hsize_t> maxDims(ndim);
-  H5Sget_simple_extent_dims(ds, &dims[0], &maxDims[0]);
+  checkCall(H5Sget_simple_extent_dims(ds, &dims[0], &maxDims[0]));
   return dims;
 }
 

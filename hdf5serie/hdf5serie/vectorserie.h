@@ -179,7 +179,7 @@ namespace H5 {
 
   template<class T>
   int VectorSerie<T>::getRows() {
-    H5Sget_simple_extent_dims(fileDataSpaceID, dims, nullptr);
+    checkCall(H5Sget_simple_extent_dims(fileDataSpaceID, dims, nullptr));
     return dims[0];
   }
 

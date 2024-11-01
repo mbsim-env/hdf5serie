@@ -58,14 +58,20 @@ namespace H5 {
           throw Exception("<unknown>", "No close function defined.");
       }
       ~ScopedHID() {
-        reset();
+        try {
+          reset();
+        }
+        catch(Exception &ex) {
+          std::cerr<<"Error in ScopedHID::dtor: "<<ex.what()<<std::endl;
+        }
       }
       operator hid_t() {
         return id;
       }
       void reset() {
         if(id>=0)
-          closeFunc(id);
+          if(closeFunc(id)<0)
+            throw Exception("<unknown>", "Close function of ScopedHID failed.");
         id=-1;
         closeFunc=nullptr;
       }
@@ -79,6 +85,11 @@ namespace H5 {
         closeFunc=closeFunc_;
       }
   };
+
+  inline void checkCall(herr_t err) {
+    if(err<0)
+      throw Exception("<unknown>", "A HDF5 call failed.");
+  }
 
   class File;
   class GroupBase;

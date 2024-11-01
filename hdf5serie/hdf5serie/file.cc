@@ -263,19 +263,20 @@ void File::openWriter() {
   // create file
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Create HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
-  H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
-  H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI);
+  checkCall(H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST));
+  checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
   // Disable file locking: we use our own locking mechanism
   #if H5_VERSION_LE(1, 10, 6)                                                                         \
     // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> use this
     putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
   #else
     // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
-    H5Pset_file_locking(faid, false, true);
+    checkCall(H5Pset_file_locking(faid, false, true));
   #endif
   ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
-  H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED);
+  checkCall(H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED));
   id.reset(H5Fcreate(name.c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Create HDF5 file: done"<<endl;
 }
 
 void File::initProcessInfo() {
@@ -367,18 +368,19 @@ void File::openReader() {
   // open file
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Open HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
-  H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI);
+  checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
   // Disable file locking: we use our own locking mechanism
   #if H5_VERSION_LE(1, 10, 6)                                                                         \
     // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> use this
     putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
   #else
     // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
-    H5Pset_file_locking(faid, false, true);
+    checkCall(H5Pset_file_locking(faid, false, true));
   #endif
   auto hid=H5Fopen(filename.string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid);
   if(hid>=0)
     id.reset(hid, &H5Fclose);
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Open HDF5 file: done"<<endl;
 }
 
 File::~File() {
@@ -512,6 +514,8 @@ void File::enableSWMR() {
 
   if(H5Fstart_swmr_write(id)<0)
     throw Exception(getPath(), "enableSWMR() failed: still opened attributes, ...");
+
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR in writer and call H5Fstart_swmr_write: done"<<endl;
 
   {
     ScopedLock lock(sharedData->mutex, this, "enableSWMR");
@@ -660,6 +664,7 @@ void File::removeSharedMemory(const boost::filesystem::path &filename) {
 
 
 void File::close() {
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": close file"<<endl;
   // close everything (except the file itself)
   GroupBase::close();
 
@@ -688,6 +693,7 @@ void File::close() {
 
   // now close also the file with is now the last opened identifier
   id.reset();
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": close file: done"<<endl;
 }
 
 }
