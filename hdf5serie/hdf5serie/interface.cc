@@ -33,15 +33,12 @@ using namespace std;
 
 namespace {
   herr_t getChildNamesACB(hid_t, const char *name, const H5A_info_t *, void *op_data) {
-    pair<std::optional<exception>, set<string>> &ret=*static_cast<pair<std::optional<exception>, set<string>>*>(op_data);
+    pair<exception_ptr, set<string>> &ret=*static_cast<pair<exception_ptr, set<string>>*>(op_data);
     try {
       ret.second.insert(name);
     }
-    catch(exception &ex) {
-      ret.first=ex;
-    }
     catch(...) {
-      ret.first=runtime_error("Unknown exception in getChildNamesACB.");
+      ret.first=current_exception();
     }
     return 0;
   }
@@ -153,11 +150,11 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
 }
 
 set<string> Object::getChildAttributeNames() {
-  pair<std::optional<exception>, set<string>> ret;
+  pair<exception_ptr, set<string>> ret { nullptr, {} };
   hsize_t idx=0;
   checkCall(H5Aiterate2(id, H5_INDEX_NAME, H5_ITER_NATIVE, &idx, &getChildNamesACB, &ret));
   if(ret.first)
-    throw ret.first;
+    rethrow_exception(ret.first);
   return ret.second;
 }
 

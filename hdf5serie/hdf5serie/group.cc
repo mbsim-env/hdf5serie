@@ -32,15 +32,12 @@ using namespace boost::filesystem;
 
 namespace {
   herr_t getChildNamesLCB(hid_t, const char *name, const H5L_info_t *, void *op_data) {
-    pair<std::optional<exception>, list<string>> &ret=*static_cast<pair<std::optional<exception>, list<string>>*>(op_data);
+    pair<exception_ptr, list<string>> &ret=*static_cast<pair<exception_ptr, list<string>>*>(op_data);
     try {
       ret.second.emplace_back(name);
     }
-    catch(exception &ex) {
-      ret.first=ex;
-    }
     catch(...) {
-      ret.first=runtime_error("Unknown exception during getChildNamesLCB");
+      ret.first=current_exception();
     }
     return 0;
   }
@@ -129,11 +126,11 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
 }
 
 list<string> GroupBase::getChildObjectNames() {
-  pair<std::optional<exception>, list<string>> ret;
+  pair<exception_ptr, list<string>> ret { nullptr, {} };
   hsize_t idx=0;
   checkCall(H5Literate(id, H5_INDEX_CRT_ORDER, H5_ITER_INC, &idx, &getChildNamesLCB, &ret));
   if(ret.first)
-    throw ret.first.value();
+    rethrow_exception(ret.first);
   return ret.second;
 }
 
