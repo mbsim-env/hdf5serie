@@ -99,99 +99,89 @@ void PlotWindow::detachPlot() {
 }
 
 void PlotWindow::plotDataSet(PlotData pd, int penColor) {
-  DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent()->parent())->getDataSelection();
-  std::shared_ptr<H5::File> h5file=dataSelection->getH5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString());
-
-  H5::VectorSerie<double> *vs;
   try {
+    DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent()->parent())->getDataSelection();
+    std::shared_ptr<H5::File> h5file=dataSelection->getH5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString());
+
+    H5::VectorSerie<double> *vs;
     vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
-  }
-  catch(...) {
-    return;
-  }
-  size_t rows=vs->getRows();
-  std::vector<double> xVal(rows);
-  vs->getColumn(pd.getValue("x-Index").toInt(), xVal);
+    size_t rows=vs->getRows();
+    std::vector<double> xVal(rows);
+    vs->getColumn(pd.getValue("x-Index").toInt(), xVal);
 
-  try {
     vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y-Path").toStdString());
+    std::vector<double> yVal(rows);
+    vs->getColumn(pd.getValue("y-Index").toInt(), yVal);
+
+    std::vector<double> y2Val(rows);
+    bool useY2=false;
+    if (pd.getValue("y2-Path").length()>0) {
+      vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y2-Path").toStdString());
+      vs->getColumn(pd.getValue("y2-Index").toInt(), y2Val);
+      useY2=true;
+    }
+
+    if (xVal.size()==yVal.size()) {
+
+      for (double i : xVal)
+        if (!std::isnan(i)) { // xValue
+          if (i<xMinValue)
+            xMinValue=i;
+          if (i>xMaxValue)
+            xMaxValue=i;
+        }
+
+      if (useY2) {
+        if ((yVal.size()==y2Val.size())) {
+          const double y2offset=pd.getValue("y2offset").toDouble();
+          const double y2gain=pd.getValue("y2gain").toDouble();
+          for (double & i : y2Val)
+            if (!std::isnan(i)) // y2Value
+              i=y2gain*i+y2offset;
+        }
+        else {
+          useY2=false;
+          QMessageBox msgBox;
+          msgBox.setText("Different sizes of y- and y2-Vector. I'm going to skip y2 data.");
+          msgBox.exec();
+        }
+      }
+
+      const double offset=pd.getValue("offset").toDouble();
+      const double gain=pd.getValue("gain").toDouble();
+      for (unsigned int i=0; i<yVal.size(); i++)
+        if (!std::isnan(yVal[i])) { // yValue
+          yVal[i]=gain*yVal[i]+offset;
+          if (useY2)
+            yVal[i]+=y2Val[i];
+          if (yVal[i]<yMinValue)
+            yMinValue=yVal[i];
+          if (yVal[i]>yMaxValue)
+            yMaxValue=yVal[i];
+        }
+
+      for (unsigned int i=0; i<xVal.size(); i++) {
+        if (std::isnan(xVal[i]))
+          xVal[i]=.5*(xMinValue+xMaxValue);
+        if (std::isnan(yVal[i]))
+          yVal[i]=.5*(yMinValue+yMaxValue);
+      }
+
+      auto *curve = new QwtPlotCurve("Curve "+QString::number(plot->itemList().size()+1));
+      curve->attach(plot);
+      while (penColor>pen.size()-1)
+        penColor-=pen.size();
+      curve->setPen(pen[penColor]);
+      curve->setSamples(&xVal[0], &yVal[0], xVal.size());
+    }
+    else {
+      QMessageBox msgBox;
+      msgBox.setText("Different sizes of x- and y-Vector. I'm going to skip these data.");
+      msgBox.exec();
+    }
   }
   catch(...) {
     return;
-  }
-  std::vector<double> yVal(rows);
-  vs->getColumn(pd.getValue("y-Index").toInt(), yVal);
-
-  std::vector<double> y2Val(rows);
-  bool useY2=false;
-  if (pd.getValue("y2-Path").length()>0) {
-    try {
-      vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y2-Path").toStdString());
-    }
-    catch(...) {
-      return;
-    }
-    vs->getColumn(pd.getValue("y2-Index").toInt(), y2Val);
-    useY2=true;
-  }
-
-  if (xVal.size()==yVal.size()) {
-
-    for (double i : xVal)
-      if (!std::isnan(i)) { // xValue
-        if (i<xMinValue)
-          xMinValue=i;
-        if (i>xMaxValue)
-          xMaxValue=i;
-      }
-
-    if (useY2) {
-      if ((yVal.size()==y2Val.size())) {
-        const double y2offset=pd.getValue("y2offset").toDouble();
-        const double y2gain=pd.getValue("y2gain").toDouble();
-        for (double & i : y2Val)
-          if (!std::isnan(i)) // y2Value
-            i=y2gain*i+y2offset;
-      }
-      else {
-        useY2=false;
-        QMessageBox msgBox;
-        msgBox.setText("Different sizes of y- and y2-Vector. I'm going to skip y2 data.");
-        msgBox.exec();
-      }
-    }
-
-    const double offset=pd.getValue("offset").toDouble();
-    const double gain=pd.getValue("gain").toDouble();
-    for (unsigned int i=0; i<yVal.size(); i++)
-      if (!std::isnan(yVal[i])) { // yValue
-        yVal[i]=gain*yVal[i]+offset;
-        if (useY2)
-          yVal[i]+=y2Val[i];
-        if (yVal[i]<yMinValue)
-          yMinValue=yVal[i];
-        if (yVal[i]>yMaxValue)
-          yMaxValue=yVal[i];
-      }
-
-    for (unsigned int i=0; i<xVal.size(); i++) {
-      if (std::isnan(xVal[i]))
-        xVal[i]=.5*(xMinValue+xMaxValue);
-      if (std::isnan(yVal[i]))
-        yVal[i]=.5*(yMinValue+yMaxValue);
-    }
-
-    auto *curve = new QwtPlotCurve("Curve "+QString::number(plot->itemList().size()+1));
-    curve->attach(plot);
-    while (penColor>pen.size()-1)
-      penColor-=pen.size();
-    curve->setPen(pen[penColor]);
-    curve->setSamples(&xVal[0], &yVal[0], xVal.size());
-  }
-  else {
-    QMessageBox msgBox;
-    msgBox.setText("Different sizes of x- and y-Vector. I'm going to skip these data.");
-    msgBox.exec();
   }
 }
 

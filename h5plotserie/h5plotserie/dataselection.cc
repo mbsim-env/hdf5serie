@@ -286,6 +286,8 @@ void DataSelection::selectFromCurrentData(QListWidgetItem* item, const QString &
 }
 
 void DataSelection::updatePath(QTreeWidgetItem *cur) {
+  if(!cur)
+    return;
   QString str=cur->text(0);
   for (QTreeWidgetItem *item=cur->parent(); item!=nullptr; item=item->parent())
     str=item->text(0)+"/"+str;
