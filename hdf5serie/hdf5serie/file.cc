@@ -31,7 +31,9 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #ifdef _WIN32
-  #define WIN32_LEAN_AND_MEAN
+  #ifndef WIN32_LEAN_AND_MEAN
+  #  define WIN32_LEAN_AND_MEAN
+  #endif
   #include <windows.h>
 #endif
 
