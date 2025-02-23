@@ -125,12 +125,16 @@ namespace Internal {
 class Settings {
   private:
     static boost::filesystem::path getFileName() {
+      static boost::filesystem::path base;
+      if(base.empty()) {
 #if _WIN32
-      boost::filesystem::path base(getenv("APPDATA"));
+        base=getenv("APPDATA");
 #else
-      boost::filesystem::path base(getenv("HOME"));
-      base/=".config";
+        base=getenv("XDG_CONFIG_HOME")?getenv("XDG_CONFIG_HOME"):"";
+        if(base.empty())
+          base=boost::filesystem::path(getenv("HOME"))/".config";
 #endif
+      }
       return base/"mbsim-env"/"hdf5serie.ini";
     }
   public:
