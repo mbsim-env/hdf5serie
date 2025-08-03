@@ -24,8 +24,15 @@ HDF5SERIE_CLASS<T>::~HDF5SERIE_CLASS() = default;
 template<class T>
 void HDF5SERIE_CLASS<T>::close() {
   HDF5SERIE_BASECLASS::close();
-  memDataSpaceID.reset();
+  // memDataSpaceID.reset(); do not close this since its not file related (to avoid the need for reopen it in writetemp mode)
   id.reset();
+}
+
+template<class T>
+void HDF5SERIE_CLASS<T>::enableSWMR() {
+  if(file->getType(true) == File::writeTempNoneSWMR)
+    id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
+  HDF5SERIE_BASECLASS::enableSWMR();
 }
 
 template<class T>
@@ -89,8 +96,15 @@ HDF5SERIE_CLASS<vector<T> >::~HDF5SERIE_CLASS() = default;
 template<class T>
 void HDF5SERIE_CLASS<vector<T> >::close() {
   HDF5SERIE_BASECLASS::close();
-  memDataSpaceID.reset();
+  // memDataSpaceID.reset(); do not close this since its not file related (to avoid the need for reopen it in writetemp mode)
   id.reset();
+}
+
+template<class T>
+void HDF5SERIE_CLASS<vector<T> >::enableSWMR() {
+  if(file->getType(true) == File::writeTempNoneSWMR)
+    id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
+  HDF5SERIE_BASECLASS::enableSWMR();
 }
 
 template<class T>
@@ -168,8 +182,15 @@ HDF5SERIE_CLASS<vector<vector<T> > >::~HDF5SERIE_CLASS() = default;
 template<class T>
 void HDF5SERIE_CLASS<vector<vector<T> > >::close() {
   HDF5SERIE_BASECLASS::close();
-  memDataSpaceID.reset();
+  // memDataSpaceID.reset(); do not close this since its not file related (to avoid the need for reopen it in writetemp mode)
   id.reset();
+}
+
+template<class T>
+void HDF5SERIE_CLASS<vector<vector<T> > >::enableSWMR() {
+  if(file->getType(true) == File::writeTempNoneSWMR)
+    id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
+  HDF5SERIE_BASECLASS::enableSWMR();
 }
 
 template<class T>

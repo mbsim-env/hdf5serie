@@ -47,6 +47,8 @@ using namespace std;
 //  int i;
 //};
 
+int worker(File::FileAccess writeType);
+
 int main() {
 #ifdef _WIN32
   SetConsoleCP(CP_UTF8);
@@ -56,13 +58,22 @@ int main() {
   assert(feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW)!=-1);
 #endif
 
+  int ret=0;
+  ret += worker(File::write);
+  ret += worker(File::writeTempNoneSWMR);
+
+  return ret;
+}
+
+int worker(File::FileAccess writeType) {
+  cout<<"Running with writeType = "<<writeType<<"\n";
 
   /***** SimpleDataset *****/
   cout<<"MYDATASET\n";
 
   { // scalar double
   cout<<"scalar double\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
 
   SimpleDataset<double> *dsd=file.createChildObject<SimpleDataset<double> >("dsd")();
   double d=5.67;
@@ -82,7 +93,7 @@ int main() {
 
   { // scalar string
   cout<<"scalar string\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
 
   SimpleDataset<string> *dsd=file.createChildObject<SimpleDataset<string> >("dsd")();
   string d="sdlfkjsf";
@@ -102,7 +113,7 @@ int main() {
 
   { // scalar complex<double>
   cout<<"scalar complex<double>\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
 
   SimpleDataset<complex<double>> *dsd=file.createChildObject<SimpleDataset<complex<double>> >("dsd")();
   complex<double> d{3.5,7.3};
@@ -128,7 +139,7 @@ int main() {
 
   { // vector double
   cout<<"vector double\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
 
   SimpleDataset<vector<double> > *dsd=file.createChildObject<SimpleDataset<vector<double> > >("dsd")(2);
   vector<double> d; d.push_back(5.67); d.push_back(7.34);
@@ -152,7 +163,7 @@ int main() {
 
   { // vector string
   cout<<"vector string\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
 
   SimpleDataset<vector<string> > *dsd=file.createChildObject<SimpleDataset<vector<string> > >("dsd")(2);
   vector<string> d; d.emplace_back("sdlkfj"); d.emplace_back("owiuer");
@@ -176,7 +187,7 @@ int main() {
 
   { // vector complex<double>
   cout<<"vector complex<double>\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
 
   SimpleDataset<vector<complex<double>> > *dsd=file.createChildObject<SimpleDataset<vector<complex<double>> > >("dsd")(2);
   vector<complex<double>> d; d.emplace_back(3.6,7.5); d.emplace_back(7.3,4.7);
@@ -216,7 +227,7 @@ int main() {
 
   { // scalar double
   cout<<"scalar double\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
 
   SimpleAttribute<double> *dsd=data->createChildAttribute<SimpleAttribute<double> >("dsd")();
@@ -236,7 +247,7 @@ int main() {
 
   { // scalar string
   cout<<"scalar string\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
 
   SimpleAttribute<string> *dsd=data->createChildAttribute<SimpleAttribute<string> >("dsd")();
@@ -256,7 +267,7 @@ int main() {
 
   { // scalar complex<double>
   cout<<"scalar complex<double>\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
 
   SimpleAttribute<complex<double>> *dsd=data->createChildAttribute<SimpleAttribute<complex<double>> >("dsd")();
@@ -282,7 +293,7 @@ int main() {
 
   { // vector double
   cout<<"vector double\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
 
   constexpr int size=10000;
@@ -310,7 +321,7 @@ int main() {
 
   { // vector string
   cout<<"vector string\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
 
   // test a large attribute (>64K). This should automatically switch to dense attribute storge
@@ -339,7 +350,7 @@ int main() {
 
   { // vector complex<double>
   cout<<"vector complex<double>\n";
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *data=file.createChildObject<SimpleDataset<double> >("data")();
 
   // test a large attribute (>64K). This should automatically switch to dense attribute storge
@@ -368,8 +379,8 @@ int main() {
 
   /***** MYTIMESERIE *****/
   cout<<"TIMESERIE\n";
-  auto write = [](const string &filename) {
-    File file(filename, File::write);
+  auto write = [writeType](const string &filename) {
+    File file(filename, writeType);
     VectorSerie<double> *ts=file.createChildObject<VectorSerie<double> >("timeserie")(3);
     vector<string> colhead;
     colhead.emplace_back("col1");
@@ -461,7 +472,7 @@ int main() {
   /***** Attribute vector<vector<double>> *****/
   cout<<"Attribute vector<vector<double>>\n";
   {
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *d=file.createChildObject<SimpleDataset<double> >("d")();
   d->write(3.56);
   SimpleAttribute<vector<vector<double> > > *a=d->createChildAttribute<SimpleAttribute<vector<vector<double> > > >("a")(2,3);
@@ -480,7 +491,7 @@ int main() {
   /***** Attribute vector<vector<string>> *****/
   cout<<"Attribute vector<vector<string>>\n";
   {
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *d=file.createChildObject<SimpleDataset<double> >("d")();
   SimpleAttribute<vector<vector<string> > > *a=d->createChildAttribute<SimpleAttribute<vector<vector<string> > > >("a")(2,3);
   vector<string> d1; d1.emplace_back("a"); d1.emplace_back("bb"); d1.emplace_back("ccc");
@@ -498,7 +509,7 @@ int main() {
   /***** Attribute vector<vector<complex<double>>> *****/
   cout<<"Attribute vector<vector<complex<double>>>\n";
   {
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<double> *d=file.createChildObject<SimpleDataset<double> >("d")();
   SimpleAttribute<vector<vector<complex<double>> > > *a=d->createChildAttribute<SimpleAttribute<vector<vector<complex<double>> > > >("a")(2,3);
   vector<complex<double>> d1; d1.emplace_back(2.3,3.5); d1.emplace_back(2.3,3.5); d1.emplace_back(2.3,3.5);
@@ -516,7 +527,7 @@ int main() {
   /***** Dataset vector<vector<double>> *****/
   cout<<"Dataset vector<vector<double>>\n";
   {
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<vector<vector<double> > > *d=file.createChildObject<SimpleDataset<vector<vector<double> > > >("d")(2, 3);
   vector<double> d1; d1.push_back(1); d1.push_back(2); d1.push_back(3);
   vector<double> d2; d2.push_back(4); d2.push_back(5); d2.push_back(6);
@@ -533,7 +544,7 @@ int main() {
   /***** Dataset vector<vector<string>> *****/
   cout<<"Dataset vector<vector<string>>\n";
   {
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<vector<vector<string> > > *d=file.createChildObject<SimpleDataset<vector<vector<string> > > >("d")(2, 3);
   vector<string> d1; d1.emplace_back("a"); d1.emplace_back("bb"); d1.emplace_back("ccc");
   vector<string> d2; d2.emplace_back("d"); d2.emplace_back("ee"); d2.emplace_back("fff");
@@ -550,7 +561,7 @@ int main() {
   /***** Dataset vector<vector<complex<double>>> *****/
   cout<<"Dataset vector<vector<complex<double>>>\n";
   {
-  File file("test.h5", File::write);
+  File file("test.h5", writeType);
   SimpleDataset<vector<vector<complex<double>> > > *d=file.createChildObject<SimpleDataset<vector<vector<complex<double>> > > >("d")(2, 3);
   vector<complex<double>> d1; d1.emplace_back(3.3,6.3); d1.emplace_back(3.3,6.3); d1.emplace_back(3.3,6.3);
   vector<complex<double>> d2; d2.emplace_back(3.3,6.3); d2.emplace_back(3.3,6.3); d2.emplace_back(3.3,6.3);
@@ -578,7 +589,6 @@ int main() {
 //  cout<<out<<endl;
 //  file.close();
 //  }
-
 
   return 0;
 }

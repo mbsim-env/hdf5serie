@@ -40,6 +40,17 @@ namespace H5 {
     memDataTypeID=toH5Type<T>();
 
     // open the dataset, get column size and chunk size, close dataset again
+    openIDandFileDataSpaceID();
+
+    // create mem space
+    hsize_t memDims[]={1, dims[1]};
+    memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
+    msg(Debug)<<"HDF5:"<<endl
+              <<"Opened object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
+  }
+
+  template<class T>
+  void VectorSerie<T>::openIDandFileDataSpaceID() {
     id.reset(H5Dopen(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Dclose);
     ScopedHID sid(H5Dget_space(id), &H5Sclose);
     if(H5Sget_simple_extent_ndims(sid)!=2)
@@ -56,12 +67,6 @@ namespace H5 {
     checkCall(H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*maxDims[0], 0.75));
     id.reset(H5Dopen(parent->getID(), name.c_str(), apl), &H5Dclose);
     fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
-
-    // create mem space
-    hsize_t memDims[]={1, dims[1]};
-    memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
-    msg(Debug)<<"HDF5:"<<endl
-              <<"Opened object with name = "<<name<<", id = "<<id<<" at parent with id = "<<parent->getID()<<"."<<endl;
   }
 
   template<class T>
@@ -106,8 +111,8 @@ namespace H5 {
     }
 
     Dataset::close();
-    memDataSpaceID.reset();
-    memDataSpaceCacheID.reset();
+    // memDataSpaceID.reset(); do not close this since its not file related (to avoid the need for reopen it in writetemp mode)
+    // memDataSpaceCacheID.reset(); do not close this since its not file related (to avoid the need for reopen it in writetemp mode)
     id.reset();
   }
 
@@ -225,6 +230,13 @@ namespace H5 {
   vector<string> VectorSerie<T>::getColumnLabel() {
     auto *col=openChildAttribute<SimpleAttribute<vector<string> > >("Column Label");
     return col->read();
+  }
+
+  template<class T>
+  void VectorSerie<T>::enableSWMR() {
+    if(file->getType(true) == File::writeTempNoneSWMR)
+      openIDandFileDataSpaceID();
+    Dataset::enableSWMR();
   }
 
 

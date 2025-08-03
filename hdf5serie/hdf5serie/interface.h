@@ -31,7 +31,15 @@
 
 namespace H5 {
 
-  #define HDF5SERIE_MAXCTORPARAMETERS 5
+  // The class defines all base classes of the interface for HDF5Serie.
+  // The interface has the following virtual functions which gets, started from File, calles
+  // for all created children classes recursively:
+  // - close: closes all HDF5 handles (hid_t) before File will notify other processes that the file is closed
+  // - refresh: makes the HDF5 refresh calls
+  // - flush: makes the HDF5 flush calls
+  // - enableSWMR: for type=write: closes all attributes than switches File to SWMR writing mode
+  //               for type=writeTempNoneSWMR: closes all elements, rename the file, reopen all elements
+  //                                           except attributes, then switches File to SWMR writing mode
 
   class Exception : public std::exception {
     protected:

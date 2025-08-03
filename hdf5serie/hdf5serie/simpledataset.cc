@@ -24,6 +24,7 @@
 #include <hdf5serie/simpledataset.h>
 #include <hdf5serie/group.h>
 #include <hdf5serie/utils.h>
+#include <hdf5serie/file.h>
 #include <hdf5serie/toh5type.h>
 
 using namespace std;

@@ -99,8 +99,15 @@ namespace H5 {
     friend class Internal::ScopedLock;
     public:
       enum FileAccess {
-        read,  //!< open file for reading
-        write, //!< open file for writing
+        read,              //!< Open file for reading with SWMR reading mode enabled
+        write,             //!< Open file for writing. Calling enableSWMR will switch to SWMR writing mode.
+                           //!< Note that enableSWMR will close all attributes.
+        writeTempNoneSWMR, //!< Open file for writing with a modified filename (<path>/<basename>.tempNoneSWMR.<ext>).
+                           //!< Calling enableSWMR will close the file, rename it to the normal filename (<path>/<basename>.<ext>),
+                           //!< reopen it in SWMR writing mode while all Elements of the file, except Attributes which are closed,
+                           //!< are still available (but there hid_t will change, call getID() gain if needed).
+                           //!< This is useful to avoid locking the normal filename during the none SWMR mode write tasks.
+                           //!< This way the time the file is exclusively locked (in none SWMR mode) is minimized.
       };
       //! Opens the HDF5 file filename_ as a writer or reader dependent on type_.
       //! For a reader closeRequestCallback_ should be set!
@@ -143,6 +150,8 @@ namespace H5 {
       //! Internal helper function which removes the shared memory associated with filename, !!!EVEN if other process still use it!!!
       static void removeSharedMemory(const boost::filesystem::path &filename);
 
+      FileAccess getType(bool originalType=false); // returns write for write and writeTempNoneSWMR and read for read
+
     private:
       static int defaultCompression;
       static int defaultChunkSize;
@@ -151,18 +160,14 @@ namespace H5 {
       void close() override;
 
       //! The name of the file
-      const boost::filesystem::path filename;
-      //! Flag if this instance is a writer or reader
-      const FileAccess type;
-      //! This callback is called when a writer requested a close of all readers
-      const std::function<void()> closeRequestCallback;
-      //! This callback is called when a writer has flushed
-      const std::function<void()> refreshCallback;
+      boost::filesystem::path filename;
+      boost::filesystem::path getFilename(bool originalFilename=false); // gets the filename dependent on the current tempNoneSWMR
 
-      //! Name of the shared memory
-      std::string shmName;
-      //!< a globally unique identifier for this process
-      const boost::uuids::uuid processUUID;
+      //! Flag if this instance is a writer or reader
+      FileAccess type;
+      //! This flag is set if the file was opened in writeTempNoneSWMR mode and is currently in this mode (enableSWMR was not called yet)
+      //! (note that type is reset to write in this case in the ctor, hence you need to used this flag)
+      bool tempNoneSWMR { false };
 
       //! A writer can be in the following state:
       enum class WriterState {
@@ -199,6 +204,16 @@ namespace H5 {
         // the follwing members are only used for flush/refresh handling
         bool flushRequest { false }; //<! Is set to true by reader if a flush of the writer should be done. The writer resets to false after a flush.
       };
+
+      //! This callback is called when a writer requested a close of all readers
+      const std::function<void()> closeRequestCallback;
+      //! This callback is called when a writer has flushed
+      const std::function<void()> refreshCallback;
+
+      //! Name of the shared memory
+      std::string shmName;
+      //!< a globally unique identifier for this process
+      const boost::uuids::uuid processUUID;
 
       //! Shared memory object holding the shared memory
       //! Access to shm (and region) must bu guarded by locking the boost filelock of filename.
@@ -253,7 +268,10 @@ namespace H5 {
       void deinitProcessInfo();
 
       //! open or create the shared memory atomically (process with using file lock)
-      void openOrCreateShm();
+      static void openOrCreateShm(const boost::filesystem::path &filename, File *self,
+                                  std::string &shmName, Internal::SharedMemory &shm, boost::interprocess::mapped_region &region,
+                                  SharedMemObject *&sharedData);
+      static void deinitShm(SharedMemObject *sharedData, const boost::filesystem::path &filename, File *self, const std::string &shmName);
   };
 }
 

@@ -72,6 +72,7 @@ namespace H5 {
       boost::multi_array<T, 2> cache;
       size_t cacheRow;
       void writeToHDF5(size_t nrRows, size_t cacheSize, const T* data);
+      void openIDandFileDataSpaceID();
     protected:
       VectorSerie(int dummy, GroupBase *parent_, const std::string &name_);
       VectorSerie(GroupBase *parent_, const std::string &name_, int cols,
@@ -80,6 +81,7 @@ namespace H5 {
       void close() override;
       void refresh() override;
       void flush() override;
+      void enableSWMR() override;
 
     public:
       /** \brief Sets a description for the dataset
