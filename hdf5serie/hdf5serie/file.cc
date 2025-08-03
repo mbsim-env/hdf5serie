@@ -248,7 +248,7 @@ boost::filesystem::path File::getFilename(bool originalFilename) {
   if(originalFilename)
     return filename;
   if(tempNoneSWMR)
-    return filename.parent_path()/(filename.stem().string()+".tempNoneSWMR."+filename.extension().string());
+    return filename.parent_path()/(filename.stem().string()+".tempNoneSWMR"+filename.extension().string());
   return filename;
 }
 
