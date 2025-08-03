@@ -305,10 +305,10 @@ void File::openWriter() {
   if(type==write || (type==writeTempNoneSWMR && tempNoneSWMR)) {
     ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
     checkCall(H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED));
-    id.reset(H5Fcreate(getFilename().c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
+    id.reset(H5Fcreate(getFilename().string().c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
   }
   else
-    id.reset(H5Fopen(getFilename().c_str(), H5F_ACC_RDWR, faid), &H5Fclose);
+    id.reset(H5Fopen(getFilename().string().c_str(), H5F_ACC_RDWR, faid), &H5Fclose);
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Create HDF5 file: done"<<endl;
 }
 
