@@ -451,6 +451,10 @@ File::~File() {
       case read:   closeReader(); break;
       default: throw runtime_error("internal error");
     }
+
+    // if opened with writeTempNoneSWMR but enableSWMR was not called -> rename the file now
+    if(type == writeTempNoneSWMR && tempNoneSWMR == true)
+      boost::filesystem::rename(getFilename(), filename);
  
     deinitShm(sharedData, getFilename(), this, shmName);
   }

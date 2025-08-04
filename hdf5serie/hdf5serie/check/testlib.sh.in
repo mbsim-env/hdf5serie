@@ -9,4 +9,5 @@ else
   export LD_LIBRARY_PATH=@prefix@/bin:@prefix@/lib:$LD_LIBRARY_PATH
 fi
 @XC_EXEC_PREFIX@ ../dump/h5lockserie@EXEEXT@ --remove test.h5 test2d.h5 test2dcache.h5 || echo "failed but continuing" # remove all shared memory to start from a consistent state
+rm -f test.h5 test2d.h5 test2dcache.h5
 @XC_EXEC_PREFIX@ ./testlib@EXEEXT@
