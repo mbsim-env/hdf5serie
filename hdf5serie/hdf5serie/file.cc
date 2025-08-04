@@ -44,7 +44,13 @@ namespace ipc = boost::interprocess;
 
 namespace {
   auto now() {
-    return chrono::high_resolution_clock::now().time_since_epoch().count();
+    auto now = chrono::system_clock::now();
+    auto t = chrono::system_clock::to_time_t(now);
+    auto local_t = *localtime(&t);
+    auto ms = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    stringstream str;
+    str<<put_time(&local_t, R"(%FT%T)")<<"."<<setfill('0')<<setw(3)<<ms.count();
+    return str.str();
   }
 }
 
@@ -53,6 +59,7 @@ namespace H5 {
 int File::defaultCompression=1;
 int File::defaultChunkSize=100;
 int File::defaultCacheSize=100;
+std::chrono::milliseconds File::showBlockMessageAfter=500ms;
 
 namespace Internal {
   // This class is similar to boost::interprocess::scoped_lock but prints debug messages.
@@ -87,6 +94,15 @@ namespace Internal {
   template<int N>
   void ConditionVariable<N>::wait(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
                                   const function<bool()> &pred) {
+    while(!wait_for(externLock, std::chrono::milliseconds::max(), pred)) {
+    }
+  }
+
+  template<int N>
+  bool ConditionVariable<N>::wait_for(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
+                                      const std::chrono::milliseconds& relTime,
+                                      const std::function<bool()> &pred) {
+    auto startTime = std::chrono::steady_clock::now();
     if(!externLock)
       throw boost::interprocess::lock_exception();
     auto waiterUUID=boost::uuids::random_generator()();
@@ -98,7 +114,8 @@ namespace Internal {
         waiter.emplace_back(waiterUUID);
       }
       externLock.unlock();
-      
+
+      bool timeExceeded = false;
       bool exitLoop;
       do {
         using namespace chrono_literals;
@@ -107,11 +124,19 @@ namespace Internal {
           boost::interprocess::scoped_lock waiterLock(waiterMutex);
           exitLoop = find(waiter.begin(), waiter.end(), waiterUUID)==waiter.end();
         }
+        if(std::chrono::steady_clock::now()-startTime>relTime) {
+          timeExceeded = true;
+          break;
+        }
       }
       while(!exitLoop);
 
       externLock.lock();
+
+      if(timeExceeded)
+        return false;
     }
+    return true;
   }
 
   template<int N>
@@ -269,7 +294,7 @@ void File::openWriter() {
     initProcessInfo();
     // open the writer
     // wait until no other writer is active
-    wait(lock, "Blocking until other writer has finished.", [this](){
+    wait(lock, showBlockMessageAfter, "Blocking until other writer has finished.", [this](){
       return sharedData->writerState==WriterState::none;
     });
     // now we are the single writer on this file
@@ -279,7 +304,7 @@ void File::openWriter() {
       sharedData->writerState=WriterState::writeRequest;
       sharedData->cond.notify_all();
         // now wait until all readers have closed
-      wait(lock, "Blocking until all readers haved closed.", [this](){
+      wait(lock, showBlockMessageAfter, "Blocking until all readers haved closed.", [this](){
         return sharedData->activeReaders==0;
       });
     }
@@ -384,7 +409,7 @@ void File::openReader() {
     initProcessInfo();
     // open file as a reader
     // wait until either no writer exists or the writer is in SWMR state
-    wait(lock, "Blocking until no writer exists or the writer is in SWMR state.", [this](){
+    wait(lock, showBlockMessageAfter, "Blocking until no writer exists or the writer is in SWMR state.", [this](){
       return sharedData->writerState==WriterState::none || sharedData->writerState==WriterState::swmr;
     });
     lastWriterState=sharedData->writerState;
@@ -459,10 +484,10 @@ File::~File() {
     deinitShm(sharedData, getFilename(), this, shmName);
   }
   catch(const exception &ex) {
-    msg(Atom::Warn)<<"HDF5Serie: Exception during destructor: "<<ex.what()<<endl;
+    msg(Atom::Error)<<"HDF5Serie: Exception during destructor: "<<ex.what()<<endl;
   }
   catch(...) {
-    msg(Atom::Warn)<<"HDF5Serie: Unknown exception during destructor."<<endl;
+    msg(Atom::Error)<<"HDF5Serie: Unknown exception during destructor."<<endl;
   }
 }
 
@@ -604,14 +629,21 @@ void File::enableSWMR() {
   }
 }
 
-void File::wait(ScopedLock &lock,
+void File::wait(ScopedLock &lock, const std::chrono::milliseconds& relTime,
                 string_view blockingMsg, const function<bool()> &pred) {
   if(msgAct(Atom::Debug))
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Waiting for: "<<blockingMsg<<endl;
-  // print a message if this call will block
-  if(!blockingMsg.empty() && !pred())
-    msg(Atom::Info)<<"HDF5Serie: "<<getFilename().string()<<": "<<blockingMsg<<endl;
-  sharedData->cond.wait(lock, [&pred](){ return pred(); });
+  bool blockMsgPrinted=false;
+  if(!sharedData->cond.wait_for(lock, relTime, [&pred](){ return pred(); })) {
+    // print a message if this call will block
+    if(!blockingMsg.empty() && !pred()) {
+      msg(Atom::Info)<<getFilename().filename().string()<<": "<<now()<<": "<<blockingMsg<<endl;
+      blockMsgPrinted=true;
+    }
+    sharedData->cond.wait(lock, [&pred](){ return pred(); });
+  }
+  if(blockMsgPrinted)
+    msg(Atom::Info)<<getFilename().filename().string()<<": "<<now()<<": Waiting condition passed, continue: "<<blockingMsg<<endl;
   if(msgAct(Atom::Debug))
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Waiting condition passed, continue: "<<blockingMsg<<endl;
 }
@@ -624,7 +656,7 @@ void File::listenForRequest() {
   ScopedLock threadLock(sharedData->mutex, this, "listenForRequest");
   while(true) {
     // ... waits until write request happens (or this thread is to be closed)
-    wait(threadLock, "", [this](){
+    wait(threadLock, std::chrono::milliseconds::max(), "", [this](){
       return sharedData->writerState==WriterState::writeRequest || // the writer wants to write
              (flushRequested && sharedData->flushRequest==false) || // this object has requested a flush which is done now
              (lastWriterState!=WriterState::none && sharedData->writerState==WriterState::none) || // writer has finished

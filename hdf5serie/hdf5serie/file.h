@@ -79,6 +79,9 @@ namespace H5 {
       public:
         void wait(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
                   const std::function<bool()> &pred);
+        bool wait_for(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
+                      const std::chrono::milliseconds& relTime,
+                      const std::function<bool()> &pred);
         void notify_all();
       private:
         boost::container::static_vector<boost::uuids::uuid, N> waiter;
@@ -133,6 +136,8 @@ namespace H5 {
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
       static int getDefaultCacheSize() { return defaultCacheSize; }
       static void setDefaultCacheSize(int cache) { defaultCacheSize=cache; }
+      static const std::chrono::milliseconds& getShowBlockMessageAfter() { return showBlockMessageAfter; }
+      static void setShowBlockMessageAfter(const std::chrono::milliseconds& relTime) { showBlockMessageAfter=relTime; }
 
       //! Refresh the dataset of a reader
       void refresh() override;
@@ -156,6 +161,7 @@ namespace H5 {
       static int defaultCompression;
       static int defaultChunkSize;
       static int defaultCacheSize;
+      static std::chrono::milliseconds showBlockMessageAfter;
 
       void close() override;
 
@@ -244,9 +250,10 @@ namespace H5 {
 
       //! Helper function which waits until the condition pred is true.
       //! On entry the lock lock is released and re-aquired if waiting ends (the pred() == true).
-      //! If this call blocks (pred is not already true on entry) then the message blockingMsg is printed
+      //! If this call blocks for more then relTime then then the message blockingMsg is printed
+      //! but wait will not return (its blocking until pred is true)
       //! (use a empty string to avoid printing)
-      void wait(Internal::ScopedLock &lock,
+      void wait(Internal::ScopedLock &lock, const std::chrono::milliseconds& relTime,
                 std::string_view blockingMsg, const std::function<bool()> &pred);
 
       // still alive pings use boost::thread since interruption point of boost, which are not availabe for std::thread, are used
