@@ -111,7 +111,8 @@ namespace Internal {
         boost::interprocess::scoped_lock waiterLock(waiterMutex);
         if(waiter.size()==N)
           throw runtime_error("Too many threads are waiting in ConditionVariable.");
-        waiter.emplace_back(waiterUUID);
+        if(find(waiter.begin(), waiter.end(), waiterUUID)==waiter.end())
+          waiter.emplace_back(waiterUUID);
       }
       externLock.unlock();
 
