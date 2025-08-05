@@ -126,6 +126,9 @@ namespace Internal {
           exitLoop = find(waiter.begin(), waiter.end(), waiterUUID)==waiter.end();
         }
         if(std::chrono::steady_clock::now()-startTime>relTime) {
+          boost::interprocess::scoped_lock waiterLock(waiterMutex);
+          if(auto it=find(waiter.begin(), waiter.end(), waiterUUID); it!=waiter.end())
+            waiter.erase(it);
           timeExceeded = true;
           break;
         }
