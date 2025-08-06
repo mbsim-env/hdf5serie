@@ -364,7 +364,10 @@ void File::deinitProcessInfo() {
     auto it=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
       return pi.processUUID==processUUID;
     });
-    sharedData->processes.erase(it);
+    if(it!=sharedData->processes.end())
+      sharedData->processes.erase(it);
+    else
+      msg(Atom::Error)<<"HDF5Serie: "<<getFilename().string()<<": Another process has remove this ProcessInfo, maybe because it thought that this process has crashed, but I'm this alive."<<endl;
   }
 }
 
