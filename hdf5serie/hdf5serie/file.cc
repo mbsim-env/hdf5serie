@@ -585,36 +585,48 @@ void File::enableSWMR() {
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: start"<<endl;
 
   if(type == writeTempNoneSWMR) {
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: close all elements"<<endl;
-    switch(getType()) {
-      case write:  closeWriter(); break;
-      case read:   closeReader(); break;
-      default: throw runtime_error("internal error");
+    try {
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: close all elements"<<endl;
+      switch(getType()) {
+        case write:  closeWriter(); break;
+        case read:   closeReader(); break;
+        default: throw runtime_error("internal error");
+      }
+
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: lock original filename"<<endl;
+      std::string newShmName;
+      Internal::SharedMemory newShm;
+      boost::interprocess::mapped_region newRegion;
+      SharedMemObject *newSharedData;
+      openOrCreateShm(filename, this,
+                      newShmName, newShm, newRegion, newSharedData);
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: move temp to original file"<<endl;
+      boost::filesystem::rename(getFilename(), filename);
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: unlock temp filename"<<endl;
+      deinitShm(sharedData, getFilename(), this, shmName);
+      shmName    = std::move(newShmName);
+      shm        = std::move(newShm);
+      region     = std::move(newRegion);
+      sharedData =           newSharedData;
+
+      tempNoneSWMR = false;
+
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: reopen all elements"<<endl;
+      switch(getType()) {
+        case write: openWriter(); break;
+        case read:  openReader(); break;
+        default: throw runtime_error("internal error");
+      }
     }
-
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: lock original filename"<<endl;
-    std::string newShmName;
-    Internal::SharedMemory newShm;
-    boost::interprocess::mapped_region newRegion;
-    SharedMemObject *newSharedData;
-    openOrCreateShm(filename, this,
-                    newShmName, newShm, newRegion, newSharedData);
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: move temp to original file"<<endl;
-    boost::filesystem::rename(getFilename(), filename);
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: unlock temp filename"<<endl;
-    deinitShm(sharedData, getFilename(), this, shmName);
-    shmName    = std::move(newShmName);
-    shm        = std::move(newShm);
-    region     = std::move(newRegion);
-    sharedData =           newSharedData;
-
-    tempNoneSWMR = false;
-
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: reopen all elements"<<endl;
-    switch(getType()) {
-      case write: openWriter(); break;
-      case read:  openReader(); break;
-      default: throw runtime_error("internal error");
+    catch(const exception &ex) {
+      msg(Atom::Error)<<"HDF5Serie: A exception was thrown during enableSWMR which is rethrown now. This may cause further undefined behaviour:\n"<<
+                        "Exception message:\n"<<ex.what()<<endl;
+      throw ex;
+    }
+    catch(...) {
+      msg(Atom::Error)<<"HDF5Serie: A exception was thrown during enableSWMR which is rethrown now. This may cause further undefined behaviour.\n"<<
+                        "Exception message: <unknown>"<<endl;
+      rethrow_exception(current_exception());
     }
   }
 
