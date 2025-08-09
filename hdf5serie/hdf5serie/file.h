@@ -243,7 +243,9 @@ namespace H5 {
       void openReader();
       //! Helper function to close the file as a reader
       void closeReader();
-      //! Helper function to open the file as a writer
+      //! Helper function to allow this process to open for writing (wait for other writers and for all readers to close)
+      void allowOpenWriter();
+      //! Helper function to open the file as a writer. allowOpenWriter must be called before
       void openWriter();
       //! Helper function to close the file as a writer
       void closeWriter();

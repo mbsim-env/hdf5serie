@@ -210,8 +210,13 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
                   shmName, shm, region, sharedData);
 
   switch(getType()) {
-    case write: openWriter(); break;
-    case read:  openReader(); break;
+    case write:
+      allowOpenWriter();
+      openWriter();
+      break;
+    case read:
+      openReader();
+      break;
     default: throw runtime_error("internal error");
   }
 }
@@ -289,34 +294,37 @@ File::FileAccess File::getType(bool originalType) {
   return write;
 }
 
-void File::openWriter() {
+void File::allowOpenWriter() {
   if(!sharedData)
     throw Exception(getPath(), "The file "+getFilename().string()+" is not writeable");
 
-  {
-    ScopedLock lock(sharedData->mutex, this, "openWriter");
-    initProcessInfo();
-    // open the writer
-    // wait until no other writer is active
-    wait(lock, showBlockMessageAfter, "Blocking until other writer has finished.", [this](){
-      return sharedData->writerState==WriterState::none;
-    });
-    // now we are the single writer on this file
-    if(sharedData->activeReaders>0) {
-      // if readers are still active set the writer state to writeRequest and notify to request that all readers close
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Set writerState=writeRequest and notify"<<endl;
-      sharedData->writerState=WriterState::writeRequest;
-      sharedData->cond.notify_all();
-        // now wait until all readers have closed
-      wait(lock, showBlockMessageAfter, "Blocking until all readers haved closed.", [this](){
-        return sharedData->activeReaders==0;
-      });
-    }
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Set writerState=active and notify"<<endl;
-    // now set the writer state to active (creation of datasets/attributes) and notify about this change
-    sharedData->writerState=WriterState::active;
+  ScopedLock lock(sharedData->mutex, this, "openWriter");
+  initProcessInfo();
+  // open the writer
+  // wait until no other writer is active
+  wait(lock, showBlockMessageAfter, "Blocking until other writer has finished.", [this](){
+    return sharedData->writerState==WriterState::none;
+  });
+  // now we are the single writer on this file
+  if(sharedData->activeReaders>0) {
+    // if readers are still active set the writer state to writeRequest and notify to request that all readers close
+    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Set writerState=writeRequest and notify"<<endl;
+    sharedData->writerState=WriterState::writeRequest;
     sharedData->cond.notify_all();
+      // now wait until all readers have closed
+    wait(lock, showBlockMessageAfter, "Blocking until all readers haved closed.", [this](){
+      return sharedData->activeReaders==0;
+    });
   }
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Set writerState=active and notify"<<endl;
+  // now set the writer state to active (creation of datasets/attributes) and notify about this change
+  sharedData->writerState=WriterState::active;
+  sharedData->cond.notify_all();
+}
+
+void File::openWriter() {
+  if(!sharedData)
+    throw Exception(getPath(), "The file "+getFilename().string()+" is not writeable");
 
   // create file
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Create HDF5 file"<<endl;
@@ -587,36 +595,30 @@ void File::enableSWMR() {
   if(type == writeTempNoneSWMR) {
     try {
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: close all elements"<<endl;
-      switch(getType()) {
-        case write:  closeWriter(); break;
-        case read:   closeReader(); break;
-        default: throw runtime_error("internal error");
-      }
+      closeWriter();
 
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: lock original filename"<<endl;
-      std::string newShmName;
-      Internal::SharedMemory newShm;
-      boost::interprocess::mapped_region newRegion;
-      SharedMemObject *newSharedData;
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeTempNoneSWMR: create shm for original filename"<<endl;
+      std::string tmpShmName;
+      Internal::SharedMemory tmpShm;
+      boost::interprocess::mapped_region tmpRegion;
+      SharedMemObject *tmpSharedData;
       openOrCreateShm(filename, this,
-                      newShmName, newShm, newRegion, newSharedData);
+                      tmpShmName, tmpShm, tmpRegion, tmpSharedData);
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeTempNoneSWMR: wait to allow writing for original filename"<<endl;
+      std::swap(shmName, tmpShmName);
+      std::swap(shm, tmpShm);
+      std::swap(region, tmpRegion);
+      std::swap(sharedData, tmpSharedData);
+      allowOpenWriter();
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: move temp to original file"<<endl;
       boost::filesystem::rename(getFilename(), filename);
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: unlock temp filename"<<endl;
-      deinitShm(sharedData, getFilename(), this, shmName);
-      shmName    = std::move(newShmName);
-      shm        = std::move(newShm);
-      region     = std::move(newRegion);
-      sharedData =           newSharedData;
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: deinit shm for temp filename"<<endl;
+      deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
 
       tempNoneSWMR = false;
 
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: reopen all elements"<<endl;
-      switch(getType()) {
-        case write: openWriter(); break;
-        case read:  openReader(); break;
-        default: throw runtime_error("internal error");
-      }
+      openWriter();
     }
     catch(const exception &ex) {
       msg(Atom::Error)<<"HDF5Serie: A exception was thrown during enableSWMR which is rethrown now. This may cause further undefined behaviour:\n"<<
