@@ -36,6 +36,9 @@
   #endif
   #include <windows.h>
 #endif
+#if !defined(NDEBUG) && !defined(_WIN32)
+  #include <boost/process.hpp>
+#endif
 
 using namespace std;
 using namespace fmatvec;
@@ -52,6 +55,32 @@ namespace {
     str<<put_time(&local_t, R"(%FT%T)")<<"."<<setfill('0')<<setw(3)<<ms.count();
     return str.str();
   }
+
+#if !defined(NDEBUG) && !defined(_WIN32)
+  // This function is only called in debug builds on linux when the program /usr/bin/lsof is installed.
+  // If so, it checks if filename is opened by any process and throws a exception is this case.
+  // The exception message will contain the filename, pid, cmd-name and user who owns a handle to filename.
+  // This function is used in debug build (on linux) to check that the IPC to close a file by all running processes is working.
+  void checkIfFileIsOpenedBySomeone(const boost::filesystem::path &filename) {
+    using namespace boost::process;
+    if(!boost::filesystem::exists("/usr/bin/lsof"))
+      return;
+    ipstream outStr;
+    child c("/usr/bin/lsof", "-F", "pcL", filename.string(), std_out > outStr, std_err > null);
+    string line;
+    string error;
+    while(getline(outStr, line)) {
+      if(line[0]=='p') error+="File "+boost::filesystem::absolute(filename).string()+" is opened by pid="+line.substr(1);
+      if(line[0]=='c') error+=" cmd="+line.substr(1);
+      if(line[0]=='L') error+=" user="+line.substr(1)+"\n";
+    }
+    c.wait();
+    if(!error.empty())
+      throw runtime_error(error);
+  }
+#else
+  #define checkIfFileIsOpenedBySomeone(filename)
+#endif
 }
 
 namespace H5 {
@@ -493,8 +522,11 @@ File::~File() {
     }
 
     // if opened with writeTempNoneSWMR but enableSWMR was not called -> rename the file now
-    if(type == writeTempNoneSWMR && tempNoneSWMR == true)
+    if(type == writeTempNoneSWMR && tempNoneSWMR == true) {
+      checkIfFileIsOpenedBySomeone(getFilename());
+      checkIfFileIsOpenedBySomeone(filename);
       boost::filesystem::rename(getFilename(), filename);
+    }
  
     deinitShm(sharedData, getFilename(), this, shmName);
   }
@@ -611,6 +643,8 @@ void File::enableSWMR() {
       std::swap(sharedData, tmpSharedData);
       allowOpenWriter();
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: move temp to original file"<<endl;
+      checkIfFileIsOpenedBySomeone(getFilename());
+      checkIfFileIsOpenedBySomeone(filename);
       boost::filesystem::rename(getFilename(), filename);
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: deinit shm for temp filename"<<endl;
       deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
@@ -801,17 +835,17 @@ void File::close() {
 
   if(id>=0) {
     // check if all object are closed now: if not -> throw internal error (with details about the opened objects)
-    ssize_t count=H5Fget_obj_count(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
+    ssize_t count=H5Fget_obj_count(id, H5F_OBJ_FILE | H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL);
     if(count<0)
       throw Exception(getPath(), "Internal error: H5Fget_obj_count failed");
-    if(count>0) {
+    if(count!=1) {
       vector<hid_t> obj(count, 0);
       ssize_t ret=H5Fget_obj_ids(id, H5F_OBJ_DATASET | H5F_OBJ_GROUP | H5F_OBJ_DATATYPE | H5F_OBJ_ATTR | H5F_OBJ_LOCAL, count, &obj[0]);
       if(ret<0)
         throw Exception(getPath(), "Internal error: H5Fget_obj_ids failed");
       vector<char> name(1000+1);
       stringstream err;
-      err<<"Internal error: Can not close file since "<<count<<" elements are still open:"<<endl;
+      err<<"Internal error: Can not close file since "<<count<<" elements (including the file itself) are still open:"<<endl;
       for(auto it : obj) {
         size_t ret=H5Iget_name(it, &name[0], 1000);
         if(ret<=0)
