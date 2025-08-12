@@ -102,15 +102,15 @@ namespace H5 {
     friend class Internal::ScopedLock;
     public:
       enum FileAccess {
-        read,              //!< Open file for reading with SWMR reading mode enabled
-        write,             //!< Open file for writing. Calling enableSWMR will switch to SWMR writing mode.
-                           //!< Note that enableSWMR will close all attributes.
-        writeTempNoneSWMR, //!< Open file for writing with a modified filename (<path>/<basename>.tempNoneSWMR.<ext>).
-                           //!< Calling enableSWMR will close the file, rename it to the normal filename (<path>/<basename>.<ext>),
-                           //!< reopen it in SWMR writing mode while all Elements of the file, except Attributes which are closed,
-                           //!< are still available (but there hid_t will change, call getID() gain if needed).
-                           //!< This is useful to avoid locking the normal filename during the none SWMR mode write tasks.
-                           //!< This way the time the file is exclusively locked (in none SWMR mode) is minimized.
+        read,            //!< Open file for reading with SWMR reading mode enabled
+        write,           //!< Open file for writing. Calling enableSWMR will switch to SWMR writing mode.
+                         //!< Note that enableSWMR will close all attributes.
+        writeWithRename, //!< Open file for writing with a modified filename (<path>/<basename>.preSWMR.<ext>).
+                         //!< Calling enableSWMR will close the file, rename it to the normal filename (<path>/<basename>.<ext>),
+                         //!< reopen it in SWMR writing mode while all Elements of the file, except Attributes which are closed,
+                         //!< are still available (but there hid_t will change, call getID() gain if needed).
+                         //!< This is useful to avoid locking the normal filename during the none SWMR mode write tasks.
+                         //!< This way the time the file is exclusively locked (in none SWMR mode) is minimized.
       };
       //! Opens the HDF5 file filename_ as a writer or reader dependent on type_.
       //! For a reader closeRequestCallback_ should be set!
@@ -155,7 +155,7 @@ namespace H5 {
       //! Internal helper function which removes the shared memory associated with filename, !!!EVEN if other process still use it!!!
       static void removeSharedMemory(const boost::filesystem::path &filename);
 
-      FileAccess getType(bool originalType=false); // returns write for write and writeTempNoneSWMR and read for read
+      FileAccess getType(bool originalType=false); // returns write for write and writeWithRename and read for read
 
     private:
       static int defaultCompression;
@@ -167,13 +167,13 @@ namespace H5 {
 
       //! The name of the file
       boost::filesystem::path filename;
-      boost::filesystem::path getFilename(bool originalFilename=false); // gets the filename dependent on the current tempNoneSWMR
+      boost::filesystem::path getFilename(bool originalFilename=false); // gets the filename dependent on the current preSWMR
 
       //! Flag if this instance is a writer or reader
       FileAccess type;
-      //! This flag is set if the file was opened in writeTempNoneSWMR mode and is currently in this mode (enableSWMR was not called yet)
+      //! This flag is set if the file was opened in writeWithRename mode and is currently in this mode (enableSWMR was not called yet)
       //! (note that type is reset to write in this case in the ctor, hence you need to used this flag)
-      bool tempNoneSWMR { false };
+      bool preSWMR { false };
 
       //! A writer can be in the following state:
       enum class WriterState {

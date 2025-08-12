@@ -38,8 +38,8 @@ namespace H5 {
   // - refresh: makes the HDF5 refresh calls
   // - flush: makes the HDF5 flush calls
   // - enableSWMR: for type=write: closes all attributes than switches File to SWMR writing mode
-  //               for type=writeTempNoneSWMR: closes all elements, rename the file, reopen all elements
-  //                                           except attributes, then switches File to SWMR writing mode
+  //               for type=writeWithRename: closes all elements, rename the file, reopen all elements
+  //                                         except attributes, then switches File to SWMR writing mode
 
   class Exception : public std::exception {
     protected:

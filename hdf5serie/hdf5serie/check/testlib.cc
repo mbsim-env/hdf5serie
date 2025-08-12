@@ -47,7 +47,7 @@ using namespace std;
 //  int i;
 //};
 
-int worker(File::FileAccess writeType);
+int worker(File::FileAccess writeType, bool callEnableSWMR);
 
 int main() {
 #ifdef _WIN32
@@ -59,13 +59,15 @@ int main() {
 #endif
 
   int ret=0;
-  ret += worker(File::write);
-  ret += worker(File::writeTempNoneSWMR);
+  ret += worker(File::write, true);
+  ret += worker(File::write, false);
+  ret += worker(File::writeWithRename, true);
+  ret += worker(File::writeWithRename, false);
 
   return ret;
 }
 
-int worker(File::FileAccess writeType) {
+int worker(File::FileAccess writeType, bool callEnableSWMR) {
   cout<<"Running with writeType = "<<writeType<<"\n";
 
   /***** SimpleDataset *****/
@@ -80,7 +82,8 @@ int worker(File::FileAccess writeType) {
   dsd->write(d);
   dsd->setDescription("testdesc");
   cout<<dsd->read()<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -100,7 +103,8 @@ int worker(File::FileAccess writeType) {
   dsd->write(d);
   dsd->setDescription("testdesc");
   cout<<dsd->read()<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -120,7 +124,8 @@ int worker(File::FileAccess writeType) {
   dsd->write(d);
   dsd->setDescription("testdesc");
   cout<<dsd->read()<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -148,7 +153,8 @@ int worker(File::FileAccess writeType) {
   vector<double> dout;
   dout=dsd->read();
   for(double d : dout) cout<<d<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -172,7 +178,8 @@ int worker(File::FileAccess writeType) {
   vector<string> dout;
   dout=dsd->read();
   for(auto & d : dout) cout<<d<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -196,7 +203,8 @@ int worker(File::FileAccess writeType) {
   vector<complex<double>> dout;
   dout=dsd->read();
   for(auto & d : dout) cout<<d<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -234,7 +242,8 @@ int worker(File::FileAccess writeType) {
   double d=5.67;
   dsd->write(d);
   cout<<dsd->read()<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -254,7 +263,8 @@ int worker(File::FileAccess writeType) {
   string d="sdlfkjsf";
   dsd->write(d);
   cout<<dsd->read()<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -274,7 +284,8 @@ int worker(File::FileAccess writeType) {
   complex<double> d{3.5,8.2};
   dsd->write(d);
   cout<<dsd->read()<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -306,7 +317,8 @@ int worker(File::FileAccess writeType) {
   vector<double> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -335,7 +347,8 @@ int worker(File::FileAccess writeType) {
   vector<string> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -364,7 +377,8 @@ int worker(File::FileAccess writeType) {
   vector<complex<double>> dout;
   dout=dsd->read();
   for(unsigned int i=0; i<min(dout.size(), static_cast<size_t>(20)); i++) cout<<dout[i]<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
   {
   File file("test.h5", File::read);
@@ -379,7 +393,7 @@ int worker(File::FileAccess writeType) {
 
   /***** MYTIMESERIE *****/
   cout<<"TIMESERIE\n";
-  auto write = [writeType](const string &filename) {
+  auto write = [writeType, callEnableSWMR](const string &filename) {
     File file(filename, writeType);
     VectorSerie<double> *ts=file.createChildObject<VectorSerie<double> >("timeserie")(3);
     vector<string> colhead;
@@ -417,7 +431,8 @@ int worker(File::FileAccess writeType) {
     dataComplex.emplace_back(4.4,8.2);
     dataComplex.emplace_back(5.4,9.2);
     tsComplex->append(dataComplex);
-    file.enableSWMR();
+    if(callEnableSWMR)
+      file.enableSWMR();
   };
   write("test2d.h5");
   {
@@ -485,7 +500,8 @@ int worker(File::FileAccess writeType) {
   for(auto & r : out)
     for(double c : r)
       cout<<c<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
 
   /***** Attribute vector<vector<string>> *****/
@@ -503,7 +519,8 @@ int worker(File::FileAccess writeType) {
   for(auto & r : out)
     for(auto & c : r)
       cout<<c<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
 
   /***** Attribute vector<vector<complex<double>>> *****/
@@ -521,7 +538,8 @@ int worker(File::FileAccess writeType) {
   for(auto & r : out)
     for(auto & c : r)
       cout<<c<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
 
   /***** Dataset vector<vector<double>> *****/
@@ -538,7 +556,8 @@ int worker(File::FileAccess writeType) {
   for(auto & r : out)
     for(double c : r)
       cout<<c<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
 
   /***** Dataset vector<vector<string>> *****/
@@ -555,7 +574,8 @@ int worker(File::FileAccess writeType) {
   for(auto & r : out)
     for(auto & c : r)
       cout<<c<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
 
   /***** Dataset vector<vector<complex<double>>> *****/
@@ -572,7 +592,8 @@ int worker(File::FileAccess writeType) {
   for(auto & r : out)
     for(auto & c : r)
       cout<<c<<endl;
-  file.enableSWMR();
+  if(callEnableSWMR)
+    file.enableSWMR();
   }
 
 //  /***** Dataset vector<vector<double>> fmatvec *****/

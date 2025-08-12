@@ -30,7 +30,7 @@ void HDF5SERIE_CLASS<T>::close() {
 
 template<class T>
 void HDF5SERIE_CLASS<T>::enableSWMR() {
-  if(file->getType(true) == File::writeTempNoneSWMR)
+  if(file->getType(true) == File::writeWithRename)
     id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
   HDF5SERIE_BASECLASS::enableSWMR();
 }
@@ -102,7 +102,7 @@ void HDF5SERIE_CLASS<vector<T> >::close() {
 
 template<class T>
 void HDF5SERIE_CLASS<vector<T> >::enableSWMR() {
-  if(file->getType(true) == File::writeTempNoneSWMR)
+  if(file->getType(true) == File::writeWithRename)
     id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
   HDF5SERIE_BASECLASS::enableSWMR();
 }
@@ -188,7 +188,7 @@ void HDF5SERIE_CLASS<vector<vector<T> > >::close() {
 
 template<class T>
 void HDF5SERIE_CLASS<vector<vector<T> > >::enableSWMR() {
-  if(file->getType(true) == File::writeTempNoneSWMR)
+  if(file->getType(true) == File::writeWithRename)
     id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
   HDF5SERIE_BASECLASS::enableSWMR();
 }

@@ -186,7 +186,7 @@ void Group::flush() {
 }
 
 void Group::enableSWMR() {
-  if(file->getType(true) == File::writeTempNoneSWMR)
+  if(file->getType(true) == File::writeWithRename)
     id.reset(H5Gopen2(parent->getID(), name.c_str(), H5P_DEFAULT), &H5Gclose);
   GroupBase::enableSWMR();
 }

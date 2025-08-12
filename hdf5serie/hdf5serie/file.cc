@@ -256,8 +256,8 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
   refreshCallback(refreshCallback_),
   processUUID(boost::uuids::random_generator()()) {
 
-  if(type==writeTempNoneSWMR)
-    tempNoneSWMR = true;
+  if(type==writeWithRename)
+    preSWMR = true;
 
   if(getenv("HDF5SERIE_DEBUG"))
     setMessageStreamActive(Atom::Debug, true);
@@ -316,10 +316,10 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
     // convert filename to valid boost interprocess name (cname)
     try {
       // try to open the shared memory ...
-      self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Try to open shared memory named "<<shmName<<endl;
-      shm=SharedMemory(ipc::open_only, shmName.c_str(), ipc::read_write);
-      region=ipc::mapped_region(shm, ipc::read_write); // map memory
-      sharedData=static_cast<SharedMemObject*>(region.get_address()); // get pointer
+        self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Try to open shared memory named "<<shmName<<endl;
+        shm=SharedMemory(ipc::open_only, shmName.c_str(), ipc::read_write);
+        region=ipc::mapped_region(shm, ipc::read_write); // map memory
+        sharedData=static_cast<SharedMemObject*>(region.get_address()); // get pointer
     }
     catch(...) {
       // ... if it failed, create the shared memory
@@ -341,8 +341,8 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
 boost::filesystem::path File::getFilename(bool originalFilename) {
   if(originalFilename)
     return filename;
-  if(tempNoneSWMR)
-    return filename.parent_path()/(filename.stem().string()+".tempNoneSWMR"+filename.extension().string());
+  if(preSWMR)
+    return filename.parent_path()/(filename.stem().string()+".preSWMR"+filename.extension().string());
   return filename;
 }
 
@@ -399,7 +399,8 @@ void File::openWriter() {
     // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
     checkCall(H5Pset_file_locking(faid, false, true));
   #endif
-  if(type==write || (type==writeTempNoneSWMR && tempNoneSWMR)) {
+  checkIfFileIsOpenedBySomeone("File::openWriter::precreate/preopen", getFilename());
+  if(type==write || (type==writeWithRename && preSWMR)) {
     ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
     checkCall(H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED));
     id.reset(H5Fcreate(getFilename().string().c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
@@ -554,11 +555,11 @@ File::~File() {
       default: throw runtime_error("internal error");
     }
 
-    // if opened with writeTempNoneSWMR but enableSWMR was not called -> rename the file now
-    if(type == writeTempNoneSWMR && tempNoneSWMR == true) {
-      checkIfFileIsOpenedBySomeone("File::~File", getFilename());
-      checkIfFileIsOpenedBySomeone("File::~File", filename);
-      boost::filesystem::rename(getFilename(), filename);
+    // if opened with writeWithRename but enableSWMR was not called -> rename the file now
+    if(type == writeWithRename && preSWMR == true) {
+      checkIfFileIsOpenedBySomeone("File::~File::prerename", getFilename());
+      checkIfFileIsOpenedBySomeone("File::~File::prerename", filename);
+        boost::filesystem::rename(getFilename(), filename);
     }
  
     deinitShm(sharedData, getFilename(), this, shmName);
@@ -657,34 +658,34 @@ void File::enableSWMR() {
     throw Exception(getPath(), "enableSWMR() can only be called for writing files");
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: start"<<endl;
 
-  if(type == writeTempNoneSWMR) {
+  if(type == writeWithRename) {
     try {
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: close all elements"<<endl;
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: close all elements"<<endl;
       closeWriter();
 
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeTempNoneSWMR: create shm for original filename"<<endl;
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeWithRename: create shm for original filename"<<endl;
       std::string tmpShmName;
       Internal::SharedMemory tmpShm;
       boost::interprocess::mapped_region tmpRegion;
       SharedMemObject *tmpSharedData;
       openOrCreateShm(filename, this,
                       tmpShmName, tmpShm, tmpRegion, tmpSharedData);
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeTempNoneSWMR: wait to allow writing for original filename"<<endl;
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeWithRename: wait to allow writing for original filename"<<endl;
       std::swap(shmName, tmpShmName);
       std::swap(shm, tmpShm);
       std::swap(region, tmpRegion);
       std::swap(sharedData, tmpSharedData);
       allowOpenWriter();
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: move temp to original file"<<endl;
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: move temp to original file"<<endl;
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", filename);
       boost::filesystem::rename(getFilename(), filename);
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: deinit shm for temp filename"<<endl;
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: deinit shm for temp filename"<<endl;
       deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
 
-      tempNoneSWMR = false;
+      preSWMR = false;
 
-      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeTempNoneSWMR: reopen all elements"<<endl;
+      msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: reopen all elements"<<endl;
       openWriter();
     }
     catch(const exception &ex) {

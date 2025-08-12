@@ -234,7 +234,7 @@ namespace H5 {
 
   template<class T>
   void VectorSerie<T>::enableSWMR() {
-    if(file->getType(true) == File::writeTempNoneSWMR)
+    if(file->getType(true) == File::writeWithRename)
       openIDandFileDataSpaceID();
     Dataset::enableSWMR();
   }
