@@ -35,6 +35,7 @@
   #  define WIN32_LEAN_AND_MEAN
   #endif
   #include <windows.h>
+  #include <io.h>
 #endif
 #if !defined(NDEBUG) && !defined(_WIN32)
   #include <boost/process.hpp>
@@ -84,42 +85,32 @@ namespace {
 
   // call this function after opening a HDF5 file using H5F... to set the file flags to not to inherit a open
   // file descriptor in a started subprocess.
-  void skipFileInherit(H5::ScopedHID &id, const boost::filesystem::path &filename) {
-    unsigned long fno;
-    #if H5_VERSION_GE(1, 12, 0)
-      checkCall(H5Fget_fileno(id, &fno));
-    #else
+  void noFileHandleInherit(H5::ScopedHID &id) {
+    // check if we are running on sec2 VFD
+    H5::ScopedHID fapl(H5Fget_access_plist(id), &H5Pclose);
+    auto driver = H5Pget_driver(fapl);
+    // if so, get the file descriptor and mark the file flags as none inherit to child processes
+    if(driver == H5FD_SEC2) {
+      void *fileHandle;
+      H5::checkCall(H5Fget_vfd_handle(id, H5P_DEFAULT, &fileHandle));
+      auto fno = *static_cast<int*>(fileHandle);
+      if(fno == -1)
+        throw runtime_error("Unable to get file descriptor.");
       #ifdef _WIN32
-        #error "HDF5 version >= 1.12.0 is required on Windows"
+        auto handle = reinterpret_cast<HANDLE>(_get_osfhandle(fno));
+        if(handle == INVALID_HANDLE_VALUE)
+          throw runtime_error("Unable to get Windows file handle from the file number.");
+        if(SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0)==0)
+          throw runtime_error("Unable to set Windows file handle flag.");
       #else
-        using namespace boost::process;
-        if(!boost::filesystem::exists("/usr/bin/lsof"))
-          throw runtime_error("This program was build with a hdf5 version < 1.12.0. In this case the '/usr/bin/lsof' program is needed at runtime but it was not found");
-        ipstream outStr;
-        child c("/usr/bin/lsof", "-F", "pf", filename.string(), std_out > outStr, std_err > null);
-        string line;
-        bool use = false;
-        while(getline(outStr, line)) {
-          if(line[0]=='p' && line.substr(1)==to_string(getpid())) use = true;
-          if(line[0]=='f' && use) fno = stoi(line.substr(1));
-        }
-        c.wait();
+        int flags = fcntl(fno, F_GETFD);
+        if(flags == -1)
+          throw runtime_error("Unable to get Linux file flags.");
+        flags |= FD_CLOEXEC;
+        if(fcntl(fno, F_SETFD, flags) == -1)
+          throw runtime_error("Unable to set Linux file flags.");
       #endif
-    #endif
-    #ifdef _WIN32
-      auto handle = _get_osfhandle(fno);
-      if(handle == INVALID_HANDLE_VALUE)
-        throw runtime_error("Unable to get Windows file handle from the file number.");
-      if(SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0)==0)
-        throw runtime_error("Unable to set Windows file handle flag.");
-    #else
-      int flags = fcntl(fno, F_GETFD);
-      if(flags == -1)
-        throw runtime_error("Unable to get Linux file flags.");
-      flags |= FD_CLOEXEC;
-      if(fcntl(fno, F_SETFD, flags) == -1)
-        throw runtime_error("Unable to set Linux file flags.");
-    #endif
+    }
   }
 }
 
@@ -415,7 +406,7 @@ void File::openWriter() {
   }
   else
     id.reset(H5Fopen(getFilename().string().c_str(), H5F_ACC_RDWR, faid), &H5Fclose);
-  skipFileInherit(id, getFilename());
+  noFileHandleInherit(id);
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Create HDF5 file: done"<<endl;
 }
 
@@ -523,7 +514,7 @@ void File::openReader() {
   auto hid=H5Fopen(getFilename().string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid);
   if(hid>=0)
     id.reset(hid, &H5Fclose);
-  skipFileInherit(id, getFilename());
+  noFileHandleInherit(id);
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Open HDF5 file: done"<<endl;
 }
 
