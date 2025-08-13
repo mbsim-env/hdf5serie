@@ -136,8 +136,6 @@ namespace H5 {
       static void setDefaultChunkSize(int chunk) { defaultChunkSize=chunk; }
       static int getDefaultCacheSize() { return defaultCacheSize; }
       static void setDefaultCacheSize(int cache) { defaultCacheSize=cache; }
-      static const std::chrono::milliseconds& getShowBlockMessageAfter() { return showBlockMessageAfter; }
-      static void setShowBlockMessageAfter(const std::chrono::milliseconds& relTime) { showBlockMessageAfter=relTime; }
 
       //! Refresh the dataset of a reader
       void refresh() override;
@@ -161,7 +159,6 @@ namespace H5 {
       static int defaultCompression;
       static int defaultChunkSize;
       static int defaultCacheSize;
-      static std::chrono::milliseconds showBlockMessageAfter;
 
       void close() override;
 

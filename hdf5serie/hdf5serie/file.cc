@@ -47,11 +47,10 @@ using namespace H5::Internal;
 namespace ipc = boost::interprocess;
 
 namespace {
-  auto now() {
-    auto now = chrono::system_clock::now();
-    auto t = chrono::system_clock::to_time_t(now);
+  auto now(const chrono::system_clock::time_point &currentTime = chrono::system_clock::now()) {
+    auto t = chrono::system_clock::to_time_t(currentTime);
     auto local_t = *localtime(&t);
-    auto ms = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    auto ms = chrono::duration_cast<chrono::milliseconds>(currentTime.time_since_epoch()) % 1000;
     stringstream str;
     str<<put_time(&local_t, R"(%FT%T)")<<"."<<setfill('0')<<setw(3)<<ms.count();
     return str.str();
@@ -119,7 +118,6 @@ namespace H5 {
 int File::defaultCompression=1;
 int File::defaultChunkSize=100;
 int File::defaultCacheSize=100;
-std::chrono::milliseconds File::showBlockMessageAfter=500ms;
 
 namespace Internal {
   // This class is similar to boost::interprocess::scoped_lock but prints debug messages.
@@ -362,6 +360,7 @@ void File::allowOpenWriter() {
   initProcessInfo();
   // open the writer
   // wait until no other writer is active
+  const static std::chrono::milliseconds showBlockMessageAfter(Settings::getValue("messages/showBlockMessageAfter", 500));
   wait(lock, showBlockMessageAfter, "Blocking until other writer has finished.", [this](){
     return sharedData->writerState==WriterState::none;
   });
@@ -454,8 +453,9 @@ void File::stillAlivePing() {
       auto it=sharedData->processes.begin();
       while(it!=sharedData->processes.end()) {
         const static int HDF5SERIE_FIXAFTER=getenv("HDF5SERIE_FIXAFTER") ? boost::lexical_cast<int>(getenv("HDF5SERIE_FIXAFTER")) : 0;
+        const static int fixAfter = Settings::getValue("keepAlive/fixAfter", 3000);
         if(it->lastAliveTime+boost::posix_time::milliseconds(
-           HDF5SERIE_FIXAFTER>0 ? HDF5SERIE_FIXAFTER : Settings::getValue("keepAlive/fixAfter", 3000))<curIt->lastAliveTime) {
+           HDF5SERIE_FIXAFTER>0 ? HDF5SERIE_FIXAFTER : fixAfter)<curIt->lastAliveTime) {
           msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
                            " Assume that this process crashed. Remove it from shared memory."<<endl;
           if(it->type==read) {
@@ -475,7 +475,8 @@ void File::stillAlivePing() {
       }
     }
     // this is a boost thread interruption point
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(Settings::getValue("keepAlive/pingFrequency", 1000)));
+    const static int pingFreq = Settings::getValue("keepAlive/pingFrequency", 1000);
+    boost::this_thread::sleep_for(boost::chrono::milliseconds(pingFreq));
   }
 }
 
@@ -486,6 +487,7 @@ void File::openReader() {
     initProcessInfo();
     // open file as a reader
     // wait until either no writer exists or the writer is in SWMR state
+    const static std::chrono::milliseconds showBlockMessageAfter(Settings::getValue("messages/showBlockMessageAfter", 500));
     wait(lock, showBlockMessageAfter, "Blocking until no writer exists or the writer is in SWMR state.", [this](){
       return sharedData->writerState==WriterState::none || sharedData->writerState==WriterState::swmr;
     });
@@ -723,10 +725,11 @@ void File::wait(ScopedLock &lock, const std::chrono::milliseconds& relTime,
   if(msgAct(Atom::Debug))
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Waiting for: "<<blockingMsg<<endl;
   bool blockMsgPrinted=false;
+  auto blockTime = chrono::system_clock::now();
   if(!sharedData->cond.wait_for(lock, relTime, [&pred](){ return pred(); })) {
     // print a message if this call will block
     if(!blockingMsg.empty() && !pred()) {
-      msg(Atom::Info)<<getFilename().filename().string()<<": "<<now()<<": "<<blockingMsg<<endl;
+      msg(Atom::Info)<<getFilename().filename().string()<<": "<<now(blockTime)<<": "<<blockingMsg<<endl;
       blockMsgPrinted=true;
     }
     sharedData->cond.wait(lock, [&pred](){ return pred(); });
