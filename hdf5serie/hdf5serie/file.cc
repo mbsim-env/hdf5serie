@@ -111,6 +111,18 @@ namespace {
       #endif
     }
   }
+
+  // a boost ipc file lock must always be the same file_lock object for the same lock-file within a process
+  ipc::file_lock& getFileLockObj(const boost::filesystem::path &filename) {
+    static std::mutex m;
+    std::scoped_lock lock(m);
+    static map<boost::filesystem::path, ipc::file_lock> lockMap;
+    auto it = lockMap.find(filename);
+    if(it != lockMap.end())
+      return it->second;
+    return lockMap.emplace_hint(it, filename, ipc::file_lock(filename.string().c_str()))->second;
+  }
+
 }
 
 namespace H5 {
@@ -231,15 +243,37 @@ class Settings {
     static T getValue(string path, const T& defaultValue) {
       boost::algorithm::replace_all(path, "/", ".");
       boost::property_tree::ptree pt;
-      if(boost::filesystem::exists(getFileName()))
-        boost::property_tree::ini_parser::read_ini(getFileName().string(), pt);
-      else
-        boost::filesystem::create_directories(getFileName().parent_path());
+      auto filename = getFileName();
+      if(!boost::filesystem::is_directory(filename.parent_path()))
+        boost::filesystem::create_directories(filename.parent_path());
+
+      // threads lock using mutex
+      static std::mutex m;
+      std::scoped_lock lockThread(m);
+
+      // interprocess lock using file lock: boost ipc filelocks are unspecified regarding thread locking -> that's why we lock threads before
+      boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
+      { std::ofstream dummy(filenameLock.string()); } // create the file
+#ifdef _WIN32
+      { // make lock file hidden on windows
+        auto attrs = GetFileAttributesA(filenameLock.string().c_str());
+        if(attrs != INVALID_FILE_ATTRIBUTES)
+          SetFileAttributesA(filenameLock.string().c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
+      }
+#endif
+      // exclusively lock the file
+      ipc::file_lock &fileLock = getFileLockObj(filenameLock.string().c_str());
+      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: settings"<<endl;
+      ipc::scoped_lock lock(fileLock);
+      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": file locked: settings"<<endl;
+
+      if(boost::filesystem::exists(filename))
+        boost::property_tree::ini_parser::read_ini(filename.string(), pt);
       boost::optional<T> v=pt.get_optional<T>(path);
       if(v)
         return v.get();
       pt.put(path, defaultValue);
-      boost::property_tree::ini_parser::write_ini(getFileName().string(), pt);
+      boost::property_tree::ini_parser::write_ini(filename.string(), pt);
       return defaultValue;
     }
 };
@@ -293,7 +327,12 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
     return;
   // create inter process shared memory atomically
   self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Touch file"<<endl;
-  // at least using wine we cannot use filename as lock file itself, its crashing
+
+  // threads lock using mutex
+  static std::mutex m;
+  std::scoped_lock lockThread(m);
+
+  // interprocess lock using file lock: boost ipc filelocks are unspecified regarding thread locking -> that's why we lock threads before
   boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
   { std::ofstream dummy(filenameLock.string()); } // create the file
 #ifdef _WIN32
@@ -306,7 +345,7 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
   // now the file exists and we can create the shm name (which uses boost::filesystem::canonical)
   shmName=createShmName(filename);
   // exclusively lock the file to atomically create or open a shared memory associated with this file
-  ipc::file_lock fileLock(filenameLock.string().c_str());
+  ipc::file_lock &fileLock = getFileLockObj(filenameLock.string().c_str());
   {
     self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: openOrCreateShm"<<endl;
     ipc::scoped_lock lock(fileLock);
@@ -523,9 +562,13 @@ void File::openReader() {
 
 void File::deinitShm(SharedMemObject *sharedData, const boost::filesystem::path &filename, File *self, const std::string &shmName) {
   if(sharedData) {
-    // at least using wine we cannot use filename as lock file itself, its crashing
+    // threads lock using mutex
+    static std::mutex m;
+    std::scoped_lock lockThread(m);
+
+    // interprocess lock using file lock: boost ipc filelocks are unspecified regarding thread locking -> that's why we lock threads before
     boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
-    ipc::file_lock fileLock(filenameLock.string().c_str());//MISSING file_lock are not very portable -> use a named mutex (the mutex in the shm may be obsolte than)
+    ipc::file_lock &fileLock = getFileLockObj(filenameLock.string().c_str());
     {
       self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: dtor"<<endl;
       ipc::scoped_lock lockF(fileLock);
@@ -792,8 +835,12 @@ void File::listenForRequest() {
 }
 
 void File::dumpSharedMemory(const boost::filesystem::path &filename) {
-  // exclusively lock the file to atomically open the shared memory associated with this file
-  ipc::file_lock fileLock(filename.string().c_str());
+  // threads lock using mutex
+  static std::mutex m;
+  std::scoped_lock lockThread(m);
+
+  // interprocess lock using file lock: boost ipc filelocks are unspecified regarding thread locking -> that's why we lock threads before
+  ipc::file_lock &fileLock = getFileLockObj(filename.string().c_str());
   {
     msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: dumpSharedMemory"<<endl;
     ipc::scoped_lock lock(fileLock);
