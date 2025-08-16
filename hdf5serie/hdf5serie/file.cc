@@ -114,8 +114,11 @@ namespace {
 
   // a boost ipc file lock must always be the same file_lock object for the same lock-file within a process
   ipc::file_lock& getFileLockObj(const boost::filesystem::path &filename) {
+    // getFileLockObj may be called from the main thread (open/close hdf5-files) and from the ping thread (via Settings::getValue)
+    // -> we need to synchronize threads here
     static std::mutex m;
     std::scoped_lock lock(m);
+
     static map<boost::filesystem::path, ipc::file_lock> lockMap;
     auto it = lockMap.find(filename);
     if(it != lockMap.end())
@@ -247,7 +250,11 @@ class Settings {
       if(!boost::filesystem::is_directory(filename.parent_path()))
         boost::filesystem::create_directories(filename.parent_path());
 
-      // threads lock using mutex
+      // getValue may be called from the main thread and from the ping thread!
+      // Since the boost file-lock will synchronize over processes but not over thread within a process
+      // we need to synchronize thread here
+      // exclusively lock thread (to synchronize threads)
+      // no other place will operate on the config file -> a local mutex is enought
       static std::mutex m;
       std::scoped_lock lockThread(m);
 
@@ -261,7 +268,7 @@ class Settings {
           SetFileAttributesA(filenameLock.string().c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
       }
 #endif
-      // exclusively lock the file
+      // exclusively lock the file (to synchronize processes)
       ipc::file_lock &fileLock = getFileLockObj(filenameLock.string().c_str());
       Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: settings"<<endl;
       ipc::scoped_lock lock(fileLock);
@@ -328,11 +335,6 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
   // create inter process shared memory atomically
   self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Touch file"<<endl;
 
-  // threads lock using mutex
-  static std::mutex m;
-  std::scoped_lock lockThread(m);
-
-  // interprocess lock using file lock: boost ipc filelocks are unspecified regarding thread locking -> that's why we lock threads before
   boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
   { std::ofstream dummy(filenameLock.string()); } // create the file
 #ifdef _WIN32
@@ -562,11 +564,6 @@ void File::openReader() {
 
 void File::deinitShm(SharedMemObject *sharedData, const boost::filesystem::path &filename, File *self, const std::string &shmName) {
   if(sharedData) {
-    // threads lock using mutex
-    static std::mutex m;
-    std::scoped_lock lockThread(m);
-
-    // interprocess lock using file lock: boost ipc filelocks are unspecified regarding thread locking -> that's why we lock threads before
     boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
     ipc::file_lock &fileLock = getFileLockObj(filenameLock.string().c_str());
     {
@@ -835,11 +832,6 @@ void File::listenForRequest() {
 }
 
 void File::dumpSharedMemory(const boost::filesystem::path &filename) {
-  // threads lock using mutex
-  static std::mutex m;
-  std::scoped_lock lockThread(m);
-
-  // interprocess lock using file lock: boost ipc filelocks are unspecified regarding thread locking -> that's why we lock threads before
   ipc::file_lock &fileLock = getFileLockObj(filename.string().c_str());
   {
     msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: dumpSharedMemory"<<endl;
