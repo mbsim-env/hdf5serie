@@ -164,64 +164,6 @@ namespace Internal {
       string_view msg;
   };
 
-  template<int N>
-  void ConditionVariable<N>::wait(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
-                                  const function<bool()> &pred) {
-    while(!wait_for(externLock, std::chrono::milliseconds::max(), pred)) {
-    }
-  }
-
-  template<int N>
-  bool ConditionVariable<N>::wait_for(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
-                                      const std::chrono::milliseconds& relTime,
-                                      const std::function<bool()> &pred) {
-    auto startTime = std::chrono::steady_clock::now();
-    if(!externLock)
-      throw boost::interprocess::lock_exception();
-    auto waiterUUID=boost::uuids::random_generator()();
-    while(!pred()) {
-      {
-        boost::interprocess::scoped_lock waiterLock(waiterMutex);
-        if(waiter.size()==N)
-          throw runtime_error("Too many threads are waiting in ConditionVariable.");
-        if(find(waiter.begin(), waiter.end(), waiterUUID)==waiter.end())
-          waiter.emplace_back(waiterUUID);
-      }
-      externLock.unlock();
-
-      bool timeExceeded = false;
-      bool exitLoop;
-      do {
-        using namespace chrono_literals;
-        this_thread::sleep_for(1000ms/25);
-        {
-          boost::interprocess::scoped_lock waiterLock(waiterMutex);
-          exitLoop = find(waiter.begin(), waiter.end(), waiterUUID)==waiter.end();
-        }
-        if(std::chrono::steady_clock::now()-startTime>relTime) {
-          boost::interprocess::scoped_lock waiterLock(waiterMutex);
-          if(auto it=find(waiter.begin(), waiter.end(), waiterUUID); it!=waiter.end())
-            waiter.erase(it);
-          timeExceeded = true;
-          break;
-        }
-      }
-      while(!exitLoop);
-
-      externLock.lock();
-
-      if(timeExceeded)
-        return false;
-    }
-    return true;
-  }
-
-  template<int N>
-  void ConditionVariable<N>::notify_all() {
-    boost::interprocess::scoped_lock waiterLock(waiterMutex);
-    // no wakeup of all others needed since polling is used
-    waiter.clear();
-  }
 }
 
 class Settings {
@@ -766,7 +708,10 @@ void File::wait(ScopedLock &lock, const std::chrono::milliseconds& relTime,
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Waiting for: "<<blockingMsg<<endl;
   bool blockMsgPrinted=false;
   auto blockTime = chrono::system_clock::now();
-  if(!sharedData->cond.wait_for(lock, relTime, [&pred](){ return pred(); })) {
+  // newer boost have also a wait_for and can use std::chrono but older have only timed_wait which can only use boost::posix_time
+  if(!sharedData->cond.timed_wait(lock,
+    boost::posix_time::second_clock::universal_time()+boost::posix_time::milliseconds(relTime.count()),
+    [&pred](){ return pred(); })) {
     // print a message if this call will block
     if(!blockingMsg.empty() && !pred()) {
       msg(Atom::Info)<<getFilename().filename().string()<<": "<<now(blockTime)<<": "<<blockingMsg<<endl;
