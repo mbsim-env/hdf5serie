@@ -25,7 +25,7 @@
 
 #include <config.h>
 #include <hdf5serie/file.h>
-#include <boost/interprocess/sync/file_lock.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -112,19 +112,8 @@ namespace {
     }
   }
 
-  // a boost ipc file lock must always be the same file_lock object for the same lock-file within a process
-  ipc::file_lock& getFileLockObj(const boost::filesystem::path &filename) {
-    // getFileLockObj may be called from the main thread (open/close hdf5-files) and from the ping thread (via Settings::getValue)
-    // -> we need to synchronize threads here
-    static std::mutex m;
-    std::scoped_lock lock(m);
-
-    static map<boost::filesystem::path, ipc::file_lock> lockMap;
-    auto it = lockMap.find(filename);
-    if(it != lockMap.end())
-      return it->second;
-    return lockMap.emplace_hint(it, filename, ipc::file_lock(filename.string().c_str()))->second;
-  }
+  // a named ipc mutex to guard the open/create and destroy of the shared memory (syncronization primitive) for a file from multiple access (from threads and processes)
+  ipc::named_mutex mutexSyncPrim(ipc::open_or_create, "hdf5serie_mutex_syncprim");
 
 }
 
@@ -192,29 +181,11 @@ class Settings {
       if(!boost::filesystem::is_directory(filename.parent_path()))
         boost::filesystem::create_directories(filename.parent_path());
 
-      // getValue may be called from the main thread and from the ping thread!
-      // Since the boost file-lock will synchronize over processes but not over thread within a process
-      // we need to synchronize thread here
-      // exclusively lock thread (to synchronize threads)
-      // no other place will operate on the config file -> a local mutex is enought
-      static std::mutex m;
-      std::scoped_lock lockThread(m);
-
-      // interprocess lock using file lock: boost ipc filelocks are unspecified regarding thread locking -> that's why we lock threads before
-      boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
-      { std::ofstream dummy(filenameLock.string()); } // create the file
-#ifdef _WIN32
-      { // make lock file hidden on windows
-        auto attrs = GetFileAttributesA(filenameLock.string().c_str());
-        if(attrs != INVALID_FILE_ATTRIBUTES)
-          SetFileAttributesA(filenameLock.string().c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
-      }
-#endif
-      // exclusively lock the file (to synchronize processes)
-      ipc::file_lock &fileLock = getFileLockObj(filenameLock.string().c_str());
-      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: settings"<<endl;
-      ipc::scoped_lock lock(fileLock);
-      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": file locked: settings"<<endl;
+      // exclusively lock mutex (to synchronize processes and threads)
+      static ipc::named_mutex m(ipc::open_or_create, "hdf5serie_mutex_settings_file"); // a named ipc mutex to guard the settings file from multiple access (from threads and processes)
+      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the named mutex 'hdf5serie_mutex_settings_file'"<<endl;
+      ipc::scoped_lock lock(m);
+      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": locked"<<endl;
 
       if(boost::filesystem::exists(filename))
         boost::property_tree::ini_parser::read_ini(filename.string(), pt);
@@ -277,23 +248,12 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
   // create inter process shared memory atomically
   self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Touch file"<<endl;
 
-  boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
-  { std::ofstream dummy(filenameLock.string()); } // create the file
-#ifdef _WIN32
-  { // make lock file hidden on windows
-    auto attrs = GetFileAttributesA(filenameLock.string().c_str());
-    if(attrs != INVALID_FILE_ATTRIBUTES)
-      SetFileAttributesA(filenameLock.string().c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
-  }
-#endif
-  // now the file exists and we can create the shm name (which uses boost::filesystem::canonical)
   shmName=createShmName(filename);
-  // exclusively lock the file to atomically create or open a shared memory associated with this file
-  ipc::file_lock &fileLock = getFileLockObj(filenameLock.string().c_str());
+  // exclusively lock the global shm mutex
   {
-    self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: openOrCreateShm"<<endl;
-    ipc::scoped_lock lock(fileLock);
-    self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": File locked: openOrCreateShm"<<endl;
+    self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the global shm mutex: openOrCreateShm"<<endl;
+    ipc::scoped_lock lock(mutexSyncPrim);
+    self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Locked: openOrCreateShm"<<endl;
     // convert filename to valid boost interprocess name (cname)
     try {
       // try to open the shared memory ...
@@ -313,9 +273,9 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
       ScopedLock mutexLock(sharedData->mutex, self, "openOrCreateShm, increment shmUseCount");
       sharedData->shmUseCount++;
     }
-    self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock file: openOrCreateShm"<<endl;
+    self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock: openOrCreateShm"<<endl;
   }
-  // now the process shared memory is created or opened atomically and the file lock is releases
+  // now the process shared memory is created or opened atomically and the global mutex lock is releases
   // from now on this shared memory is used for any syncronization/communiation between the processes
 }
 
@@ -506,11 +466,9 @@ void File::openReader() {
 
 void File::deinitShm(SharedMemObject *sharedData, const boost::filesystem::path &filename, File *self, const std::string &shmName) {
   if(sharedData) {
-    boost::filesystem::path filenameLock(filename.parent_path()/("."+filename.filename().string()+".lock"));
-    ipc::file_lock &fileLock = getFileLockObj(filenameLock.string().c_str());
     {
-      self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: dtor"<<endl;
-      ipc::scoped_lock lockF(fileLock);
+      self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the global mutex: dtor"<<endl;
+      ipc::scoped_lock lockF(mutexSyncPrim);
       self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": File locked: dtor"<<endl;
       size_t localShmUseCount;
       {
@@ -519,14 +477,14 @@ void File::deinitShm(SharedMemObject *sharedData, const boost::filesystem::path 
         localShmUseCount=sharedData->shmUseCount;
         self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Decrement shmUseCount"<<endl;
       }
-      // sharedData->shmUseCount cannot be incremente by another process since we sill own the file lock (but the mutex is unlocked now)
+      // sharedData->shmUseCount cannot be incremente by another process since we sill own the global named mutex
       if(localShmUseCount==0) {
         self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Shared memory is no longer used, remove it"<<endl;
         sharedData->~SharedMemObject(); // call destructor of SharedMemObject
         // region does not need destruction
         SharedMemoryRemove(shmName.c_str()); // effectively destructs shm
       }
-      self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock file: dtor"<<endl;
+      self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock: dtor"<<endl;
     }
   }
 }
@@ -777,10 +735,9 @@ void File::listenForRequest() {
 }
 
 void File::dumpSharedMemory(const boost::filesystem::path &filename) {
-  ipc::file_lock &fileLock = getFileLockObj(filename.string().c_str());
   {
-    msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock file: dumpSharedMemory"<<endl;
-    ipc::scoped_lock lock(fileLock);
+    msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the global mutex: dumpSharedMemory"<<endl;
+    ipc::scoped_lock lock(mutexSyncPrim);
     msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": File locked: dumpSharedMemory"<<endl;
     // convert filename to valid boost interprocess name (cname)
     string shmName=createShmName(filename);
@@ -822,22 +779,13 @@ void File::dumpSharedMemory(const boost::filesystem::path &filename) {
     for(auto &pi : sharedData->processes)
       cout<<"processes: UUID="<<pi.processUUID<<" lastAliveTime="<<pi.lastAliveTime<<" type="<<(pi.type == write ? "write": "read")<<endl;
 
-    msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock file: dumpSharedMemory"<<endl;
+    msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock: dumpSharedMemory"<<endl;
   }
 }
 
 string File::createShmName(const boost::filesystem::path &filename) {
-  string shmName="hdf5serieShm_";
-  auto absFilename=boost::filesystem::canonical(filename).generic_string();
-  for(const char &c : absFilename) {
-    if(('a'<=c && c<='z') || ('A'<=c && c<='Z') || ('0'<=c && c<='9'))
-      shmName+=c;
-    else if(c=='/')
-      shmName+='_';
-    else
-      shmName+="_"+to_string(static_cast<unsigned char>(c))+"_";
-  }
-  return shmName;
+  auto absFilename=boost::filesystem::absolute(filename).lexically_normal().generic_string();
+  return "hdf5serie_shm_file_"+to_string(hash<string>{}(absFilename));
 }
 
 void File::removeSharedMemory(const boost::filesystem::path &filename) {

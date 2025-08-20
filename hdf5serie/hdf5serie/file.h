@@ -126,7 +126,7 @@ namespace H5 {
       void flushIfRequested();
 
       //! Internal helper function which dumps the content of the shared memory associated with filename.
-      //! !!! Note that the mutex is NOT locked for this operation but the file lock is accquired.
+      //! !!! Note that the shared memory mutex is NOT locked for this operation but the global named mutex to create/open and destroy lock is accquired.
       static void dumpSharedMemory(const boost::filesystem::path &filename);
       //! Internal helper function which removes the shared memory associated with filename, !!!EVEN if other process still use it!!!
       static void removeSharedMemory(const boost::filesystem::path &filename);
@@ -195,10 +195,10 @@ namespace H5 {
       const boost::uuids::uuid processUUID;
 
       //! Shared memory object holding the shared memory
-      //! Access to shm (and region) must bu guarded by locking the boost filelock of filename.
+      //! Open/create and destroy of shm must bu guarded by a mutex
       Internal::SharedMemory shm;
       //! Memory region holding the shared memory map
-      //! Access to region (and shm) must bu guarded by locking the boost filelock of filename.
+      //! Open/create and destroy of region must bu guarded by a mutex
       boost::interprocess::mapped_region region;
 
       //! Pointer to the shared memory object
@@ -249,7 +249,7 @@ namespace H5 {
       //! Remove process information of this process from the shared memory
       void deinitProcessInfo();
 
-      //! open or create the shared memory atomically (process with using file lock)
+      //! open or create the shared memory atomically (guarded by a global named mutex)
       static void openOrCreateShm(const boost::filesystem::path &filename, File *self,
                                   std::string &shmName, Internal::SharedMemory &shm, boost::interprocess::mapped_region &region,
                                   SharedMemObject *&sharedData);
