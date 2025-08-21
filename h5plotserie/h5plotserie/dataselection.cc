@@ -363,22 +363,24 @@ void DataSelection::currentDataClicked(QListWidgetItem *item) {
       selectFromCurrentData(item,"add");
     else if (QApplication::keyboardModifiers() & Qt::ControlModifier)
       selectFromCurrentData(item,"new");
+    else if (QApplication::keyboardModifiers() & Qt::AltModifier)
+      selectFromCurrentData(item,"replaceAllX");
     else
       selectFromCurrentData(item,"replace");
   }
   if(QApplication::mouseButtons()==Qt::RightButton) {
-    QMenu *menu = new QMenu;
-    QAction *action=new QAction("Plot in new window", menu);
-    connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"new"); });
-    action->setShortcut(QKeySequence("Ctrl+Return"));
+    auto menu = new QMenu;
+    auto action=new QAction("Replace, in current window, all curves with x=first col y=selected col", menu);
+    connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"replace"); });
+    action->setShortcut(QKeySequence("Return"));
     menu->addAction(action);
-    action=new QAction("Add to current window", menu);
+    action=new QAction("Add, in the current window, the curve with x=first col y=selected col", menu);
     connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"add"); });
     action->setShortcut(QKeySequence("Shift+Return"));
     menu->addAction(action);
-    action=new QAction("Replace in current window", menu);
-    connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"replace"); });
-    action->setShortcut(QKeySequence("Return"));
+    action=new QAction("Create a new windows and add the curve with x=first col y=selected col", menu);
+    connect(action,&QAction::triggered,this,[=](){ selectFromCurrentData(item,"new"); });
+    action->setShortcut(QKeySequence("Ctrl+Return"));
     menu->addAction(action);
     menu->exec(QCursor::pos());
     delete menu;
