@@ -99,9 +99,13 @@ namespace H5 {
       //! For a reader refreshCallback_ should also be set if the reader will call requestFlush.
       //! This this callback is called the reader should call refresh().
       //! Note that both callback functions will be called from of a thread created by this constructor.
+      //! If the file was opened with writeWithRename then the function renameAtomicFunc is called immediately after the rename
+      //! of the HDF5 file took place, at a time when both files are still locked. Hence, this function can be used if other actions
+      //! a rename of additional files need to happen in a way being synchronous to the HDF5 rename
       File(const boost::filesystem::path &filename_, FileAccess type_,
-           const std::function<void()> &closeRequestCallback_=std::function<void()>(),
-           const std::function<void()> &refreshCallback_=std::function<void()>());
+           const std::function<void()> &closeRequestCallback_={},
+           const std::function<void()> &refreshCallback_={},
+           const std::function<void()> &renameAtomicFunc_={});
       //! Closes the HDF5 file.
       ~File() override;
       //! Switch a writer from dataset creation mode to SWMR. After this call no datasets, groups or attributes can be created anymore
@@ -188,6 +192,7 @@ namespace H5 {
       const std::function<void()> closeRequestCallback;
       //! This callback is called when a writer has flushed
       const std::function<void()> refreshCallback;
+      const std::function<void()> renameAtomicFunc;
 
       //! Name of the shared memory
       std::string shmName;
@@ -217,7 +222,7 @@ namespace H5 {
       //! Helper function to close the file as a reader
       void closeReader();
       //! Helper function to allow this process to open for writing (wait for other writers and for all readers to close)
-      void allowOpenWriter();
+      void allowOpenWriter(bool callInitProcessInfo=true);
       //! Helper function to open the file as a writer. allowOpenWriter must be called before
       void openWriter();
       //! Helper function to close the file as a writer

@@ -25,7 +25,7 @@
 
 #include <config.h>
 #include <hdf5serie/file.h>
-#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -36,6 +36,9 @@
   #endif
   #include <windows.h>
   #include <io.h>
+#else
+  #include <sys/vfs.h>
+  #include <linux/magic.h>
 #endif
 #if !defined(NDEBUG) && !defined(_WIN32)
   #include <boost/process.hpp>
@@ -112,8 +115,53 @@ namespace {
     }
   }
 
-  // a named ipc mutex to guard the open/create and destroy of the shared memory (syncronization primitive) for a file from multiple access (from threads and processes)
-  ipc::named_mutex mutexSyncPrim(ipc::open_or_create, "hdf5serie_mutex_syncprim");
+  void initFileLock(ipc::file_lock &fl, const string &filename) {
+#if _WIN32
+    auto tmpDir=boost::filesystem::temp_directory_path();
+#else
+    auto checkTMPFS=[](const boost::filesystem::path &dir) {
+      struct statfs buf;
+      if(statfs(dir.string().c_str(), &buf)!=0)
+        return false;
+      return buf.f_type==TMPFS_MAGIC;
+    };
+    const char *XDG_RUNTIME_DIR=getenv("XDG_RUNTIME_DIR");
+    boost::filesystem::path tmpDir;
+    if(XDG_RUNTIME_DIR && checkTMPFS(XDG_RUNTIME_DIR))
+      tmpDir=XDG_RUNTIME_DIR;
+    if(tmpDir.empty() && checkTMPFS("/dev/shm"))
+      tmpDir="/dev/shm";
+    if(tmpDir.empty() && XDG_RUNTIME_DIR)
+      tmpDir=XDG_RUNTIME_DIR;
+    if(tmpDir.empty())
+      tmpDir=boost::filesystem::temp_directory_path();
+#endif
+
+    boost::filesystem::path filepath = tmpDir/filename;
+    if(!boost::filesystem::exists(filepath))
+      ofstream f(filepath);
+    fl = ipc::file_lock(filepath.string().c_str());
+  }
+
+  pair<std::mutex, ipc::file_lock> &getSyncPrimFileLock() {
+    static pair<std::mutex, ipc::file_lock> ret;
+    static bool firstCall = true;
+    if(firstCall) {
+      firstCall = false;
+      initFileLock(ret.second, "hdf5serie_syncprim_filelock");
+    }
+    return ret;
+  }
+
+  pair<std::mutex, ipc::file_lock> &getSettingsFileLock() {
+    static pair<std::mutex, ipc::file_lock> ret;
+    static bool firstCall = true;
+    if(firstCall) {
+      firstCall = false;
+      initFileLock(ret.second, "hdf5serie_settings_filelock");
+    }
+    return ret;
+  }
 
 }
 
@@ -181,10 +229,9 @@ class Settings {
       if(!boost::filesystem::is_directory(filename.parent_path()))
         boost::filesystem::create_directories(filename.parent_path());
 
-      // exclusively lock mutex (to synchronize processes and threads)
-      static ipc::named_mutex m(ipc::open_or_create, "hdf5serie_mutex_settings_file"); // a named ipc mutex to guard the settings file from multiple access (from threads and processes)
       Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the named mutex 'hdf5serie_mutex_settings_file'"<<endl;
-      ipc::scoped_lock lock(m);
+      ipc::scoped_lock lock1(getSettingsFileLock().first);
+      ipc::scoped_lock lock2(getSettingsFileLock().second);
       Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": locked"<<endl;
 
       if(boost::filesystem::exists(filename))
@@ -200,12 +247,14 @@ class Settings {
 
 File::File(const boost::filesystem::path &filename_, FileAccess type_,
            const function<void()> &closeRequestCallback_,
-           const function<void()> &refreshCallback_) :
+           const function<void()> &refreshCallback_,
+           const function<void()> &renameAtomicFunc_) :
   GroupBase(nullptr, filename_.string()),
   filename(filename_),
   type(type_),
   closeRequestCallback(closeRequestCallback_),
   refreshCallback(refreshCallback_),
+  renameAtomicFunc(renameAtomicFunc_),
   processUUID(boost::uuids::random_generator()()) {
 
   if(type==writeWithRename)
@@ -252,7 +301,8 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
   // exclusively lock the global shm mutex
   {
     self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the global shm mutex: openOrCreateShm"<<endl;
-    ipc::scoped_lock lock(mutexSyncPrim);
+    ipc::scoped_lock lock1(getSyncPrimFileLock().first);
+    ipc::scoped_lock lock2(getSyncPrimFileLock().second);
     self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Locked: openOrCreateShm"<<endl;
     // convert filename to valid boost interprocess name (cname)
     try {
@@ -295,12 +345,13 @@ File::FileAccess File::getType(bool originalType) {
   return write;
 }
 
-void File::allowOpenWriter() {
+void File::allowOpenWriter(bool callInitProcessInfo) {
   if(!sharedData)
     throw Exception(getPath(), "The file "+getFilename().string()+" is not writeable");
 
   ScopedLock lock(sharedData->mutex, this, "openWriter");
-  initProcessInfo();
+  if(callInitProcessInfo)
+    initProcessInfo();
   // open the writer
   // wait until no other writer is active
   const static std::chrono::milliseconds showBlockMessageAfter(Settings::getValue("messages/showBlockMessageAfter", 500));
@@ -468,7 +519,8 @@ void File::deinitShm(SharedMemObject *sharedData, const boost::filesystem::path 
   if(sharedData) {
     {
       self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the global mutex: dtor"<<endl;
-      ipc::scoped_lock lockF(mutexSyncPrim);
+      ipc::scoped_lock lock1(getSyncPrimFileLock().first);
+      ipc::scoped_lock lock2(getSyncPrimFileLock().second);
       self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": File locked: dtor"<<endl;
       size_t localShmUseCount;
       {
@@ -499,9 +551,26 @@ File::~File() {
 
     // if opened with writeWithRename but enableSWMR was not called -> rename the file now
     if(type == writeWithRename && preSWMR == true) {
+      std::string tmpShmName;
+      Internal::SharedMemory tmpShm;
+      boost::interprocess::mapped_region tmpRegion;
+      SharedMemObject *tmpSharedData;
+      openOrCreateShm(filename, this, tmpShmName, tmpShm, tmpRegion, tmpSharedData);
+      {
+        ScopedLock lock1(sharedData->mutex, this, "dtor rename");
+        ScopedLock lock2(tmpSharedData->mutex, this, "dtor rename");
+        std::swap(shmName, tmpShmName);
+        std::swap(shm, tmpShm);
+        std::swap(region, tmpRegion);
+        std::swap(sharedData, tmpSharedData);
+      }
+      allowOpenWriter(false);
       checkIfFileIsOpenedBySomeone("File::~File::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::~File::prerename", filename);
-        boost::filesystem::rename(getFilename(), filename);
+      boost::filesystem::rename(getFilename(), filename);
+      if(renameAtomicFunc)
+        renameAtomicFunc();
+      deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
     }
  
     deinitShm(sharedData, getFilename(), this, shmName);
@@ -610,18 +679,23 @@ void File::enableSWMR() {
       Internal::SharedMemory tmpShm;
       boost::interprocess::mapped_region tmpRegion;
       SharedMemObject *tmpSharedData;
-      openOrCreateShm(filename, this,
-                      tmpShmName, tmpShm, tmpRegion, tmpSharedData);
+      openOrCreateShm(filename, this, tmpShmName, tmpShm, tmpRegion, tmpSharedData);
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeWithRename: wait to allow writing for original filename"<<endl;
-      std::swap(shmName, tmpShmName);
-      std::swap(shm, tmpShm);
-      std::swap(region, tmpRegion);
-      std::swap(sharedData, tmpSharedData);
+      {
+        ScopedLock lock1(sharedData->mutex, this, "dtor rename");
+        ScopedLock lock2(tmpSharedData->mutex, this, "dtor rename");
+        std::swap(shmName, tmpShmName);
+        std::swap(shm, tmpShm);
+        std::swap(region, tmpRegion);
+        std::swap(sharedData, tmpSharedData);
+      }
       allowOpenWriter();
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: move temp to original file"<<endl;
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", filename);
       boost::filesystem::rename(getFilename(), filename);
+      if(renameAtomicFunc)
+        renameAtomicFunc();
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: deinit shm for temp filename"<<endl;
       deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
 
@@ -737,7 +811,8 @@ void File::listenForRequest() {
 void File::dumpSharedMemory(const boost::filesystem::path &filename) {
   {
     msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the global mutex: dumpSharedMemory"<<endl;
-    ipc::scoped_lock lock(mutexSyncPrim);
+    ipc::scoped_lock lock1(getSyncPrimFileLock().first);
+    ipc::scoped_lock lock2(getSyncPrimFileLock().second);
     msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": File locked: dumpSharedMemory"<<endl;
     // convert filename to valid boost interprocess name (cname)
     string shmName=createShmName(filename);
