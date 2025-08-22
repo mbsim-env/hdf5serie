@@ -34,9 +34,11 @@
 #include <hdf5serie/simpledataset.h>
 #include <iostream>
 #include <fmatvec/fmatvec.h>
+#include <boost/filesystem.hpp>
 
 using namespace H5;
 using namespace std;
+namespace bfs = boost::filesystem;
 
 //struct MyStruct {
 //  double d;
@@ -594,6 +596,25 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
       cout<<c<<endl;
   if(callEnableSWMR)
     file.enableSWMR();
+  }
+
+  /***** test file read in readonly dir and file *****/
+  cout<<"test readonly\n";
+  {
+    bfs::create_directory("readonlydir");
+    bfs::permissions("readonlydir", bfs::owner_write | bfs::owner_read | bfs::owner_exe);
+    boost::system::error_code ec;
+    bfs::permissions("readonlydir/test.h5", bfs::owner_write | bfs::owner_read, ec);
+    bfs::copy_file("test.h5", "readonlydir/test.h5", bfs::copy_options::overwrite_existing);
+    bfs::permissions("readonlydir", bfs::owner_read | bfs::owner_exe);
+    bfs::permissions("readonlydir/test.h5", bfs::owner_read);
+
+    File file("readonlydir/test.h5", File::read);
+    auto *d=file.openChildObject<SimpleDataset<vector<vector<complex<double>>>>>("d");
+    auto out=d->read();
+    for(auto & r : out)
+      for(auto & c : r)
+        cout<<c<<endl;
   }
 
 //  /***** Dataset vector<vector<double>> fmatvec *****/

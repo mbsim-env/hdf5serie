@@ -217,16 +217,20 @@ namespace H5 {
       //! transform filename to a valid boost interprocess name.
       static std::string createShmName(const boost::filesystem::path &filename);
 
-      //! Helper function to open the file as a reader
+      //! Helper function to prepare for openReader
+      void preOpenReader();
+      //! Helper function to open the file as a reader. preOpenReader must be called before
       void openReader();
       //! Helper function to close the file as a reader
       void closeReader();
-      //! Helper function to allow this process to open for writing (wait for other writers and for all readers to close)
-      void allowOpenWriter(bool callInitProcessInfo=true);
-      //! Helper function to open the file as a writer. allowOpenWriter must be called before
+      void postCloseReader();
+      //! Helper function to prepare for openWriter
+      void preOpenWriter();
+      //! Helper function to open the file as a writer. preOpenWriter must be called before
       void openWriter();
       //! Helper function to close the file as a writer
       void closeWriter();
+      void postCloseWriter();
 
       //! Helper function which waits until the condition pred is true.
       //! On entry the lock lock is released and re-aquired if waiting ends (the pred() == true).

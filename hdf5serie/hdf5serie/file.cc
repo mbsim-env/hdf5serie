@@ -257,6 +257,9 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
   renameAtomicFunc(renameAtomicFunc_),
   processUUID(boost::uuids::random_generator()()) {
 
+  if(getType()==read && !boost::filesystem::exists(filename))
+    throw runtime_error("No such HDF5 file to open: "+filename.string());
+
   if(type==writeWithRename)
     preSWMR = true;
 
@@ -272,10 +275,13 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
 
   switch(getType()) {
     case write:
-      allowOpenWriter();
+      initProcessInfo();
+      preOpenWriter();
       openWriter();
       break;
     case read:
+      initProcessInfo();
+      preOpenReader();
       openReader();
       break;
     default: throw runtime_error("internal error");
@@ -285,15 +291,6 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
 void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
                            string &shmName, Internal::SharedMemory &shm, boost::interprocess::mapped_region &region,
                            SharedMemObject *&sharedData) {
-  // check if file is writeable
-  bool writeable=true;
-  {
-    ofstream str(filename.string(), ios_base::app);
-    writeable=str.is_open();
-  }
-  if(!writeable)
-    // the file is not writeable, no locking and no shared memory is needed: sharedData is not set (=nullptr)
-    return;
   // create inter process shared memory atomically
   self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Touch file"<<endl;
 
@@ -319,10 +316,7 @@ void File::openOrCreateShm(const boost::filesystem::path &filename, File *self,
       region=ipc::mapped_region(shm, ipc::read_write); // map memory
       sharedData=new(region.get_address())SharedMemObject; // initialize shared memory (by placement new)
     }
-    {
-      ScopedLock mutexLock(sharedData->mutex, self, "openOrCreateShm, increment shmUseCount");
-      sharedData->shmUseCount++;
-    }
+    sharedData->shmUseCount++;
     self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock: openOrCreateShm"<<endl;
   }
   // now the process shared memory is created or opened atomically and the global mutex lock is releases
@@ -345,13 +339,8 @@ File::FileAccess File::getType(bool originalType) {
   return write;
 }
 
-void File::allowOpenWriter(bool callInitProcessInfo) {
-  if(!sharedData)
-    throw Exception(getPath(), "The file "+getFilename().string()+" is not writeable");
-
-  ScopedLock lock(sharedData->mutex, this, "openWriter");
-  if(callInitProcessInfo)
-    initProcessInfo();
+void File::preOpenWriter() {
+  ScopedLock lock(sharedData->mutex, this, "preOpenWriter");
   // open the writer
   // wait until no other writer is active
   const static std::chrono::milliseconds showBlockMessageAfter(Settings::getValue("messages/showBlockMessageAfter", 500));
@@ -376,9 +365,6 @@ void File::allowOpenWriter(bool callInitProcessInfo) {
 }
 
 void File::openWriter() {
-  if(!sharedData)
-    throw Exception(getPath(), "The file "+getFilename().string()+" is not writeable");
-
   // create file
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Create HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
@@ -405,6 +391,7 @@ void File::openWriter() {
 }
 
 void File::initProcessInfo() {
+  ScopedLock lock(sharedData->mutex, this, "initProcessInfo");
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": init process info and start thread"<<endl;
   // save the process info of this process in shared memory
   if(sharedData->processes.size()==MAXREADERS+1)
@@ -421,17 +408,15 @@ void File::deinitProcessInfo() {
   stillAlivePingThread.interrupt();
   stillAlivePingThread.join();
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Thread joined"<<endl;
-  if(sharedData)
-  {
-    ScopedLock lock(sharedData->mutex, this, "deinitProcessInfo");
-    auto it=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
-      return pi.processUUID==processUUID;
-    });
-    if(it!=sharedData->processes.end())
-      sharedData->processes.erase(it);
-    else
-      msg(Atom::Error)<<"HDF5Serie: "<<getFilename().string()<<": Another process has remove this ProcessInfo, maybe because it thought that this process has crashed, but I'm this alive."<<endl;
-  }
+
+  ScopedLock lock(sharedData->mutex, this, "deinitProcessInfo");
+  auto it=std::find_if(sharedData->processes.begin(), sharedData->processes.end(), [this](const ProcessInfo &pi) {
+    return pi.processUUID==processUUID;
+  });
+  if(it!=sharedData->processes.end())
+    sharedData->processes.erase(it);
+  else
+    msg(Atom::Error)<<"HDF5Serie: "<<getFilename().string()<<": Another process has remove this ProcessInfo, maybe because it thought that this process has crashed, but I'm this alive."<<endl;
 }
 
 // executed in a thread
@@ -474,28 +459,26 @@ void File::stillAlivePing() {
   }
 }
 
-void File::openReader() {
-  if(sharedData)
-  {
-    ScopedLock lock(sharedData->mutex, this, "openReader");
-    initProcessInfo();
-    // open file as a reader
-    // wait until either no writer exists or the writer is in SWMR state
-    const static std::chrono::milliseconds showBlockMessageAfter(Settings::getValue("messages/showBlockMessageAfter", 500));
-    wait(lock, showBlockMessageAfter, "Blocking until no writer exists or the writer is in SWMR state.", [this](){
-      return sharedData->writerState==WriterState::none || sharedData->writerState==WriterState::swmr;
-    });
-    lastWriterState=sharedData->writerState;
-    // increment the active readers count and notify about this change
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Increment activeReaders and notify"<<endl;
-    sharedData->activeReaders++;
-    sharedData->cond.notify_all();
-    // open a thread which listens for futher writer which want to start writing
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Start thread"<<endl;
-    exitThread=false; // flag indicating that the thread should close -> false at thread start
-    listenForRequestThread=thread(&File::listenForRequest, this);
-  }
+void File::preOpenReader() {
+  ScopedLock lock(sharedData->mutex, this, "preOpenReader");
+  // open file as a reader
+  // wait until either no writer exists or the writer is in SWMR state
+  const static std::chrono::milliseconds showBlockMessageAfter(Settings::getValue("messages/showBlockMessageAfter", 500));
+  wait(lock, showBlockMessageAfter, "Blocking until no writer exists or the writer is in SWMR state.", [this](){
+    return sharedData->writerState==WriterState::none || sharedData->writerState==WriterState::swmr;
+  });
+  lastWriterState=sharedData->writerState;
+  // increment the active readers count and notify about this change
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Increment activeReaders and notify"<<endl;
+  sharedData->activeReaders++;
+  sharedData->cond.notify_all();
+  // open a thread which listens for futher writer which want to start writing
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Start thread"<<endl;
+  exitThread=false; // flag indicating that the thread should close -> false at thread start
+  listenForRequestThread=thread(&File::listenForRequest, this);
+}
 
+void File::openReader() {
   // open file
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Open HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
@@ -516,37 +499,43 @@ void File::openReader() {
 }
 
 void File::deinitShm(SharedMemObject *sharedData, const boost::filesystem::path &filename, File *self, const std::string &shmName) {
-  if(sharedData) {
-    {
-      self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the global mutex: dtor"<<endl;
-      ipc::scoped_lock lock1(getSyncPrimFileLock().first);
-      ipc::scoped_lock lock2(getSyncPrimFileLock().second);
-      self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": File locked: dtor"<<endl;
-      size_t localShmUseCount;
-      {
-        ScopedLock lock(sharedData->mutex, self, "dtor");
-        sharedData->shmUseCount--;
-        localShmUseCount=sharedData->shmUseCount;
-        self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Decrement shmUseCount"<<endl;
-      }
-      // sharedData->shmUseCount cannot be incremente by another process since we sill own the global named mutex
-      if(localShmUseCount==0) {
-        self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Shared memory is no longer used, remove it"<<endl;
-        sharedData->~SharedMemObject(); // call destructor of SharedMemObject
-        // region does not need destruction
-        SharedMemoryRemove(shmName.c_str()); // effectively destructs shm
-      }
-      self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock: dtor"<<endl;
-    }
+  self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the global mutex: dtor"<<endl;
+  ipc::scoped_lock lock1(getSyncPrimFileLock().first);
+  ipc::scoped_lock lock2(getSyncPrimFileLock().second);
+  self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": File locked: dtor"<<endl;
+  size_t localShmUseCount;
+  sharedData->shmUseCount--;
+  localShmUseCount=sharedData->shmUseCount;
+  self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Decrement shmUseCount"<<endl;
+  // sharedData->shmUseCount cannot be incremente by another process since we sill own the global named mutex
+  if(localShmUseCount==0) {
+    self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Shared memory is no longer used, remove it"<<endl;
+    sharedData->~SharedMemObject(); // call destructor of SharedMemObject
+    // region does not need destruction
+    SharedMemoryRemove(shmName.c_str()); // effectively destructs shm
   }
+  self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock: dtor"<<endl;
 }
 
 File::~File() {
   try {
     switch(getType()) {
-      case write:  closeWriter(); break;
-      case read:   closeReader(); break;
-      default: throw runtime_error("internal error");
+      case write:
+        closeWriter();
+        postCloseWriter();
+        deinitProcessInfo();
+        break;
+      case read:
+        closeReader();
+        postCloseReader();
+        deinitProcessInfo();
+        // the thread should close now and we wait for it to join.
+        msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Join thread"<<endl;
+        listenForRequestThread.join();
+        msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Thread joined"<<endl;
+        break;
+      default:
+        throw runtime_error("internal error");
     }
 
     // if opened with writeWithRename but enableSWMR was not called -> rename the file now
@@ -556,15 +545,11 @@ File::~File() {
       boost::interprocess::mapped_region tmpRegion;
       SharedMemObject *tmpSharedData;
       openOrCreateShm(filename, this, tmpShmName, tmpShm, tmpRegion, tmpSharedData);
-      {
-        ScopedLock lock1(sharedData->mutex, this, "dtor rename");
-        ScopedLock lock2(tmpSharedData->mutex, this, "dtor rename");
-        std::swap(shmName, tmpShmName);
-        std::swap(shm, tmpShm);
-        std::swap(region, tmpRegion);
-        std::swap(sharedData, tmpSharedData);
-      }
-      allowOpenWriter(false);
+      std::swap(shmName, tmpShmName);
+      std::swap(shm, tmpShm);
+      std::swap(region, tmpRegion);
+      std::swap(sharedData, tmpSharedData);
+      preOpenWriter();
       checkIfFileIsOpenedBySomeone("File::~File::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::~File::prerename", filename);
       boost::filesystem::rename(getFilename(), filename);
@@ -587,38 +572,33 @@ void File::closeWriter() {
   // close writer file
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Close HDF5 writer file"<<endl;
   close();
+}
 
+void File::postCloseWriter() {
   {
-    ScopedLock lock(sharedData->mutex, this, "closeWriter");
+    ScopedLock lock(sharedData->mutex, this, "postCloseWriter");
     // close the writer
     // set the writer state to none and notify about this change
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Set writerState=none and notify"<<endl;
     sharedData->writerState=WriterState::none;
     sharedData->cond.notify_all();
   }
-  deinitProcessInfo();
 }
 
 void File::closeReader() {
   // close reader file
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Close HDF5 reader file"<<endl;
   close();
+}
 
-  if(sharedData)
-  {
-    ScopedLock lock(sharedData->mutex, this, "closeReader");
-    // close a reader
-    // decrements the number of active readers and notify about this change
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Decrement activeReaders, set thread exit flag and notify"<<endl;
-    sharedData->activeReaders--;
-    exitThread=true; // set the thread exit flag before notifying to ensure that the thread gets closed
-    sharedData->cond.notify_all();
-  }
-  deinitProcessInfo();
-  // the thread should close now and we wait for it to join.
-  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Join thread"<<endl;
-  listenForRequestThread.join();
-  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Thread joined"<<endl;
+void File::postCloseReader() {
+  ScopedLock lock(sharedData->mutex, this, "postCloseReader");
+  // close a reader
+  // decrements the number of active readers and notify about this change
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Decrement activeReaders, set thread exit flag and notify"<<endl;
+  sharedData->activeReaders--;
+  exitThread=true; // set the thread exit flag before notifying to ensure that the thread gets closed
+  sharedData->cond.notify_all();
 }
 
 void File::refresh() {
@@ -629,8 +609,6 @@ void File::refresh() {
 }
 
 void File::requestFlush() {
-  if(!sharedData)
-    return;
   ScopedLock lock(sharedData->mutex, this, "requestFlush");
   if(msgAct(Atom::Debug))
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Set flushRequest and notify"<<endl;
@@ -673,6 +651,8 @@ void File::enableSWMR() {
     try {
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: close all elements"<<endl;
       closeWriter();
+      postCloseWriter();
+      deinitProcessInfo();
 
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeWithRename: create shm for original filename"<<endl;
       std::string tmpShmName;
@@ -681,15 +661,12 @@ void File::enableSWMR() {
       SharedMemObject *tmpSharedData;
       openOrCreateShm(filename, this, tmpShmName, tmpShm, tmpRegion, tmpSharedData);
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeWithRename: wait to allow writing for original filename"<<endl;
-      {
-        ScopedLock lock1(sharedData->mutex, this, "dtor rename");
-        ScopedLock lock2(tmpSharedData->mutex, this, "dtor rename");
-        std::swap(shmName, tmpShmName);
-        std::swap(shm, tmpShm);
-        std::swap(region, tmpRegion);
-        std::swap(sharedData, tmpSharedData);
-      }
-      allowOpenWriter();
+      std::swap(shmName, tmpShmName);
+      std::swap(shm, tmpShm);
+      std::swap(region, tmpRegion);
+      std::swap(sharedData, tmpSharedData);
+      initProcessInfo();
+      preOpenWriter();
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: move temp to original file"<<endl;
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", filename);

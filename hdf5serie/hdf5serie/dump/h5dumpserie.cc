@@ -153,7 +153,8 @@ int main(int argc, char* argv[]) {
     }
     while(ft!=boost::filesystem::file_type::regular_file &&
           ft!=boost::filesystem::file_type::symlink_file &&
-          ft!=boost::filesystem::file_type::fifo_file);
+          ft!=boost::filesystem::file_type::fifo_file &&
+          i!=static_cast<int>(string::npos));
     file[k].reset(new File(filename, File::read));
 
     string dummy=para.substr(i);
