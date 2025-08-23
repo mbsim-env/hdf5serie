@@ -32,7 +32,6 @@
   #include <boost/interprocess/shared_memory_object.hpp>
 #endif
 #include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/sync/interprocess_condition.hpp>
 #include <boost/container/static_vector.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -40,6 +39,8 @@
 #include <boost/thread/thread.hpp>
 
 namespace H5 {
+
+  class File;
 
   namespace Internal {
 #ifdef _WIN32
@@ -65,6 +66,32 @@ namespace H5 {
 #endif
 
     class ScopedLock;
+
+    // A simple robust condition variable,
+    // since boost::interprocess::interprocess:condition does not provide a robust condition on Linux.
+    // A none robust condition variable is blocking in notify_all or dtor if a process waiting on the condition crashed!
+    // The robustness is simply achived by polling in constant time intervalls instead of putting thread to sleep and wakeup.
+    // This polling delay is no problem in this scope since its only used for user visible things.
+    // So a polling delay of 1/25 second (25 frames per second) is used which equal the human visible reaction time.
+    // The interface equals boost::interprocess::interprocess_condition but not with all member functions.
+    // However, only N threads (which may be from different processes) can be waiting.
+    // This class must be implemented in a address-free way since it is placed usually in shared memory.
+    // The implementation is similar to
+    // https://cseweb.ucsd.edu/classes/sp17/cse120-a/applications/ln/lecture7.html
+    template<int N>
+    class ConditionVariable {
+      friend class H5::File; // to allow File::dumpSharedMemory to access the private members
+      public:
+        void wait(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
+                  const std::function<bool()> &pred);
+        bool wait_for(boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> &externLock,
+                      const std::chrono::milliseconds& relTime,
+                      const std::function<bool()> &pred);
+        void notify_all();
+      private:
+        boost::container::static_vector<boost::uuids::uuid, N> waiter;
+        boost::interprocess::interprocess_mutex waiterMutex;
+    };
   }
 
   class Dataset;
@@ -163,6 +190,8 @@ namespace H5 {
       };
       //! the maximal number of readers which can access the file simultanously
       constexpr static size_t MAXREADERS { 100 };
+      //! the maximal number of writers. Just need since only a fixed amount of readers+writers can wait for the ConditionVariable
+      constexpr static size_t MAXWRITERS { 10 };
       //! Information about a process accessing the shared memory (a process means here an instance of a File class)
       struct ProcessInfo {
         boost::uuids::uuid processUUID;         //!< a globally unique identifier for each process
@@ -177,7 +206,7 @@ namespace H5 {
         size_t shmUseCount { 0 }; //<! the number users of this shared memory object
         // the following members are used to synchronize the writer and all readers.
         boost::interprocess::interprocess_mutex mutex;    //<! mutex for synchronization handling.
-        boost::interprocess::interprocess_condition cond; //<! a condition variable for signaling state changes.
+        Internal::ConditionVariable<MAXREADERS+MAXWRITERS> cond; //<! a condition variable for signaling state changes.
         // the following members represent the state of the writer and readers
         // after setting any of these variables sharedData->cond.notify_all() must be called to notify all waiting process about the change
         WriterState writerState { WriterState::none }; //<! the current state of the write of this file.
