@@ -742,7 +742,7 @@ void File::listenForRequest() {
   ScopedLock threadLock(sharedData->mutex, this, "listenForRequest");
   while(true) {
     // ... waits until write request happens (or this thread is to be closed)
-    wait(threadLock, std::chrono::milliseconds::max(), "", [this](){
+    wait(threadLock, 1000*24*60*60*1000ms, "", [this](){ // use a reltime of 1000day for infinity
       return sharedData->writerState==WriterState::writeRequest || // the writer wants to write
              (flushRequested && sharedData->flushRequest==false) || // this object has requested a flush which is done now
              (lastWriterState!=WriterState::none && sharedData->writerState==WriterState::none) || // writer has finished
