@@ -98,6 +98,22 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
       static_cast<PlotDataTable*>(currentWidget())->addDataSet(pd);
     }
   }
+  else if (QString::compare(mode, "replaceAllX", Qt::CaseSensitive)==0) {
+    auto pdt = static_cast<PlotDataTable*>(currentWidget());
+    for(int r=0; r<pdt->rowCount(); ++r) {
+      for(int c=0; c<pdt->columnCount(); ++c) {
+        QString columnHeader=pd.string(pdt->item(r,c)->column());
+        if ((QString::compare(columnHeader, "x-Label", Qt::CaseSensitive)==0))
+          pdt->setItem(r, c, new QTableWidgetItem(pd.getValue("y-Label")));
+        if ((QString::compare(columnHeader, "x-Index", Qt::CaseSensitive)==0))
+          pdt->setItem(r, c, new QTableWidgetItem(pd.getValue("y-Index")));
+        if ((QString::compare(columnHeader, "x-Path", Qt::CaseSensitive)==0))
+          pdt->setItem(r, c, new QTableWidgetItem(pd.getValue("y-Path")));
+      }
+      pdt->resizeColumnsToContents();
+      pdt->resizeRowsToContents();
+    }
+  }
   plotCurrentTab();
 }
 

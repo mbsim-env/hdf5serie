@@ -64,7 +64,7 @@ MainWindow::MainWindow(const QStringList &arg) {
   QSettings settings;
   plotArea->setShowMaximized(settings.value("plotwindow/showmaximized", true).toBool());
 
-  auto *dataSelectionDW=new QDockWidget("Data Selection", this);
+  auto *dataSelectionDW=new QDockWidget("Model Tree / Data List", this);
   dockMenu->addAction(dataSelectionDW->toggleViewAction());
   dataSelectionDW->setObjectName("dockWidget/dataSelection");
   addDockWidget(Qt::LeftDockWidgetArea,dataSelectionDW);
@@ -143,27 +143,31 @@ MainWindow::~MainWindow() {
 void MainWindow::help() {
   QMessageBox::information(this, "h5plotserie - GUI Help", 
       "<h1>GUI Help</h1>"
-      "<h2>Actions in model tree</h2>"
+      "<h2>Actions in 'Model Tree' dock</h2>"
       "<ul>"
       "  <dt>Left-Click</dt><dd>Select data set</dd>"
       "  <dt>Right-Click</dt><dd>Open context menu</dd>"
       "</ul>"
-      "<h2>Actions in data list</h2>"
+      "<h2>Actions in 'Data List' dock, if no cell in 'Curves' dock is selected</h2>"
       "<ul>"
-      "  <dt>Left-Click</dt><dd>Replace curve in current window (x = first, y = selected)</dd>"
-      "  <dt>Shift+Left-Click</dt><dd>Add curve to current window (x = first, y = selected)</dd>"
-      "  <dt>Ctrl+Left-Click</dt><dd>Plot curve in new window (x = first, y = selected)</dd>"
-      "  <dt>Shift+Left-Click</dt><dd>Replace selected cell with selected data</dd>"
+      "  <dt>Left-Click</dt><dd>Replace, in the current window, all curves with a single new curve with x = first col (usually the time) and y = selected col</dd>"
+      "  <dt>Shift+Left-Click</dt><dd>Add, in the current window, a new curve with x = first col (usually the time) and y = selected col</dd>"
+      "  <dt>Ctrl+Left-Click</dt><dd>Create a new (empty) window and add the curve with x = first col (usually the time) and y = selected col</dd>"
+      "  <dt>Alt+Left-Click</dt><dd>Replace, in the current window, the x-axis of all curves with the selected col</dd>"
       "  <dt>Right-Click</dt><dd>Open context menu</dd>"
       "</ul>"
-      "<h2>Actions in curve list</h2>"
+      "<h2>Actions in 'Data List' dock, if a cell in 'Curves' dock is selected</h2>"
+      "<ul>"
+      "  <dt>Shift+Left-Click</dt><dd>Replace the selected cell of the curve with the selected 'Data List' col (the cols x-Label/Path/Index replace the x-axis, y the y-axis and y2 the y2-axis)</dd>"
+      "</ul>"
+      "<h2>Actions in 'Curves' dock tab title</h2>"
+      "<ul>"
+      "  <dt>Left-Doubleclick</dt><dd>Change plot window name</dd>"
+      "</ul>"
+      "<h2>Actions in 'Curves' dock table row</h2>"
       "<ul>"
       "  <dt>Left-Click</dt><dd>Select cell</dd>"
       "  <dt>Right-Click</dt><dd>Open context menu</dd>"
-      "</ul>"
-      "<h2>Actions in tab bar</h2>"
-      "<ul>"
-      "  <dt>Left-Doubleclick</dt><dd>Change plot window name</dd>"
       "</ul>"
       );
 }
