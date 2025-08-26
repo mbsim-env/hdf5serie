@@ -65,6 +65,9 @@ namespace {
   // The exception message will contain the filename, pid, cmd-name and user who owns a handle to filename.
   // This function is used in debug build (on linux) to check that the IPC to close a file by all running processes is working.
   void checkIfFileIsOpenedBySomeone(const string &msg, const boost::filesystem::path &filename) {
+    static bool check = (getenv("HDF5SERIE_CHECKIFFILEISOPENEDBYSOMEONE")!=nullptr);
+    if(!check)
+      return;
     using namespace boost::process;
     if(!boost::filesystem::exists("/usr/bin/lsof"))
       return;
