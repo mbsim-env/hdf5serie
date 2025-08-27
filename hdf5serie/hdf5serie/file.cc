@@ -50,6 +50,17 @@ using namespace H5::Internal;
 namespace ipc = boost::interprocess;
 
 namespace {
+
+  struct Init{
+    Init() {
+      #if H5_VERSION_LE(1, 10, 6)
+        // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> set this envvar
+        // We do setting of envvars at program start where we assume that no other threads are running -> then is safe to all getenv
+        putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
+      #endif
+    }
+  } init;
+
   auto now(const chrono::system_clock::time_point &currentTime = chrono::system_clock::now()) {
     auto t = chrono::system_clock::to_time_t(currentTime);
     auto local_t = *localtime(&t);
@@ -285,16 +296,17 @@ class Settings {
     template<class T>
     static T getValue(string path, const T& defaultValue) {
       boost::algorithm::replace_all(path, "/", ".");
-      boost::property_tree::ptree pt;
+
+      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": Trying to lock the named mutex 'hdf5serie_mutex_settings_file'"<<endl;
+      ipc::scoped_lock lock1(getSettingsFileLock().first);
+      ipc::scoped_lock lock2(getSettingsFileLock().second);
+      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": locked"<<endl;
+
       auto filename = getFileName();
       if(!boost::filesystem::is_directory(filename.parent_path()))
         boost::filesystem::create_directories(filename.parent_path());
 
-      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Trying to lock the named mutex 'hdf5serie_mutex_settings_file'"<<endl;
-      ipc::scoped_lock lock1(getSettingsFileLock().first);
-      ipc::scoped_lock lock2(getSettingsFileLock().second);
-      Atom::msgStatic(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": locked"<<endl;
-
+      boost::property_tree::ptree pt;
       if(boost::filesystem::exists(filename))
         boost::property_tree::ini_parser::read_ini(filename.string(), pt);
       boost::optional<T> v=pt.get_optional<T>(path);
@@ -432,10 +444,7 @@ void File::openWriter() {
   checkCall(H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST));
   checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
   // Disable file locking: we use our own locking mechanism
-  #if H5_VERSION_LE(1, 10, 6)                                                                         \
-    // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> use this
-    putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
-  #else
+  #if !H5_VERSION_LE(1, 10, 6)
     // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
     checkCall(H5Pset_file_locking(faid, false, true));
   #endif
@@ -545,10 +554,8 @@ void File::openReader() {
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
   // Disable file locking: we use our own locking mechanism
-  #if H5_VERSION_LE(1, 10, 6)                                                                         \
-    // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> use this
-    putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
-  #else
+  // Disable file locking: we use our own locking mechanism
+  #if !H5_VERSION_LE(1, 10, 6)
     // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
     checkCall(H5Pset_file_locking(faid, false, true));
   #endif
