@@ -194,6 +194,31 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
 
 
 
+  { // vector fixed string
+  cout<<"vector fixed string\n";
+  File file("test.h5", writeType);
+
+  SimpleDataset<vector<string> > *dsd=file.createChildObject<SimpleDataset<vector<string> > >("dsd")(2, 10);
+  vector<string> d; d.emplace_back("abcdef"); d.emplace_back("123");
+  dsd->write(d);
+  dsd->setDescription("testdesc");
+  vector<string> dout;
+  dout=dsd->read();
+  for(auto & d : dout) cout<<d<<"."<<endl;
+  if(callEnableSWMR)
+    file.enableSWMR();
+  }
+  {
+  File file("test.h5", File::read);
+  auto *dsd=file.openChildObject<SimpleDataset<vector<string> > >("dsd");
+  vector<string> dout;
+  dout=dsd->read();
+  for(auto & d : dout) cout<<d<<"."<<endl;
+  cout<<dsd->getDescription()<<endl;
+  }
+
+
+
   { // vector complex<double>
   cout<<"vector complex<double>\n";
   File file("test.h5", writeType);
@@ -578,6 +603,33 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
       cout<<c<<endl;
   if(callEnableSWMR)
     file.enableSWMR();
+  }
+
+  /***** Dataset vector<vector<string>> *****/
+  cout<<"Dataset vector<vector<string>> fixed length\n";
+  {
+  File file("test.h5", writeType);
+  SimpleDataset<vector<vector<string> > > *d=file.createChildObject<SimpleDataset<vector<vector<string> > > >("d")(2, 3, 10);
+  vector<string> d1; d1.emplace_back("a"); d1.emplace_back("bb"); d1.emplace_back("ccc");
+  vector<string> d2; d2.emplace_back("d"); d2.emplace_back("ee"); d2.emplace_back("fff");
+  vector<vector<string> > data; data.push_back(d1); data.push_back(d2);
+  d->write(data);
+  vector<vector<string> > out;
+  out=d->read();
+  for(auto & r : out)
+    for(auto & c : r)
+      cout<<c<<"."<<endl;
+  if(callEnableSWMR)
+    file.enableSWMR();
+  }
+  {
+  File file("test.h5", File::read);
+  auto *d=file.openChildObject<SimpleDataset<vector<vector<string> > > >("d");
+  vector<vector<string> > out;
+  out=d->read();
+  for(auto & r : out)
+    for(auto & c : r)
+      cout<<c<<"."<<endl;
   }
 
   /***** Dataset vector<vector<complex<double>>> *****/

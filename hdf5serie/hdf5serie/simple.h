@@ -84,11 +84,14 @@ class HDF5SERIE_CLASS<std::vector<T> > : public HDF5SERIE_BASECLASS {
   friend class Container<HDF5SERIE_CONTAINERBASECLASS, HDF5SERIE_PARENTCLASS>;
   private:
     hid_t memDataTypeID; // no need to use SScopedHID since only a static hid_t is stored here
+    ScopedHID fixedStringTypeID;
     ScopedHID memDataSpaceID;
     int size;
   protected:
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_);
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_, int fixedStrSize, int compression);
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_, int fixedStrSize) : HDF5SERIE_CLASS(parent_, name_, size_, fixedStrSize, File::getDefaultCompression()) {};
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_) : HDF5SERIE_CLASS(parent_, name_, size_, -1) {};
     ~HDF5SERIE_CLASS() override;
     void close() override;
     void enableSWMR() override;
@@ -112,12 +115,15 @@ class HDF5SERIE_CLASS<std::vector<std::vector<T> > > : public HDF5SERIE_BASECLAS
   friend class Container<HDF5SERIE_CONTAINERBASECLASS, HDF5SERIE_PARENTCLASS>;
   private:
     hid_t memDataTypeID; // no need to use SScopedHID since only a static hid_t is stored here
+    ScopedHID fixedStringTypeID;
     ScopedHID memDataSpaceID;
     int rows;
     int cols;
   protected:
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_);
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_, int fixedStrSize, int compression);
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_, int fixedStrSize) : HDF5SERIE_CLASS(parent_, name_, rows_, cols_, fixedStrSize, File::getDefaultCompression()) {}
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_) : HDF5SERIE_CLASS(parent_, name_, rows_, cols_, -1) {}
     ~HDF5SERIE_CLASS() override;
     void close() override;
     void enableSWMR() override;

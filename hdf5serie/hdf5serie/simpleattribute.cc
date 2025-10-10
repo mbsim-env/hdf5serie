@@ -23,7 +23,6 @@
 #include <cstring>
 #include <hdf5serie/simpleattribute.h>
 #include <hdf5serie/utils.h>
-#include <hdf5serie/file.h>
 #include <hdf5serie/toh5type.h>
 
 using namespace std;

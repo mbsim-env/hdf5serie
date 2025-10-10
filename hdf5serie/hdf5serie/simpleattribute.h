@@ -23,6 +23,7 @@
 #define _HDF5SERIE_SIMPLEATTRIBUTE_H_
 
 #include <hdf5serie/interface.h>
+#include <hdf5serie/file.h>
 #include <vector>
 
 namespace H5 {

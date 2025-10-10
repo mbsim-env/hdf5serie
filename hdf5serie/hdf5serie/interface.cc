@@ -32,6 +32,8 @@
 using namespace std;
 
 namespace {
+  string lastErrorStr;
+
   herr_t getChildNamesACB(hid_t, const char *name, const H5A_info_t *, void *op_data) {
     pair<exception_ptr, set<string>> &ret=*static_cast<pair<exception_ptr, set<string>>*>(op_data);
     try {
@@ -44,10 +46,11 @@ namespace {
   }
 
   herr_t errorWalk(unsigned n, const H5E_error2_t *err, void *data) {
+    auto &localLastErrorStr = *static_cast<string*>(data);
     try {
-      // we usually handle all errors -> do not print these to fmatvec::Atom::Error
-      fmatvec::Atom::msgStatic(fmatvec::Atom::Info)<<"HDF5 error in file "<<err->file_name<<":"<<err->line<<" function "<<
-        err->func_name<<endl<<err->desc<<endl;
+      if(!localLastErrorStr.empty())
+        localLastErrorStr += "\n";
+      localLastErrorStr += "HDF5 error in file "s+err->file_name+":"+to_string(err->line)+" function "+err->func_name+"\n"+err->desc;
     }
     catch(...) {
       cerr<<"Error printing error message. This should never happen."<<endl;
@@ -56,7 +59,7 @@ namespace {
   }
 
   herr_t errorHandler(hid_t estack, void *client_data) {
-    if(H5Ewalk2(H5E_DEFAULT, H5E_WALK_UPWARD, &errorWalk, nullptr)<0)
+    if(H5Ewalk2(H5E_DEFAULT, H5E_WALK_UPWARD, &errorWalk, client_data)<0)
       cerr<<"Error printing error message (H5Ewalk2 failed). This should never happen."<<endl;
     return 0;
   }
@@ -64,7 +67,10 @@ namespace {
 
 namespace H5 {
 
-Exception::Exception(std::string path_, std::string msg_) : path(std::move(path_)), msg(std::move(msg_)) {}
+Exception::Exception(std::string path_, std::string msg_) : path(std::move(path_)), msg(std::move(msg_)) {
+  msg += "\n" + lastErrorStr;
+  lastErrorStr.clear();
+}
 
 Exception::~Exception() noexcept = default;
 
@@ -77,7 +83,7 @@ Element::Element(std::string name_) :  name(std::move(name_)) {
   // print errors as exceptions
   static bool firstCall=true;
   if(firstCall) {
-    checkCall(H5Eset_auto2(H5E_DEFAULT, &errorHandler, nullptr));
+    checkCall(H5Eset_auto2(H5E_DEFAULT, &errorHandler, &lastErrorStr));
     firstCall=false;
   }
 }
