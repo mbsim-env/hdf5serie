@@ -126,6 +126,9 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
         return openChildAttribute<SimpleAttribute<CTYPE> >(name_);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
+      // fixed length string types need special handling
+      if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+        return openChildAttribute<SimpleAttribute<string> >(name_);
       throw Exception(getPath(), "unknown type of dataset");
     case 1:
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED) {
@@ -135,6 +138,9 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
           return openChildAttribute<SimpleAttribute<vector<CTYPE> > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
+        // fixed length string types need special handling
+        if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+          return openChildAttribute<SimpleAttribute<vector<string> > >(name_);
         throw Exception(getPath(), "unknown type of attribute");
       }
       throw Exception(getPath(), "unknown dimension of attribute");
@@ -147,6 +153,9 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
           return openChildAttribute<SimpleAttribute<vector<vector<CTYPE> > > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
+        // fixed length string types need special handling
+        if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+          return openChildAttribute<SimpleAttribute<vector<vector<string> > > >(name_);
         throw Exception(getPath(), "unknown type of attribute");
       }
       throw Exception(getPath(), "unknown dimension of attribute");

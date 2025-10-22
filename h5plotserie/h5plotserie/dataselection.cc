@@ -208,19 +208,23 @@ shared_ptr<H5::File> DataSelection::getH5File(const boost::filesystem::path &p) 
 void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
   list<string> names=grp->getChildObjectNames();
   for(const auto & name : names) {
-    QTreeWidgetItem *child = new TreeWidgetItem(QStringList(name.c_str()));
-    item->addChild(child);
-    auto *g=dynamic_cast<H5::Group*>(grp->openChildObject(name));
-    if(g)
+    H5::ElementType et;
+    hid_t t;
+    auto *o=grp->openChildObject(name, &et, &t);
+    auto *g=dynamic_cast<H5::Group*>(o);
+    if(g) {
+      QTreeWidgetItem *child = new TreeWidgetItem(QStringList(name.c_str()));
+      item->addChild(child);
       insertChildInTree(g, child);
+    }
     else {
-      QString path; 
-      getPath(item,path,0);
-      path += QString("/") + name.c_str();
-      H5::ElementType et;
-      hid_t t;
-      grp->openChildObject(path.toStdString(), &et, &t);
+      // for now we only add datasets of type vectorserie<double>
       if(et==H5::vectorSerie && H5Tequal(t, H5T_NATIVE_DOUBLE)) {
+        QTreeWidgetItem *child = new TreeWidgetItem(QStringList(name.c_str()));
+        item->addChild(child);
+        QString path; 
+        getPath(item,path,0);
+        path += QString("/") + name.c_str();
         static_cast<TreeWidgetItem*>(child)->setPath(path);
         static_cast<TreeWidgetItem*>(child)->setIsVectorSerieDouble(true);
       }

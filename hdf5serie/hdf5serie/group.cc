@@ -86,6 +86,9 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
         return openChildObject<SimpleDataset<CTYPE> >(name_);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
+      // fixed length string types need special handling
+      if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+        return openChildObject<SimpleDataset<string> >(name_);
       throw Exception(getPath(), "unknown type of dataset");
     case 1:
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED) {
@@ -95,6 +98,9 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
           return openChildObject<SimpleDataset<vector<CTYPE> > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
+        // fixed length string types need special handling
+        if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+          return openChildObject<SimpleDataset<vector<string> > >(name_);
         throw Exception(getPath(), "unknown type of dataset");
       }
       throw Exception(getPath(), "unknown dimension of dataset");
@@ -107,6 +113,9 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
           return openChildObject<SimpleDataset<vector<vector<CTYPE> > > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
+        // fixed length string types need special handling
+        if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+          return openChildObject<SimpleDataset<vector<vector<string> > > >(name_);
         throw Exception(getPath(), "unknown type of dataset");
       }
       if(maxDims[0]==H5S_UNLIMITED &&
@@ -117,6 +126,9 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
           return openChildObject<VectorSerie<CTYPE> >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
+        // fixed length string types need special handling
+        if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+          return openChildObject<VectorSerie<string> >(name_);
         throw Exception(getPath(), "unknown type of dataset");
       }
       throw Exception(getPath(), "unknown dimension of dataset");
