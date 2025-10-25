@@ -654,12 +654,12 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
   cout<<"test readonly\n";
   {
     bfs::create_directory("readonlydir");
-    bfs::permissions("readonlydir", bfs::owner_write | bfs::owner_read | bfs::owner_exe);
+    bfs::permissions("readonlydir", bfs::owner_write | bfs::owner_read | bfs::owner_exe | bfs::others_read | bfs::others_exe);
     boost::system::error_code ec;
-    bfs::permissions("readonlydir/test.h5", bfs::owner_write | bfs::owner_read, ec);
+    bfs::permissions("readonlydir/test.h5", bfs::owner_write | bfs::owner_read | bfs::others_read, ec);
     bfs::copy_file("test.h5", "readonlydir/test.h5", bfs::copy_options::overwrite_existing);
-    bfs::permissions("readonlydir", bfs::owner_read | bfs::owner_exe);
-    bfs::permissions("readonlydir/test.h5", bfs::owner_read);
+    bfs::permissions("readonlydir", bfs::owner_read | bfs::owner_exe | bfs::others_read | bfs::others_exe);
+    bfs::permissions("readonlydir/test.h5", bfs::owner_read | bfs::others_read, ec);
 
     File file("readonlydir/test.h5", File::read);
     auto *d=file.openChildObject<SimpleDataset<vector<vector<complex<double>>>>>("d");
