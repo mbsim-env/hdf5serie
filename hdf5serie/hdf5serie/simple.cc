@@ -117,8 +117,10 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
   #ifdef HDF5SERIE_DATASETTYPE
     ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
     checkCall(H5Pset_attr_phase_change(propID, 0, 0));
-    checkCall(H5Pset_chunk(propID, 1, dims));
-    if(compression>0) checkCall(H5Pset_deflate(propID, compression));
+    if(size>0) {
+      checkCall(H5Pset_chunk(propID, 1, dims));
+      if(compression>0) checkCall(H5Pset_deflate(propID, compression));
+    }
   #endif
   id.reset(HDF5SERIE_H5XCREATE, &HDF5SERIE_H5XCLOSE);
 }
@@ -261,8 +263,10 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
   #ifdef HDF5SERIE_DATASETTYPE
     ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
     checkCall(H5Pset_attr_phase_change(propID, 0, 0));
-    checkCall(H5Pset_chunk(propID, 2, dims));
-    if(compression>0) checkCall(H5Pset_deflate(propID, compression));
+    if(rows>0 && cols>0) {
+      checkCall(H5Pset_chunk(propID, 2, dims));
+      if(compression>0) checkCall(H5Pset_deflate(propID, compression));
+    }
   #endif
   id.reset(HDF5SERIE_H5XCREATE, &HDF5SERIE_H5XCLOSE);
 }
