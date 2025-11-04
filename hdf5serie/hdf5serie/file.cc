@@ -752,7 +752,7 @@ void File::enableSWMR() {
     catch(const exception &ex) {
       msg(Atom::Error)<<"HDF5Serie: A exception was thrown during enableSWMR which is rethrown now. This may cause further undefined behaviour:\n"<<
                         "Exception message:\n"<<ex.what()<<endl;
-      throw ex;
+      throw;
     }
     catch(...) {
       msg(Atom::Error)<<"HDF5Serie: A exception was thrown during enableSWMR which is rethrown now. This may cause further undefined behaviour.\n"<<
