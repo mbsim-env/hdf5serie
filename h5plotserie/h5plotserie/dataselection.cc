@@ -123,7 +123,13 @@ void DataSelection::addFile(const QString &name) {
   list<string> names=h5f->getChildObjectNames();
   for(const auto & name : names) {
     QTreeWidgetItem *item = new TreeWidgetItem(QStringList(name.c_str()));
-    auto *grp = h5f->openChildObject<H5::Group>(name);
+    H5::Group *grp = nullptr;
+    try {
+      grp = h5f->openChildObject<H5::Group>(name);
+    }
+    catch(const H5::Exception &ex) {
+      continue;
+    }
     insertChildInTree(grp, item);
     topitem->addChild(item);
   }
