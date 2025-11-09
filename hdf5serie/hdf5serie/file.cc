@@ -624,6 +624,7 @@ File::~File() {
       if(renameAtomicFunc)
         renameAtomicFunc();
       deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
+      postCloseWriter();
     }
  
     deinitShm(sharedData, getFilename(), this, shmName);
