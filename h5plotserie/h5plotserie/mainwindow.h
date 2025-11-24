@@ -43,6 +43,10 @@ class MainWindow : public QMainWindow {
     void saveAllPlotWindows();
     void loadPlotWindows();
 
+    //Event for dropping
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
+
     PlotArea *plotArea;
     DataSelection *dataSelection;
     Curves *curves;

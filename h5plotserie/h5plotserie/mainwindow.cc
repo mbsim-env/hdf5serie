@@ -31,6 +31,8 @@
 #include <QSettings>
 #include <QDomDocument>
 #include <QShortcut>
+#include <QDropEvent>
+#include <QMimeData>
 #include "mainwindow.h"
 #include "dataselection.h"
 #include "curves.h"
@@ -42,6 +44,9 @@
 using namespace std;
 
 MainWindow::MainWindow(const QStringList &arg) {
+
+  //accept drag and drop
+  setAcceptDrops(true);
 
   QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
   fileMenu->addAction("Add h5-File", this, &MainWindow::addH5FileDialog);
@@ -228,4 +233,23 @@ void MainWindow::showEvent(QShowEvent *event) {
   restoreGeometry(settings.value("mainwindow/geometry").toByteArray());
   restoreState(settings.value("mainwindow/state").toByteArray());
   QMainWindow::showEvent(event);
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
+  cout<<"mfmf1"<<endl;
+  if (event->mimeData()->hasUrls()) {
+    event->acceptProposedAction();
+  }
+}
+
+void MainWindow::dropEvent(QDropEvent *event) {
+  cout<<"mfmf2"<<endl;
+  for (int i = 0; i < event->mimeData()->urls().size(); i++) {
+    QString path = event->mimeData()->urls()[i].toLocalFile().toLocal8Bit().data();
+    if (path.endsWith(".h5") || path.endsWith(".mbsh5") || path.endsWith(".ombvh5")) {
+      QFile Fout(path);
+      if (Fout.exists())
+        dataSelection->addFile(Fout.fileName());
+    }
+  }
 }
