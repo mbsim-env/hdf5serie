@@ -191,25 +191,25 @@ namespace Internal {
     public:
       ScopedLock(ipc::interprocess_mutex &mutex, File *self_, string_view msg_) :
                  ipc::scoped_lock<ipc::interprocess_mutex>((initMsg(self_, msg_), mutex)), self(self_), msg(msg_) {
-        if(self->msgAct(Atom::Debug))
-          self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<self->getFilename().string()<<": Mutex locked: "<<msg<<endl;
+//        if(self->msgAct(Atom::Debug))
+//          self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<self->getFilename().string()<<": Mutex locked: "<<msg<<endl;
       }
       ScopedLock(const ScopedLock&) = delete;
       ScopedLock(ScopedLock&&) = delete;
       ScopedLock& operator=(const ScopedLock&) = delete;
       ScopedLock& operator=(ScopedLock&&) = delete;
       ~ScopedLock() {
-        if(self->msgAct(Atom::Debug)) {
-          if(mutex())
-            self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<self->getFilename().string()<<": Unlock mutex: "<<msg<<endl;
-          else
-            self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<self->getFilename().string()<<": Nothing to unlock, moved to other lock: "<<msg<<endl;
-        }
+//        if(self->msgAct(Atom::Debug)) {
+//          if(mutex())
+//            self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<self->getFilename().string()<<": Unlock mutex: "<<msg<<endl;
+//          else
+//            self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<self->getFilename().string()<<": Nothing to unlock, moved to other lock: "<<msg<<endl;
+//        }
       }
     private:
       static void initMsg(File *self, string_view msg) {
-        if(self->msgAct(Atom::Debug))
-          self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<self->getFilename().string()<<": Trying to lock mutex: "<<msg<<endl;
+//        if(self->msgAct(Atom::Debug))
+//          self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<self->getFilename().string()<<": Trying to lock mutex: "<<msg<<endl;
       }
       File *self;
       string_view msg;
@@ -505,14 +505,14 @@ void File::stillAlivePing() {
         const static int fixAfter = Settings::getValue("keepAlive/fixAfter", 3000);
         if(it->lastAliveTime+boost::posix_time::milliseconds(
            HDF5SERIE_FIXAFTER>0 ? HDF5SERIE_FIXAFTER : fixAfter)<curIt->lastAliveTime) {
-          msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
-                           " Assume that this process crashed. Remove it from shared memory."<<endl;
+//          msg(Atom::Info)<<"HDF5Serie: Found process with too old keep alive timestamp: "<<it->processUUID<<
+//                           " Assume that this process crashed. Remove it from shared memory."<<endl;
           if(it->type==read) {
-            msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": Decrement activeReaders and shmUseCount, since a reader seem to have crashed, and notify"<<endl;
+//            msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": Decrement activeReaders and shmUseCount, since a reader seem to have crashed, and notify"<<endl;
             sharedData->activeReaders--;
           }
           else if(it->type==write) {
-            msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": Set writerState=none and decrement shmUseCount, since the writer seem to have crashed, and notify"<<endl;
+//            msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": Set writerState=none and decrement shmUseCount, since the writer seem to have crashed, and notify"<<endl;
             sharedData->writerState=WriterState::none;
           }
           sharedData->shmUseCount--;
@@ -782,28 +782,29 @@ void File::enableSWMR() {
 
 void File::wait(ScopedLock &lock, const std::chrono::milliseconds& relTime,
                 string_view blockingMsg, const function<bool()> &pred) {
-  if(msgAct(Atom::Debug))
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Waiting for: "<<blockingMsg<<endl;
+//  if(msgAct(Atom::Debug))
+//    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Waiting for: "<<blockingMsg<<endl;
   bool blockMsgPrinted=false;
-  auto blockTime = chrono::system_clock::now();
+//  auto blockTime = chrono::system_clock::now();
   if(!sharedData->cond.wait_for(lock, relTime, [&pred](){ return pred(); })) {
     // print a message if this call will block
     if(!blockingMsg.empty() && !pred()) {
-      msg(Atom::Info)<<getFilename().filename().string()<<": "<<now(blockTime)<<": "<<blockingMsg<<endl;
+//      msg(Atom::Info)<<getFilename().filename().string()<<": "<<now(blockTime)<<": "<<blockingMsg<<endl;
       blockMsgPrinted=true;
     }
     sharedData->cond.wait(lock, [&pred](){ return pred(); });
   }
-  if(blockMsgPrinted)
-    msg(Atom::Info)<<getFilename().filename().string()<<": "<<now()<<": Waiting condition passed, continue: "<<blockingMsg<<endl;
-  if(msgAct(Atom::Debug))
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Waiting condition passed, continue: "<<blockingMsg<<endl;
+  if(blockMsgPrinted) {
+//    msg(Atom::Info)<<getFilename().filename().string()<<": "<<now()<<": Waiting condition passed, continue: "<<blockingMsg<<endl;
+  }
+//  if(msgAct(Atom::Debug))
+//    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Waiting condition passed, continue: "<<blockingMsg<<endl;
 }
 
 // executed in a thread
 void File::listenForRequest() {
-  if(msgAct(Atom::Debug))
-    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Thread started"<<endl;
+//  if(msgAct(Atom::Debug))
+//    msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Thread started"<<endl;
   // this thread just listens for all notifications and ...
   ScopedLock threadLock(sharedData->mutex, this, "listenForRequest");
   while(true) {
@@ -821,13 +822,13 @@ void File::listenForRequest() {
       flushRequested=false;
       // ... call the callback to notify the caller of this reader about the finished flush
       if(refreshCallback) {
-        if(msgAct(Atom::Debug))
-          msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": The writer has flushed this file. Notify the reader."<<endl;
+//        if(msgAct(Atom::Debug))
+//          msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": The writer has flushed this file. Notify the reader."<<endl;
         refreshCallback();
       }
       else {
-        if(msgAct(Atom::Debug))
-          msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": The writer has flushed this file but the reader does not handle such nofitications."<<endl;
+//        if(msgAct(Atom::Debug))
+//          msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": The writer has flushed this file but the reader does not handle such nofitications."<<endl;
       }
       // do no exit the thread
     }
@@ -836,13 +837,13 @@ void File::listenForRequest() {
     if(sharedData->writerState==WriterState::writeRequest) {
       // ... call the callback to notify the caller of this reader about this request
       if(closeRequestCallback) {
-        if(msgAct(Atom::Debug))
-          msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": The writer wants to write this file. Notify the reader."<<endl;
+//        if(msgAct(Atom::Debug))
+//          msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": The writer wants to write this file. Notify the reader."<<endl;
         closeRequestCallback();
       }
       else {
-        if(msgAct(Atom::Debug))
-          msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": The writer wants to write this file but the reader does not handle such requests."<<endl;
+//        if(msgAct(Atom::Debug))
+//          msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": The writer wants to write this file but the reader does not handle such requests."<<endl;
       }
       break; // exit the thread
     }
