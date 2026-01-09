@@ -617,6 +617,7 @@ File::~File() {
       std::swap(shm, tmpShm);
       std::swap(region, tmpRegion);
       std::swap(sharedData, tmpSharedData);
+      initProcessInfo();
       preOpenWriter();
       checkIfFileIsOpenedBySomeone("File::~File::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::~File::prerename", filename);
@@ -625,6 +626,7 @@ File::~File() {
         renameAtomicFunc();
       deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
       postCloseWriter();
+      deinitProcessInfo();
     }
  
     deinitShm(sharedData, getFilename(), this, shmName);
