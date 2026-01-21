@@ -679,13 +679,14 @@ void File::refresh() {
   GroupBase::refresh();
 }
 
-void File::requestFlush() {
+bool File::requestFlush() {
   ScopedLock lock(sharedData->mutex, this, "requestFlush");
   if(msgAct(Atom::Debug))
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Set flushRequest and notify"<<endl;
   sharedData->flushRequest=true;
   flushRequested=true;
   sharedData->cond.notify_all(); // not really needed since we assume that the writer is polling on this flag frequently.
+  return sharedData->writerState==WriterState::swmr;
 }
 
 void File::flushIfRequested() {

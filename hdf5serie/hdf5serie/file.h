@@ -150,7 +150,9 @@ namespace H5 {
       void refresh() override;
       //! Request a flush of the writer.
       //! This is not blocking. If the writer has flushed the refreshCallback is called, see constructor.
-      void requestFlush();
+      //! If a writer process currently exists true is returned else false. Note that this flag cannot change
+      //! while the calling process as opened the file for reading.
+      bool requestFlush();
       //! Flush the file (the dataset) of a writer if this is requested by a reader.
       //! Does nothing if no reader has requested a flush.
       //! If a flush happend the reades are notified about the flush.
