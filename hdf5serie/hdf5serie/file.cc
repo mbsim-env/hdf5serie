@@ -689,7 +689,7 @@ bool File::requestFlush() {
   return sharedData->writerState==WriterState::swmr;
 }
 
-void File::flushIfRequested() {
+void File::flushIfRequested(const function<void(File*)> &postFlushFunc) {
   if(getType()!=write)
     throw Exception(getPath(), "flushIfRequested() can only be called for writing files");
 
@@ -707,6 +707,9 @@ void File::flushIfRequested() {
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Flushing now"<<endl;
   GroupBase::flush();
 
+  if(postFlushFunc)
+    postFlushFunc(this);
+
   ScopedLock lock(sharedData->mutex, this, "flushIfRequested, after flush");
   if(msgAct(Atom::Debug))
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Unset flushRequest and notify"<<endl;
@@ -718,6 +721,9 @@ void File::enableSWMR() {
   if(getType()!=write)
     throw Exception(getPath(), "enableSWMR() can only be called for writing files");
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: start"<<endl;
+
+  msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": flush before enableSWMR"<<endl;
+  flush();
 
   if(type == writeWithRename) {
     try {

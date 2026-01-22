@@ -296,9 +296,9 @@ namespace H5 {
       ~Dataset() override;
       void close() override;
       void refresh() override;
-      void flush() override;
       void enableSWMR() override;
     public:
+      void flush() override;
       std::vector<hsize_t> getExtentDims();
   };
 

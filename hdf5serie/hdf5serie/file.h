@@ -155,8 +155,9 @@ namespace H5 {
       bool requestFlush();
       //! Flush the file (the dataset) of a writer if this is requested by a reader.
       //! Does nothing if no reader has requested a flush.
-      //! If a flush happend the reades are notified about the flush.
-      void flushIfRequested();
+      //! If a flush happens postFlushFunc is called immediately after the flush ("this" is passed as argument)
+      //! and than the readers are notified about the flush.
+      void flushIfRequested(const std::function<void(File*)> &postFlushFunc={});
 
       //! Internal helper function which dumps the content of the shared memory associated with filename.
       //! !!! Note that the shared memory mutex is NOT locked for this operation but the global named mutex to create/open and destroy lock is accquired.

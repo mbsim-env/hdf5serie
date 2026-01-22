@@ -35,11 +35,12 @@ namespace H5 {
       ~GroupBase() override;
       void close() override;
       void refresh() override;
-      void flush() override;
       void enableSWMR() override;
       Dataset *openChildDataset(const std::string &name_, ElementType *objectType, hid_t *type);
       GroupBase *getFileAsGroup();
     public:
+      void flush() override;
+
       template<class T>
       Container<Object, GroupBase>::Creator<T> createChildObject(const std::string &path) {
         if(path[0]=='/') // absolute path -> call createChildObject from file
