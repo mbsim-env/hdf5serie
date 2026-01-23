@@ -65,6 +65,22 @@ namespace H5 {
         if(!closeFunc)
           throw Exception("<unknown>", "No close function defined.");
       }
+      ScopedHID(const ScopedHID &) = delete;
+      ScopedHID(ScopedHID &&src) noexcept {
+        id = src.id;
+        closeFunc = src.closeFunc;
+        src.id = -1;
+        src.closeFunc = nullptr;
+      }
+      ScopedHID& operator=(const ScopedHID &) = delete;
+      ScopedHID& operator=(ScopedHID &&src) noexcept {
+        reset();
+        id = src.id;
+        closeFunc = src.closeFunc;
+        src.id = -1;
+        src.closeFunc = nullptr;
+        return *this;
+      }
       ~ScopedHID() {
         try {
           reset();
@@ -265,7 +281,7 @@ namespace H5 {
         // now its a relative path including at least one /
         return getAttrParent(path, pos)->openChild<T>(path.substr(pos+1));
       }
-      Attribute *openChildAttribute(const std::string &name_, ElementType *attributeType=nullptr, hid_t *type=nullptr);
+      Attribute *openChildAttribute(const std::string &name_, ElementType *attributeType=nullptr, ScopedHID *type=nullptr);
       std::set<std::string> getChildAttributeNames();
       bool hasChildAttribute(const std::string &name_);
       GroupBase *getParent() { return parent; }

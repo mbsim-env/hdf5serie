@@ -236,14 +236,12 @@ void MainWindow::showEvent(QShowEvent *event) {
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event) {
-  cout<<"mfmf1"<<endl;
   if (event->mimeData()->hasUrls()) {
     event->acceptProposedAction();
   }
 }
 
 void MainWindow::dropEvent(QDropEvent *event) {
-  cout<<"mfmf2"<<endl;
   for (int i = 0; i < event->mimeData()->urls().size(); i++) {
     QString path = event->mimeData()->urls()[i].toLocalFile().toLocal8Bit().data();
     if (path.endsWith(".h5") || path.endsWith(".mbsh5") || path.endsWith(".ombvh5")) {

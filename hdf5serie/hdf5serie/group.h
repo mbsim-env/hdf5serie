@@ -36,7 +36,7 @@ namespace H5 {
       void close() override;
       void refresh() override;
       void enableSWMR() override;
-      Dataset *openChildDataset(const std::string &name_, ElementType *objectType, hid_t *type);
+      Dataset *openChildDataset(const std::string &name_, ElementType *objectType, ScopedHID *type);
       GroupBase *getFileAsGroup();
     public:
       void flush() override;
@@ -70,7 +70,7 @@ namespace H5 {
           throw Exception(getPath(), "Got a path (including /) but this object is not a group");
         return group->openChildObject<T>(path.substr(pos+1));
       }
-      Object *openChildObject(const std::string &name_, ElementType *objectType=nullptr, hid_t *type=nullptr);
+      Object *openChildObject(const std::string &name_, ElementType *objectType=nullptr, ScopedHID *type=nullptr);
       std::list<std::string> getChildObjectNames();
   };
 

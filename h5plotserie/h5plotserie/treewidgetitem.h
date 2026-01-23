@@ -25,14 +25,16 @@
 
 class TreeWidgetItem : public QTreeWidgetItem {
 
+  public:
+    enum VectorSerieType { No, Double, Float };
   private:
     QString path;
     QStringList list;
     bool searchMatched;
-    bool isVectorSerieDouble { false };
+    VectorSerieType isVectorSerie { No };
   public:
-    void setIsVectorSerieDouble(bool b) { isVectorSerieDouble = b; }
-    bool getIsVectorSerieDouble() { return isVectorSerieDouble; }
+    void setIsVectorSerie(VectorSerieType t) { isVectorSerie = t; }
+    VectorSerieType getIsVectorSerie() { return isVectorSerie; }
     TreeWidgetItem ( const QStringList & strings) : QTreeWidgetItem(strings), searchMatched(true) {}
     void setPath(const QString& p) {path = p;}
     void setStringList(QStringList &list_) {list = list_;}

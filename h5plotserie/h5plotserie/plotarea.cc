@@ -98,26 +98,36 @@ void PlotWindow::detachPlot() {
   yMaxValue=-99e99;
 }
 
+namespace {
+  std::vector<double> getColumn(const std::shared_ptr<H5::File> &h5file, PlotData &pd,
+                                const QString &path, const QString &index) {
+    if(auto vsD=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue(path).toStdString()); vsD) {
+      std::vector<double> xVal(vsD->getRows());
+      vsD->getColumn(pd.getValue(index).toInt(), xVal);
+      return xVal;
+    }
+    else {
+      auto vsF=h5file->openChildObject<H5::VectorSerie<float> >(pd.getValue(path).toStdString());
+      std::vector<float> xVal(vsF->getRows());
+      vsF->getColumn(pd.getValue(index).toInt(), xVal);
+      std::vector<double> xValD;
+      xValD.reserve(xVal.size());
+      std::transform(xVal.begin(), xVal.end(), std::back_inserter(xValD), [](float x){ return x; });
+      return xValD;
+    }
+  }
+}
 void PlotWindow::plotDataSet(PlotData pd, int penColor) {
   try {
     DataSelection *dataSelection=static_cast<MainWindow*>(parent()->parent()->parent())->getDataSelection();
     std::shared_ptr<H5::File> h5file=dataSelection->getH5File(QString(pd.getValue("Filepath")+"/"+pd.getValue("Filename")).toStdString());
 
-    H5::VectorSerie<double> *vs;
-    vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("x-Path").toStdString());
-    size_t rows=vs->getRows();
-    std::vector<double> xVal(rows);
-    vs->getColumn(pd.getValue("x-Index").toInt(), xVal);
-
-    vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y-Path").toStdString());
-    std::vector<double> yVal(rows);
-    vs->getColumn(pd.getValue("y-Index").toInt(), yVal);
-
-    std::vector<double> y2Val(rows);
+    auto xVal = getColumn(h5file, pd, "x-Path", "x-Index");
+    auto yVal = getColumn(h5file, pd, "y-Path", "y-Index");
+    std::vector<double> y2Val;
     bool useY2=false;
     if (pd.getValue("y2-Path").length()>0) {
-      vs=h5file->openChildObject<H5::VectorSerie<double> >(pd.getValue("y2-Path").toStdString());
-      vs->getColumn(pd.getValue("y2-Index").toInt(), y2Val);
+      y2Val = getColumn(h5file, pd, "y2-Path", "y2-Index");
       useY2=true;
     }
 

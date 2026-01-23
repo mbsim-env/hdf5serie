@@ -215,7 +215,7 @@ void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
   list<string> names=grp->getChildObjectNames();
   for(const auto & name : names) {
     H5::ElementType et;
-    hid_t t;
+    H5::ScopedHID t;
     auto *o=grp->openChildObject(name, &et, &t);
     auto *g=dynamic_cast<H5::Group*>(o);
     if(g) {
@@ -224,15 +224,15 @@ void DataSelection::insertChildInTree(H5::Group *grp, QTreeWidgetItem *item) {
       insertChildInTree(g, child);
     }
     else {
-      // for now we only add datasets of type vectorserie<double>
-      if(et==H5::vectorSerie && H5Tequal(t, H5T_NATIVE_DOUBLE)) {
+      // for now we only add datasets of type VectorSerie<double> or VectorSerie<float>
+      if(et==H5::vectorSerie && (H5Tequal(t, H5T_NATIVE_DOUBLE) || H5Tequal(t, H5T_NATIVE_FLOAT))) {
         QTreeWidgetItem *child = new TreeWidgetItem(QStringList(name.c_str()));
         item->addChild(child);
         QString path; 
         getPath(item,path,0);
         path += QString("/") + name.c_str();
         static_cast<TreeWidgetItem*>(child)->setPath(path);
-        static_cast<TreeWidgetItem*>(child)->setIsVectorSerieDouble(true);
+        static_cast<TreeWidgetItem*>(child)->setIsVectorSerie(H5Tequal(t, H5T_NATIVE_DOUBLE) ? TreeWidgetItem::Double : TreeWidgetItem::Float);
       }
     }
   }
@@ -245,22 +245,33 @@ void DataSelection::getPath(QTreeWidgetItem* item, QString &s, int col) {
   s  += "/" + item->text(col);
 }
 
-void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
-  currentData->clear();
-  if(static_cast<TreeWidgetItem*>(item)->getIsVectorSerieDouble()) {
-    QString path = static_cast<TreeWidgetItem*>(item)->getPath();
-    int j = getTopLevelIndex(item);
-    std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
-    auto *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
+namespace {
+  template<typename Type>
+  QStringList selectFromFileBrowserHelper(const std::shared_ptr<H5::File> &h5f, const QString &path) {
+    auto *vs=h5f->openChildObject<H5::VectorSerie<Type> >(path.toStdString());
     QStringList sl;
     if(vs->hasChildAttribute("Column Label")) {
-      auto ret=vs->openChildAttribute<H5::SimpleAttribute<vector<string> > >("Column Label")->read();
+      auto ret=vs->template openChildAttribute<H5::SimpleAttribute<vector<string> > >("Column Label")->read();
       for(auto &i : ret)
         sl << i.c_str();
     }
     else
       for(size_t i=1; i<=vs->getColumns(); ++i)
         sl << QString("Column %1").arg(i);
+    return sl;
+  }
+}
+void DataSelection::selectFromFileBrowser(QTreeWidgetItem* item, int col) {
+  currentData->clear();
+  if(auto type = static_cast<TreeWidgetItem*>(item)->getIsVectorSerie(); type != TreeWidgetItem::No) {
+    QString path = static_cast<TreeWidgetItem*>(item)->getPath();
+    int j = getTopLevelIndex(item);
+    std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
+    QStringList sl;
+    if(type == TreeWidgetItem::Double)
+      sl = selectFromFileBrowserHelper<double>(h5f, path);
+    else
+      sl = selectFromFileBrowserHelper<float>(h5f, path);
     currentData->addItems(sl);
   }
 }
@@ -274,17 +285,25 @@ int DataSelection::getTopLevelIndex(QTreeWidgetItem* item) {
 }
 
 void DataSelection::selectFromCurrentData(QListWidgetItem* item, const QString &mode) {
-  QString path = static_cast<TreeWidgetItem*>(fileBrowser->currentItem())->getPath();
+  auto twi = static_cast<TreeWidgetItem*>(fileBrowser->currentItem());
+  QString path = twi->getPath();
   int col = currentData->row(item);
-  int j = getTopLevelIndex(fileBrowser->currentItem());
+  int j = getTopLevelIndex(twi);
   std::shared_ptr<H5::File> h5f=getH5File(file[j].toStdString());
-  auto *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
 
   PlotData pd;
+  if(twi->getIsVectorSerie() == TreeWidgetItem::Double) {
+    auto *vs=h5f->openChildObject<H5::VectorSerie<double> >(path.toStdString());
+    pd.setValue("x-Label", QString::fromStdString(vs->getColumnLabel()[0]));
+    pd.setValue("y-Label", QString::fromStdString(vs->getColumnLabel()[col]));
+  }
+  else {
+    auto *vs=h5f->openChildObject<H5::VectorSerie<float> >(path.toStdString());
+    pd.setValue("x-Label", QString::fromStdString(vs->getColumnLabel()[0]));
+    pd.setValue("y-Label", QString::fromStdString(vs->getColumnLabel()[col]));
+  }
   pd.setValue("Filepath", fileInfo[j].absolutePath());
   pd.setValue("Filename", fileInfo[j].fileName());
-  pd.setValue("x-Label", QString::fromStdString(vs->getColumnLabel()[0]));
-  pd.setValue("y-Label", QString::fromStdString(vs->getColumnLabel()[col]));
   pd.setValue("offset", "0");
   pd.setValue("gain", "1");
   pd.setValue("x-Path", path);

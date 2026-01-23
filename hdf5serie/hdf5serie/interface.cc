@@ -108,7 +108,7 @@ Object::Object(GroupBase *parent_, const std::string &name_) : Element(name_),
 
 Object::~Object() = default;
 
-Attribute *Object::openChildAttribute(const std::string &name_, ElementType *attributeType, hid_t *type) {
+Attribute *Object::openChildAttribute(const std::string &name_, ElementType *attributeType, ScopedHID *type) {
   ScopedHID d(H5Aopen(id, name_.c_str(), H5P_DEFAULT), &H5Dclose);
   ScopedHID sd(H5Dget_space(d), &H5Sclose);
   hsize_t ndim=H5Sget_simple_extent_ndims(sd);
@@ -116,30 +116,34 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
   vector<hsize_t> maxDims(ndim);
   checkCall(H5Sget_simple_extent_dims(sd, &dims[0], &maxDims[0]));
   ScopedHID td(H5Dget_type(d), &H5Tclose);
-  ScopedHID ntd(H5Tget_native_type(td, H5T_DIR_ASCEND), &H5Tclose);
-  if(type) *type=ntd;
+  ScopedHID ntdTmp(H5Tget_native_type(td, H5T_DIR_ASCEND), &H5Tclose);
+  reference_wrapper<ScopedHID> ntd(ntdTmp);
+  if(type) {
+    *type = std::move(ntdTmp);
+    ntd = *type; // rebind the reference_wrapper
+  }
   switch(ndim) {
     case 0:
       if(attributeType) *attributeType=simpleAttributeScalar;
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-      if(H5Tequal(ntd, H5TYPE)) \
+      if(H5Tequal(ntd.get(), H5TYPE)) \
         return openChildAttribute<SimpleAttribute<CTYPE> >(name_);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
       // fixed length string types need special handling
-      if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+      if(H5Tget_class(ntd.get()) == H5T_STRING) // a variable length string is already handled
         return openChildAttribute<SimpleAttribute<string> >(name_);
       throw Exception(getPath(), "unknown type of dataset");
     case 1:
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED) {
         if(attributeType) *attributeType=simpleAttributeVector;
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-        if(H5Tequal(ntd, H5TYPE)) \
+        if(H5Tequal(ntd.get(), H5TYPE)) \
           return openChildAttribute<SimpleAttribute<vector<CTYPE> > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
         // fixed length string types need special handling
-        if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+        if(H5Tget_class(ntd.get()) == H5T_STRING) // a variable length string is already handled
           return openChildAttribute<SimpleAttribute<vector<string> > >(name_);
         throw Exception(getPath(), "unknown type of attribute");
       }
@@ -149,12 +153,12 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
          dims[1]==maxDims[1] && dims[1]!=H5S_UNLIMITED) {
         if(attributeType) *attributeType=simpleAttributeMatrix;
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-        if(H5Tequal(ntd, H5TYPE)) \
+        if(H5Tequal(ntd.get(), H5TYPE)) \
           return openChildAttribute<SimpleAttribute<vector<vector<CTYPE> > > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
         // fixed length string types need special handling
-        if(H5Tget_class(ntd) == H5T_STRING) // a variable length string is already handled
+        if(H5Tget_class(ntd.get()) == H5T_STRING) // a variable length string is already handled
           return openChildAttribute<SimpleAttribute<vector<vector<string> > > >(name_);
         throw Exception(getPath(), "unknown type of attribute");
       }
