@@ -673,13 +673,12 @@ void File::postCloseReader() {
 }
 
 void File::refresh() {
-  if(getType()!=read)
-    throw Exception(getPath(), "refresh() can only be called for reading files");
-
+  assert(getType()==read && "refresh() can only be called on files opened for reading");
   GroupBase::refresh();
 }
 
 bool File::requestFlush() {
+  assert(getType()==read && "requestFlush() can only be called on files opened for reading");
   ScopedLock lock(sharedData->mutex, this, "requestFlush");
   if(msgAct(Atom::Debug))
     msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Set flushRequest and notify"<<endl;
@@ -690,9 +689,7 @@ bool File::requestFlush() {
 }
 
 void File::flushIfRequested(const function<void(File*)> &postFlushFunc) {
-  if(getType()!=write)
-    throw Exception(getPath(), "flushIfRequested() can only be called for writing files");
-
+  assert(getType()==write && "flushIfRequested() can only be called on files opened for writing");
   {
     ScopedLock lock(sharedData->mutex, this, "flushIfRequested, before flush");
     if(!sharedData->flushRequest) {

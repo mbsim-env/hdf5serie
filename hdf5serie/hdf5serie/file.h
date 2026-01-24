@@ -122,13 +122,14 @@ namespace H5 {
       //! This callback is called if any writer want to write the file this reader also holds.
       //! If this callback is called you should close (destruct) this File object in time.
       //! After close (destruct) you can immediately reopen the file by constructing a File object (with the same HDF5 file) again.
-      //! The inter process communication will ensure the the requested writer does its job before you can reopen the file for reading again.
+      //! The inter process communication will ensure that the requested writer does its job before you can reopen the file for reading again.
       //! For a reader refreshCallback_ should also be set if the reader will call requestFlush.
-      //! This this callback is called the reader should call refresh().
-      //! Note that both callback functions will be called from of a thread created by this constructor.
-      //! If the file was opened with writeWithRename then the function renameAtomicFunc is called immediately after the rename
-      //! of the HDF5 file took place, at a time when both files are still locked. Hence, this function can be used if other actions
-      //! a rename of additional files need to happen in a way being synchronous to the HDF5 rename
+      //! When this callback is called the reader should call refresh().
+      //! Note that both callback functions will be called from a thread created by this constructor.
+      //! If the file was opened with writeWithRename, then the function renameAtomicFunc is called immediately after the rename
+      //! of the HDF5 file took place, at a time when both files are still locked but not used.
+      //! Hence, this function can be used if other actions need to happen synchronous to this HDF5 file rename
+      //! (like renaming of additional files).
       File(const boost::filesystem::path &filename_, FileAccess type_,
            const std::function<void()> &closeRequestCallback_={},
            const std::function<void()> &refreshCallback_={},
@@ -146,14 +147,15 @@ namespace H5 {
       static int getDefaultCacheSize() { return defaultCacheSize; }
       static void setDefaultCacheSize(int cache) { defaultCacheSize=cache; }
 
-      //! Refresh the dataset of a reader
+      //! Refresh the datasets of a reader
       void refresh() override;
-      //! Request a flush of the writer.
+      //! Called by a reader to request a flush of the writer.
       //! This is not blocking. If the writer has flushed the refreshCallback is called, see constructor.
-      //! If a writer process currently exists true is returned else false. Note that this flag cannot change
-      //! while the calling process as opened the file for reading.
+      //! If a writer process currently exists true is returned else false. Note that this returned flag cannot change
+      //! while the calling process has opened the file for reading.
       bool requestFlush();
-      //! Flush the file (the dataset) of a writer if this is requested by a reader.
+      //! This function should be called periodically for a file opened for writing.
+      //! It flush's the file (the dataset) of a writer if such a flush was requested by a reader.
       //! Does nothing if no reader has requested a flush.
       //! If a flush happens postFlushFunc is called immediately after the flush ("this" is passed as argument)
       //! and than the readers are notified about the flush.

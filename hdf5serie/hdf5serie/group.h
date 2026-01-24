@@ -39,6 +39,7 @@ namespace H5 {
       Dataset *openChildDataset(const std::string &name_, ElementType *objectType, ScopedHID *type);
       GroupBase *getFileAsGroup();
     public:
+      //! flush's all dataset below this group
       void flush() override;
 
       template<class T>
