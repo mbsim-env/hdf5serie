@@ -30,6 +30,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/algorithm/string.hpp>
 #ifdef _WIN32
   #ifndef WIN32_LEAN_AND_MEAN
   #  define WIN32_LEAN_AND_MEAN
@@ -39,6 +40,7 @@
 #else
   #include <sys/vfs.h>
   #include <linux/magic.h>
+  #include <sys/file.h>
 #endif
 #if !defined(NDEBUG) && !defined(_WIN32)
   #include <boost/process.hpp>
@@ -50,16 +52,6 @@ using namespace H5::Internal;
 namespace ipc = boost::interprocess;
 
 namespace {
-
-  struct Init{
-    Init() {
-      #if H5_VERSION_LE(1, 10, 6)
-        // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> set this envvar
-        // We do setting of envvars at program start where we assume that no other threads are running -> then is safe to all getenv
-        putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
-      #endif
-    }
-  } init;
 
   auto now(const chrono::system_clock::time_point &currentTime = chrono::system_clock::now()) {
     auto t = chrono::system_clock::to_time_t(currentTime);
@@ -437,25 +429,44 @@ void File::preOpenWriter() {
   sharedData->cond.notify_all();
 }
 
+namespace {
+  void retryIfFileLockingFailed(const string &msg, const function<void()> &run) {
+    static const std::vector<double> retryDelay {0,0.1,0.5,1,5,10};
+    for(size_t i=0; i<retryDelay.size(); ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<size_t>(retryDelay[i]*1000)));
+      try {
+        run();
+        break; // if everything was ok break this loop (not retry needed)
+      }
+      catch(...) {
+        if(i<retryDelay.size()-1)
+          Atom::msgStatic(Atom::Warn)<<msg<<"\nThe file is locked by another process, not using HDF5Serie. Retry "<<i+1<<"/"<<retryDelay.size()-1
+                                          <<" in "<<retryDelay[i+1]<<"s."<<endl;
+        else
+          throw;
+      }
+    }
+  }
+}
+
 void File::openWriter() {
   // create file
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Create HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   checkCall(H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST));
   checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
-  // Disable file locking: we use our own locking mechanism
-  #if !H5_VERSION_LE(1, 10, 6)
-    // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
-    checkCall(H5Pset_file_locking(faid, false, true));
-  #endif
   checkIfFileIsOpenedBySomeone("File::openWriter::precreate/preopen", getFilename());
   if(type==write || (type==writeWithRename && preSWMR)) {
     ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
     checkCall(H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED));
-    id.reset(H5Fcreate(getFilename().string().c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
+    retryIfFileLockingFailed(getFilename().string()+": unable to open for writing.", [this, &faid, &file_creation_plist](){
+      id.reset(H5Fcreate(getFilename().string().c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
+    });
   }
   else
-    id.reset(H5Fopen(getFilename().string().c_str(), H5F_ACC_RDWR, faid), &H5Fclose);
+    retryIfFileLockingFailed(getFilename().string()+": unable to open for writing.", [this, &faid](){
+      id.reset(H5Fopen(getFilename().string().c_str(), H5F_ACC_RDWR, faid), &H5Fclose);
+    });
   noFileHandleInherit(id);
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Create HDF5 file: done"<<endl;
 }
@@ -553,15 +564,9 @@ void File::openReader() {
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Open HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
-  // Disable file locking: we use our own locking mechanism
-  // Disable file locking: we use our own locking mechanism
-  #if !H5_VERSION_LE(1, 10, 6)
-    // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
-    checkCall(H5Pset_file_locking(faid, false, true));
-  #endif
-  auto hid=H5Fopen(getFilename().string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid);
-  if(hid>=0)
-    id.reset(hid, &H5Fclose);
+  retryIfFileLockingFailed(getFilename().string()+": unable to open for reading.", [this, &faid](){
+    id.reset(H5Fopen(getFilename().string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid), &H5Fclose);
+  });
   noFileHandleInherit(id);
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Open HDF5 file: done"<<endl;
 }
@@ -583,6 +588,44 @@ void File::deinitShm(SharedMemObject *sharedData, const boost::filesystem::path 
     SharedMemoryRemove(shmName.c_str()); // effectively destructs shm
   }
   self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock: dtor"<<endl;
+}
+
+namespace {
+  void renameFileWithHDF5Locking(const boost::filesystem::path& src, const boost::filesystem::path& dst) {
+    static bool useFileLocking = ! (getenv("HDF5_USE_FILE_LOCKING")!=nullptr &&
+      (boost::iequals(getenv("HDF5_USE_FILE_LOCKING"), "OFF") || boost::iequals(getenv("HDF5_USE_FILE_LOCKING"), "FALSE")));
+    if(useFileLocking) {
+      retryIfFileLockingFailed(src.string()+"/"+dst.string()+": rename failed.",
+      [&src, &dst](){
+        #ifdef _WIN32
+        #else
+          int dstFD = open(dst.string().c_str(), O_CREAT); if(dstFD<0) throw runtime_error("Unable to open/create "+dst.string());
+          BOOST_SCOPE_EXIT(dstFD, &dst) {
+            if(close(dstFD)!=0) throw runtime_error("Unable to close "+dst.string());
+          } BOOST_SCOPE_EXIT_END
+
+          if(flock(dstFD, LOCK_EX | LOCK_NB)!=0) throw runtime_error("Unable to exclusively lock "+dst.string());
+          BOOST_SCOPE_EXIT(dstFD, &dst) {
+            if(flock(dstFD, LOCK_UN | LOCK_NB)!=0) throw runtime_error("Unable to unlock "+dst.string());
+          } BOOST_SCOPE_EXIT_END
+
+          int srcFD = open(src.string().c_str(), 0); if(srcFD<0) throw runtime_error("Unable to open "+src.string());
+          BOOST_SCOPE_EXIT(srcFD, &src) {
+            if(close(srcFD)!=0) throw runtime_error("Unable to close "+src.string());
+          } BOOST_SCOPE_EXIT_END
+
+          if(flock(srcFD, LOCK_EX | LOCK_NB)!=0) throw runtime_error("Unable to exclusively lock "+src.string());
+          BOOST_SCOPE_EXIT(srcFD, &src) {
+            if(flock(srcFD, LOCK_UN | LOCK_NB)!=0) throw runtime_error("Unable to unlock "+src.string());
+          } BOOST_SCOPE_EXIT_END
+        #endif
+
+        boost::filesystem::rename(src, dst);
+      });
+    }
+    else
+      boost::filesystem::rename(src, dst);
+  }
 }
 
 File::~File() {
@@ -621,7 +664,7 @@ File::~File() {
       preOpenWriter();
       checkIfFileIsOpenedBySomeone("File::~File::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::~File::prerename", filename);
-      boost::filesystem::rename(getFilename(), filename);
+      renameFileWithHDF5Locking(getFilename(), filename);
       if(renameAtomicFunc)
         renameAtomicFunc();
       deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
@@ -728,7 +771,7 @@ void File::enableSWMR() {
       closeWriter();
       postCloseWriter();
       deinitProcessInfo();
-
+  
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": enableSWMR: type=writeWithRename: create shm for original filename"<<endl;
       std::string tmpShmName;
       Internal::SharedMemory tmpShm;
@@ -745,14 +788,14 @@ void File::enableSWMR() {
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: move temp to original file"<<endl;
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", filename);
-      boost::filesystem::rename(getFilename(), filename);
+      renameFileWithHDF5Locking(getFilename(), filename);
       if(renameAtomicFunc)
         renameAtomicFunc();
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: deinit shm for temp filename"<<endl;
       deinitShm(tmpSharedData, getFilename(), this, tmpShmName);
-
+  
       preSWMR = false;
-
+  
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: reopen all elements"<<endl;
       openWriter();
     }
