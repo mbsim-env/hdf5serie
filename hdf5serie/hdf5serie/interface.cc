@@ -32,7 +32,7 @@
 using namespace std;
 
 namespace {
-  string lastErrorStr;
+  vector<H5::ErrorInfo> globalErrorStack;
 
   herr_t getChildNamesACB(hid_t, const char *name, const H5A_info_t *, void *op_data) {
     pair<exception_ptr, set<string>> &ret=*static_cast<pair<exception_ptr, set<string>>*>(op_data);
@@ -46,11 +46,9 @@ namespace {
   }
 
   herr_t errorWalk(unsigned n, const H5E_error2_t *err, void *data) {
-    auto &localLastErrorStr = *static_cast<string*>(data);
+    auto &globalErrorStack = *static_cast<vector<H5::ErrorInfo>*>(data);
     try {
-      if(!localLastErrorStr.empty())
-        localLastErrorStr += "\n";
-      localLastErrorStr += "HDF5 error in file "s+err->file_name+":"+to_string(err->line)+" function "+err->func_name+"\n"+err->desc;
+      globalErrorStack.emplace_back(err->cls_id, err->maj_num, err->min_num, err->line, err->func_name, err->file_name, err->desc);
     }
     catch(...) {
       cerr<<"Error printing error message. This should never happen."<<endl;
@@ -68,14 +66,38 @@ namespace {
 namespace H5 {
 
 Exception::Exception(std::string path_, std::string msg_) : path(std::move(path_)), msg(std::move(msg_)) {
-  msg += "\n" + lastErrorStr;
-  lastErrorStr.clear();
+  errorStack = std::move(globalErrorStack);
+  globalErrorStack.clear();
 }
 
 Exception::~Exception() noexcept = default;
 
 const char* Exception::what() const noexcept {
-  whatMsg="In element "+path+": "+msg;
+  if(!path.empty())
+    whatMsg = "HDF5 error at: "+path+":";
+  else
+    whatMsg = "HDF5 error:";
+
+  whatMsg += "\n"+msg;
+
+  if(!errorStack.empty()) {
+    whatMsg += "\nError details from HDF5 (stacktrace):";
+    auto tostr = [](const char* s) {
+      return s ? s : "<unknown>";
+    };
+    for(auto &ei : errorStack) {
+      whatMsg += "\n- "+ei.desc;
+      if(fmatvec::Atom::msgActStatic(fmatvec::Atom::Debug)) {
+        whatMsg += "\n  major: "s+tostr(H5Eget_major(ei.maj_num));
+        whatMsg += "\n  minor: "s+tostr(H5Eget_minor(ei.min_num));
+        whatMsg += "\n  source file: "s+ei.file_name;
+        whatMsg += "\n  source func: "s+ei.func_name;
+        whatMsg += "\n  source line: "s+to_string(ei.line);
+        whatMsg += "\n  class id: "s+to_string(ei.cls_id);
+      }
+    }
+  }
+
   return whatMsg.c_str();
 }
 
@@ -83,7 +105,7 @@ Element::Element(std::string name_) :  name(std::move(name_)) {
   // print errors as exceptions
   static bool firstCall=true;
   if(firstCall) {
-    checkCall(H5Eset_auto2(H5E_DEFAULT, &errorHandler, &lastErrorStr));
+    checkCall(H5Eset_auto2(H5E_DEFAULT, &errorHandler, &globalErrorStack));
     firstCall=false;
   }
 }

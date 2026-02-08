@@ -321,7 +321,7 @@ File::File(const boost::filesystem::path &filename_, FileAccess type_,
   processUUID(boost::uuids::random_generator()()) {
 
   if(getType()==read && !boost::filesystem::exists(filename))
-    throw runtime_error("No such HDF5 file to open: "+filename.string());
+    throw Exception({}, "No such HDF5 file to open: "+filename.string());
 
   if(type==writeWithRename)
     preSWMR = true;
@@ -428,27 +428,37 @@ void File::preOpenWriter() {
 }
 
 namespace {
-  void retryOnError(const string &msg, const function<void()> &run) {
-    static const std::vector<double> retryDelay {0,0.1,0.5,1,5,10};
+  void retryOnLockError(const string &filenames, const function<void()> &run) {
+    static const std::vector<double> retryDelay {0,0.01,0.1,0.5/*,1,5,10*/};
     for(size_t i=0; i<retryDelay.size(); ++i) {
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<size_t>(retryDelay[i]*1000)));
       try {
         run();
-        break; // if everything was ok break this loop (not retry needed)
+        break; // if everything was ok break this loop (no retry needed)
       }
-      catch(exception &ex) {
-        if(i<retryDelay.size()-1)
-          Atom::msgStatic(Atom::Warn)<<msg<<"\nFile access not possible:\n"<<ex.what()<<"\nRetry "
-                                          <<i+1<<"/"<<retryDelay.size()-1<<" in "<<retryDelay[i+1]<<"s."<<endl;
-        else
+      catch(std::exception &ex) {
+        // at the last retry -> throw
+        if(i == retryDelay.size()-1)
           throw;
-      }
-      catch(...) {
-        if(i<retryDelay.size()-1)
-          Atom::msgStatic(Atom::Warn)<<msg<<"\nFile access not possible due to unknown error\nRetry "
-                                          <<i+1<<"/"<<retryDelay.size()-1<<" in "<<retryDelay[i+1]<<"s."<<endl;
-        else
+
+        // check if its a file lock error
+        bool isLockError = false;
+        // check for HDF5 file lock errors
+        if(auto exHDF5 = dynamic_cast<Exception*>(&ex); exHDF5)
+          for(auto &ei : exHDF5->getErrorStack()) {
+            if(ei.min_num == H5E_CANTLOCKFILE) {
+              isLockError = true;
+              break;
+            }
+          }
+        // check for boost::filesystem::rename error due to locking
+
+        // if its not a file lock error -> throw
+        if(!isLockError)
           throw;
+        // if its a file lock error -> print warning
+        Atom::msgStatic(Atom::Warn)<<filenames<<": File locked by unknown process. Retry "
+                                   <<i+1<<"/"<<retryDelay.size()-1<<" in "<<retryDelay[i+1]<<"s."<<endl;
       }
     }
   }
@@ -464,12 +474,12 @@ void File::openWriter() {
   if(type==write || (type==writeWithRename && preSWMR)) {
     ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
     checkCall(H5Pset_link_creation_order(file_creation_plist, H5P_CRT_ORDER_TRACKED | H5P_CRT_ORDER_INDEXED));
-    retryOnError(getFilename().string()+": unable to open for writing.", [this, &faid, &file_creation_plist](){
+    retryOnLockError(getFilename().string(), [this, &faid, &file_creation_plist](){
       id.reset(H5Fcreate(getFilename().string().c_str(), H5F_ACC_TRUNC, file_creation_plist, faid), &H5Fclose);
     });
   }
   else
-    retryOnError(getFilename().string()+": unable to open for writing.", [this, &faid](){
+    retryOnLockError(getFilename().string(), [this, &faid](){
       id.reset(H5Fopen(getFilename().string().c_str(), H5F_ACC_RDWR, faid), &H5Fclose);
     });
   noFileHandleInherit(id);
@@ -569,7 +579,7 @@ void File::openReader() {
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Open HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
-  retryOnError(getFilename().string()+": unable to open for reading.", [this, &faid](){
+  retryOnLockError(getFilename().string(), [this, &faid](){
     id.reset(H5Fopen(getFilename().string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid), &H5Fclose);
   });
   noFileHandleInherit(id);
@@ -631,7 +641,7 @@ File::~File() {
       preOpenWriter();
       checkIfFileIsOpenedBySomeone("File::~File::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::~File::prerename", filename);
-      retryOnError(getFilename().string()+"/"+filename.string()+": rename failed.", [this](){
+      retryOnLockError(getFilename().string()+","+filename.string(), [this](){
         boost::filesystem::rename(getFilename(), filename);
       });
       if(renameAtomicFunc)
@@ -757,7 +767,7 @@ void File::enableSWMR() {
       msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": enableSWMR: type=writeWithRename: move temp to original file"<<endl;
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", filename);
-      retryOnError(getFilename().string()+"/"+filename.string()+": rename failed.", [this](){
+      retryOnLockError(getFilename().string()+","+filename.string(), [this](){
         boost::filesystem::rename(getFilename(), filename);
       });
       if(renameAtomicFunc)

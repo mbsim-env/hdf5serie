@@ -33,7 +33,7 @@ hid_t returnVarLenStrDatatypeID() {
   if(varLenStrDataTypeID<0) {
     varLenStrDataTypeID=H5Tcopy(H5T_C_S1);
     if(H5Tset_size(varLenStrDataTypeID, H5T_VARIABLE)<0)
-      throw runtime_error("Internal error: Can not create varaible length string datatype.");
+      throw Exception({}, "Internal error: Can not create varaible length string datatype.");
   }
   return varLenStrDataTypeID;
 }

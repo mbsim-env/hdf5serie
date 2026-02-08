@@ -80,7 +80,7 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *p
     if(!isVarStr) {
       fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
       if(H5Tset_size(fixedStringTypeID, H5Tget_size(stringTypeID))<0)
-        throw runtime_error("Internal error: Can not create varaible length string datatype.");
+        throw Exception({}, "Internal error: Can not create variable length string datatype.");
       memDataTypeID=fixedStringTypeID;
     }
     else
@@ -102,13 +102,13 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
     else {
       fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
       if(H5Tset_size(fixedStringTypeID, fixedStrSize)<0)
-        throw runtime_error("Internal error: Can not create varaible length string datatype.");
+        throw Exception({}, "Internal error: Can not create variable length string datatype.");
       memDataTypeID=fixedStringTypeID;
     }
   }
   else {
     if(fixedStrSize>=0)
-      throw runtime_error("A fixed string size is only possible with T=string.");
+      throw Exception({}, "A fixed string size is only possible with T=string.");
     memDataTypeID=toH5Type<T>();
   }
   hsize_t dims[1];
@@ -224,7 +224,7 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PAREN
     if(H5Tis_variable_str(stringTypeID) == 0) {
       fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
       if(H5Tset_size(fixedStringTypeID, H5Tget_size(stringTypeID))<0)
-        throw runtime_error("Internal error: Can not create varaible length string datatype.");
+        throw Exception({}, "Internal error: Can not create variable length string datatype.");
       memDataTypeID=fixedStringTypeID;
     }
     else
@@ -247,13 +247,13 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
     else {
       fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
       if(H5Tset_size(fixedStringTypeID, fixedStrSize)<0)
-        throw runtime_error("Internal error: Can not create varaible length string datatype.");
+        throw Exception({}, "Internal error: Can not create variable length string datatype.");
       memDataTypeID=fixedStringTypeID;
     }
   }
   else {
     if(fixedStrSize>=0)
-      throw runtime_error("A fixed string size is only possible with T=string.");
+      throw Exception({}, "A fixed string size is only possible with T=string.");
     memDataTypeID=toH5Type<T>();
   }
   hsize_t dims[2];

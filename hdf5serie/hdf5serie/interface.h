@@ -41,15 +41,37 @@ namespace H5 {
   //               for type=writeWithRename: closes all elements, rename the file, reopen all elements
   //                                         except attributes, then switches File to SWMR writing mode
 
+  struct ErrorInfo {
+    ErrorInfo(hid_t cls_id_, hid_t maj_num_, hid_t min_num_, unsigned line_,
+              std::string func_name_, std::string file_name_, std::string desc_) :
+      cls_id   (cls_id_),
+      maj_num  (maj_num_),
+      min_num  (min_num_),
+      line     (line_),
+      func_name(std::move(func_name_)),
+      file_name(std::move(file_name_)),
+      desc     (std::move(desc_))
+    {}
+    hid_t cls_id;
+    hid_t maj_num;
+    hid_t min_num;
+    unsigned line;
+    std::string func_name;
+    std::string file_name;
+    std::string desc;
+  };
+
   class Exception : public std::exception {
     protected:
       std::string path;
       std::string msg;
       mutable std::string whatMsg;
+      std::vector<ErrorInfo> errorStack;
     public:
       explicit Exception(std::string path_, std::string msg_);
       ~Exception() noexcept override;
       const char* what() const noexcept override;
+      const std::vector<ErrorInfo>& getErrorStack() const { return errorStack; }
   };
 
   class ScopedHID {
@@ -61,9 +83,9 @@ namespace H5 {
       ScopedHID()   = default;
       ScopedHID(hid_t id_, CloseFunc closeFunc_) : id(id_), closeFunc(closeFunc_) {
         if(id<0)
-          throw Exception("<unknown>", "Calling the HDF5 function failed.");
+          throw Exception({}, "A call of a HDF5 function failed.");
         if(!closeFunc)
-          throw Exception("<unknown>", "No close function defined.");
+          throw Exception({}, "Internal erorr: no close function defined in ScopedHID.");
       }
       ScopedHID(const ScopedHID &) = delete;
       ScopedHID(ScopedHID &&src) noexcept {
@@ -95,16 +117,16 @@ namespace H5 {
       void reset() {
         if(id>=0)
           if(closeFunc(id)<0)
-            throw Exception("<unknown>", "Close function of ScopedHID failed.");
+            throw Exception({}, "Close function of ScopedHID failed.");
         id=-1;
         closeFunc=nullptr;
       }
       void reset(hid_t id_, CloseFunc closeFunc_) {
         reset();
         if(id_<0)
-          throw Exception("<unknown>", "Calling the HDF5 function failed (during reset).");
+          throw Exception({}, "A call to a HDF5 function failed.");
         if(!closeFunc_)
-          throw Exception("<unknown>", "No close function defined.");
+          throw Exception({}, "No close function defined.");
         id=id_;
         closeFunc=closeFunc_;
       }
@@ -112,7 +134,7 @@ namespace H5 {
 
   inline void checkCall(herr_t err) {
     if(err<0)
-      throw Exception("<unknown>", "A HDF5 call failed.");
+      throw Exception({}, "A call to a HDF5 function failed.");
   }
 
   class File;
