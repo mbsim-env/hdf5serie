@@ -68,7 +68,7 @@ namespace H5 {
       mutable std::string whatMsg;
       std::vector<ErrorInfo> errorStack;
     public:
-      explicit Exception(std::string path_, std::string msg_);
+      explicit Exception(std::string path_, std::string msg_, const std::vector<ErrorInfo> &errorStack_={});
       ~Exception() noexcept override;
       const char* what() const noexcept override;
       const std::vector<ErrorInfo>& getErrorStack() const { return errorStack; }
