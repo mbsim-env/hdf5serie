@@ -451,7 +451,6 @@ namespace {
               break;
             }
           }
-        // check for boost::filesystem::rename error due to locking
 
         // if its not a file lock error -> throw
         if(!isLockError)
@@ -605,6 +604,28 @@ void File::deinitShm(SharedMemObject *sharedData, const boost::filesystem::path 
   self->msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<filename.string()<<": Unlock: dtor"<<endl;
 }
 
+namespace {
+  void renameFile(const boost::filesystem::path &src, const boost::filesystem::path &dst) {
+    auto status = boost::filesystem::status(dst);
+    if(status.type() == boost::filesystem::file_not_found)
+      status = boost::filesystem::status(boost::filesystem::absolute(dst).parent_path());
+    if((status.permissions() & boost::filesystem::owner_write) == 0)
+      // we check first for access of the destination file to throw corresponding errors since we cannot 
+      // do this implicitly on the rename (on Windows), see below.
+      throw Exception({}, "Cannot rename "+src.string()+" to "+dst.string()+": access denied on destination file.");
+    try {
+      boost::filesystem::rename(src, dst);
+    }
+    catch(exception &ex) {
+      // We need to treat all all rename errors (on Windows) as file locking errors since its not possible on Windows
+      // to do a atomic rename while the destination has a open handle (or even more, has a lock)
+      throw Exception({}, "Cannot rename "+src.string()+" to "+dst.string()+": "+ex.what(), {
+        ErrorInfo(-1, -1, H5E_CANTLOCKFILE, -1, {}, {}, {})
+      });
+    }
+  }
+}
+
 File::~File() {
   try {
     switch(getType()) {
@@ -642,7 +663,7 @@ File::~File() {
       checkIfFileIsOpenedBySomeone("File::~File::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::~File::prerename", filename);
       retryOnLockError(getFilename().string()+","+filename.string(), [this](){
-        boost::filesystem::rename(getFilename(), filename);
+        renameFile(getFilename(), filename);
       });
       if(renameAtomicFunc)
         renameAtomicFunc();
@@ -768,7 +789,7 @@ void File::enableSWMR() {
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", getFilename());
       checkIfFileIsOpenedBySomeone("File::enableSWMR::prerename", filename);
       retryOnLockError(getFilename().string()+","+filename.string(), [this](){
-        boost::filesystem::rename(getFilename(), filename);
+        renameFile(getFilename(), filename);
       });
       if(renameAtomicFunc)
         renameAtomicFunc();

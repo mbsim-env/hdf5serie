@@ -65,9 +65,13 @@ namespace {
 
 namespace H5 {
 
-Exception::Exception(std::string path_, std::string msg_) : path(std::move(path_)), msg(std::move(msg_)) {
-  errorStack = std::move(globalErrorStack);
-  globalErrorStack.clear();
+Exception::Exception(std::string path_, std::string msg_, const std::vector<ErrorInfo> &errorStack_) : path(std::move(path_)), msg(std::move(msg_)) {
+  if(errorStack_.empty()) {
+    errorStack = std::move(globalErrorStack);
+    globalErrorStack.clear();
+  }
+  else
+    errorStack = errorStack_;
 }
 
 Exception::~Exception() noexcept = default;
