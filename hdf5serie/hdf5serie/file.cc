@@ -429,7 +429,7 @@ void File::preOpenWriter() {
 
 namespace {
   void retryOnLockError(const string &filenames, const function<void()> &run) {
-    static const std::vector<double> retryDelay {0,0.01,0.1,0.5/*,1,5,10*/};
+    static const std::vector<double> retryDelay {0,0.01,0.1,0.5,1,5};
     for(size_t i=0; i<retryDelay.size(); ++i) {
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<size_t>(retryDelay[i]*1000)));
       try {
