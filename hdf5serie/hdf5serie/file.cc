@@ -51,6 +51,16 @@ namespace ipc = boost::interprocess;
 
 namespace {
 
+  struct Init{
+    Init() {
+      #if H5_VERSION_LE(1, 10, 6)
+        // HDF5 < 1.10.7 has only a envvar to disable file locking which is read on each H5Fopen/H5Fcreate call -> set this envvar
+        // We do setting of envvars at program start where we assume that no other threads are running -> then is safe to all getenv
+        putenv(const_cast<char*>("HDF5_USE_FILE_LOCKING=FALSE"));
+      #endif
+    }
+  } init;
+
   auto now(const chrono::system_clock::time_point &currentTime = chrono::system_clock::now()) {
     auto t = chrono::system_clock::to_time_t(currentTime);
     auto local_t = *localtime(&t);
@@ -469,6 +479,11 @@ void File::openWriter() {
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   checkCall(H5Pset_libver_bounds(faid, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST));
   checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
+  // Disable file locking: we use our own locking mechanism
+  #if !H5_VERSION_LE(1, 10, 6)
+    // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
+    checkCall(H5Pset_file_locking(faid, false, true));
+  #endif
   checkIfFileIsOpenedBySomeone("File::openWriter::precreate/preopen", getFilename());
   if(type==write || (type==writeWithRename && preSWMR)) {
     ScopedHID file_creation_plist(H5Pcreate(H5P_FILE_CREATE), &H5Pclose);
@@ -578,6 +593,11 @@ void File::openReader() {
   msg(Atom::Debug)<<"HDF5Serie: "<<now()<<": "<<getFilename().string()<<": Open HDF5 file"<<endl;
   ScopedHID faid(H5Pcreate(H5P_FILE_ACCESS), &H5Pclose);
   checkCall(H5Pset_fclose_degree(faid, H5F_CLOSE_SEMI));
+  // Disable file locking: we use our own locking mechanism
+  #if !H5_VERSION_LE(1, 10, 6)
+    // HDF5 >= 1.10.7 reads this envvar only at library load time but has a property to disable file locking -> use this
+    checkCall(H5Pset_file_locking(faid, false, true));
+  #endif
   retryOnLockError(getFilename().string(), [this, &faid](){
     id.reset(H5Fopen(getFilename().string().c_str(), H5F_ACC_RDONLY | H5F_ACC_SWMR_READ, faid), &H5Fclose);
   });
