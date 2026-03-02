@@ -59,6 +59,7 @@ namespace H5 {
     std::string func_name;
     std::string file_name;
     std::string desc;
+    bool operator==(const ErrorInfo &b) const;
   };
 
   class Exception : public std::exception {

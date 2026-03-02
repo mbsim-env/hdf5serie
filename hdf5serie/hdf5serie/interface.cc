@@ -65,6 +65,17 @@ namespace {
 
 namespace H5 {
 
+bool ErrorInfo::operator==(const ErrorInfo &b) const {
+  return
+    cls_id    == b.cls_id &&
+    maj_num   == b.maj_num &&
+    min_num   == b.min_num &&
+    line      == b.line &&
+    func_name == b.func_name &&
+    file_name == b.file_name &&
+    desc      == b.desc;
+}
+
 Exception::Exception(std::string path_, std::string msg_, const std::vector<ErrorInfo> &errorStack_) : path(std::move(path_)), msg(std::move(msg_)) {
   if(errorStack_.empty()) {
     errorStack = std::move(globalErrorStack);
@@ -84,7 +95,8 @@ const char* Exception::what() const noexcept {
 
   whatMsg += "\n"+msg;
 
-  if(!errorStack.empty()) {
+  if(errorStack.size()>1 ||
+     (errorStack.size()==1 && !(errorStack[0]==ErrorInfo(-1, -1, H5E_CANTLOCKFILE, -1, {}, {}, {})))) { // a stack size of 1 with this entry is not printed (its a special generated error)
     whatMsg += "\nError details from HDF5 (stacktrace):";
     auto tostr = [](const char* s) {
       return s ? s : "<unknown>";
