@@ -198,7 +198,7 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
   cout<<"vector fixed string\n";
   File file("test.h5", writeType);
 
-  SimpleDataset<vector<string> > *dsd=file.createChildObject<SimpleDataset<vector<string> > >("dsd")(2, 10);
+  SimpleDataset<vector<string> > *dsd=file.createChildObject<SimpleDataset<vector<string> > >("dsd")(2, Options{}._fixedStrSize(10));
   vector<string> d; d.emplace_back("abcdef"); d.emplace_back("123");
   dsd->write(d);
   dsd->setDescription("testdesc");
@@ -449,9 +449,15 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
     VectorSerie<string> *tsStr=file.createChildObject<VectorSerie<string> >("timeserieStr")(3);
     vector<string> dataStr;
     dataStr.emplace_back("a");
-    dataStr.emplace_back("b");
-    dataStr.emplace_back("c");
+    dataStr.emplace_back("bb");
+    dataStr.emplace_back("ccc");
     tsStr->append(dataStr);
+    VectorSerie<string> *tsFixedStr=file.createChildObject<VectorSerie<string> >("timeserieFixedStr")(3, Options{}._fixedStrSize(3));
+    vector<string> dataFixedStr;
+    dataFixedStr.emplace_back("a");
+    dataFixedStr.emplace_back("bb");
+    dataFixedStr.emplace_back("ccc");
+    tsFixedStr->append(dataFixedStr);
     VectorSerie<complex<double>> *tsComplex=file.createChildObject<VectorSerie<complex<double>> >("timeserieComplex")(3);
     vector<complex<double>> dataComplex;
     dataComplex.emplace_back(3.4,7.2);
@@ -609,7 +615,7 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
   cout<<"Dataset vector<vector<string>> fixed length\n";
   {
   File file("test.h5", writeType);
-  SimpleDataset<vector<vector<string> > > *d=file.createChildObject<SimpleDataset<vector<vector<string> > > >("d")(2, 3, 10);
+  SimpleDataset<vector<vector<string> > > *d=file.createChildObject<SimpleDataset<vector<vector<string> > > >("d")(2, 3, Options{}._fixedStrSize(10));
   vector<string> d1; d1.emplace_back("a"); d1.emplace_back("bb"); d1.emplace_back("ccc");
   vector<string> d2; d2.emplace_back("d"); d2.emplace_back("ee"); d2.emplace_back("fff");
   vector<vector<string> > data; data.push_back(d1); data.push_back(d2);

@@ -37,10 +37,23 @@ namespace H5 {
 
   template<class T>
   VectorSerie<T>::VectorSerie(int dummy, GroupBase *parent_, const string &name_) : Dataset(parent_, name_) {
-    memDataTypeID=toH5Type<T>();
-
     // open the dataset, get column size and chunk size, close dataset again
     openIDandFileDataSpaceID();
+
+    if constexpr(is_same_v<T, string>) {
+      ScopedHID stringTypeID(H5Dget_type(id), &H5Tclose);
+      bool isVarStr = H5Tis_variable_str(stringTypeID) > 0;
+      if(!isVarStr) {
+        fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
+        if(H5Tset_size(fixedStringTypeID, H5Tget_size(stringTypeID))<0)
+          throw Exception({}, "Internal error: Can not create variable length string datatype.");
+        memDataTypeID=fixedStringTypeID;
+      }
+      else
+        memDataTypeID=toH5Type<T>();
+    }
+    else
+      memDataTypeID=toH5Type<T>();
 
     // create mem space
     hsize_t memDims[]={1, dims[1]};
@@ -70,8 +83,20 @@ namespace H5 {
   }
 
   template<class T>
-  VectorSerie<T>::VectorSerie(GroupBase *parent_, const string &name_, int cols, int compression, int chunkSize, int cacheSize) : Dataset(parent_, name_) {
-    memDataTypeID=toH5Type<T>();
+  VectorSerie<T>::VectorSerie(GroupBase *parent_, const string &name_, int cols, const Options &opts) : Dataset(parent_, name_) {
+    if constexpr(is_same_v<T, string>) {
+      if(opts.fixedStrSize<0)
+        memDataTypeID=toH5Type<T>();
+      else {
+        fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
+        if(H5Tset_size(fixedStringTypeID, opts.fixedStrSize)<0)
+          throw Exception({}, "Internal error: Can not create variable length string datatype.");
+        memDataTypeID=fixedStringTypeID;
+      }
+    }
+    else
+      memDataTypeID=toH5Type<T>();
+
     // create dataset with chunk cache size = chunk size
     dims[0]=0;
     dims[1]=cols;
@@ -79,20 +104,25 @@ namespace H5 {
     fileDataSpaceID.reset(H5Screate_simple(2, dims, maxDims), &H5Sclose);
     ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
     checkCall(H5Pset_attr_phase_change(propID, 0, 0));
-    hsize_t chunkDims[]={(hsize_t)chunkSize, (hsize_t)(dims[1])};
+    hsize_t chunkDims[]={(hsize_t)opts.chunkSize, (hsize_t)(dims[1])};
     checkCall(H5Pset_chunk(propID, 2, chunkDims));
-    if(compression>0) checkCall(H5Pset_deflate(propID, compression));
+    if(opts.compression>0) checkCall(H5Pset_deflate(propID, opts.compression));
     ScopedHID apl(H5Pcreate(H5P_DATASET_ACCESS), &H5Pclose);
-    checkCall(H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*chunkSize, 0.75));
+    checkCall(H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*opts.chunkSize, 0.75));
     id.reset(H5Dcreate2(parent->getID(), name.c_str(), memDataTypeID,
                        fileDataSpaceID, H5P_DEFAULT, propID, apl), &H5Dclose);
 
     hsize_t memDims[]={1, dims[1]};
     memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
-    if(cacheSize>1) {
-      cache.resize(boost::extents[cacheSize][cols]);
+    if(opts.cacheSize>1) {
+      if constexpr (is_same_v<T, string>) {
+        if(opts.fixedStrSize>0)
+          cacheFixedSizeStr.resize(boost::extents[opts.cacheSize][cols][opts.fixedStrSize]);
+      }
+      else
+        cache.resize(boost::extents[opts.cacheSize][cols]);
       cacheRow=0;
-      memDims[0]=cacheSize;
+      memDims[0]=opts.cacheSize;
       memDataSpaceCacheID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
     }
     msg(Debug)<<"HDF5:"<<endl
@@ -104,11 +134,16 @@ namespace H5 {
 
   template<class T>
   void VectorSerie<T>::close() {
-    int cacheSize=cache.shape()[0];
-    if(cacheSize>1 && cacheRow>0) {
-      writeToHDF5(cacheRow, cacheSize, cache.data());
-      cacheRow=0;
-    }
+    if constexpr (!is_same_v<T, string>)
+      if(int cacheSize=cache.shape()[0]; cacheSize>1 && cacheRow>0) {
+        writeToHDF5(cacheRow, cacheSize, cache.data());
+        cacheRow=0;
+      }
+    if constexpr (is_same_v<T, string>)
+      if(int cacheSize=cacheFixedSizeStr.shape()[0]; cacheSize>1 && cacheRow>0) {
+        writeToHDF5(cacheRow, cacheSize, cacheFixedSizeStr.data());
+        cacheRow=0;
+      }
 
     Dataset::close();
     // memDataSpaceID.reset(); do not close this since its not file related (to avoid the need for reopen it in writetemp mode)
@@ -124,11 +159,16 @@ namespace H5 {
 
   template<class T>
   void VectorSerie<T>::flush() {
-    int cacheSize=cache.shape()[0];
-    if(cacheSize>1 && cacheRow>0) {
-      writeToHDF5(cacheRow, cacheSize, cache.data());
-      cacheRow=0;
-    }
+    if constexpr (!is_same_v<T, string>)
+      if(int cacheSize=cache.shape()[0]; cacheSize>1 && cacheRow>0) {
+        writeToHDF5(cacheRow, cacheSize, cache.data());
+        cacheRow=0;
+      }
+    if constexpr (is_same_v<T, string>)
+      if(int cacheSize=cacheFixedSizeStr.shape()[0]; cacheSize>1 && cacheRow>0) {
+        writeToHDF5(cacheRow, cacheSize, cacheFixedSizeStr.data());
+        cacheRow=0;
+      }
 
     Dataset::flush();
   }
@@ -140,7 +180,7 @@ namespace H5 {
   }
 
   template<class T>
-  void VectorSerie<T>::writeToHDF5(size_t nrRows, size_t cacheSize, const T* data) {
+  void VectorSerie<T>::writeToHDF5(size_t nrRows, size_t cacheSize, const std::conditional_t<std::is_same_v<T,std::string>,char,T>* data) {
     dims[0]+=nrRows;
     checkCall(H5Dset_extent(id, dims)); // this invalidates fileDataSpaceID -> get it again
     fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
@@ -246,22 +286,54 @@ namespace H5 {
   template<>
   void VectorSerie<string>::append(const string data[], size_t size) {
     if(size!=dims[1]) throw Exception(getPath(), "dataset dimension does not match");
-    dims[0]++;
-    checkCall(H5Dset_extent(id, dims)); // this invalidates fileDataSpaceID -> get it again
-    fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
-  
-    hsize_t start[]={dims[0]-1,0};
-    hsize_t count[]={1, dims[1]};
-    checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
-  
-    VecStr dummy(dims[1]);
-    for(unsigned int i=0; i<dims[1]; i++) {
-      dummy.alloc(i, data[i].size());
-      strcpy(dummy[i], data[i].c_str());
+
+    auto cacheSize=cacheFixedSizeStr.shape()[0];
+    if(cacheSize>1) {
+      auto fixedStrSize=H5Tget_size(fixedStringTypeID);
+      for(size_t i=0; i<size; ++i) {
+        if(data[i].size()>fixedStrSize)
+          throw Exception(getPath(), "The string to write has length "+to_string(data[i].size())+
+                                     " which is longer than the defined fixed string size of "+to_string(fixedStrSize)+".");
+        strcpy(&cacheFixedSizeStr[cacheRow][i][0], data[i].data());
+      }
+      cacheRow++;
+      if(cacheRow>=cacheSize) {
+        writeToHDF5(cacheSize, cacheSize, cacheFixedSizeStr.data());
+        cacheRow=0;
+      }
     }
-    checkCall(H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
+    else {
+      dims[0]++;
+      checkCall(H5Dset_extent(id, dims)); // this invalidates fileDataSpaceID -> get it again
+      fileDataSpaceID.reset(H5Dget_space(id), &H5Sclose);
+    
+      hsize_t start[]={dims[0]-1,0};
+      hsize_t count[]={1, dims[1]};
+      checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
+    
+      if(fixedStringTypeID<0) {
+        VecStr dummy(dims[1]);
+        for(unsigned int i=0; i<dims[1]; i++) {
+          dummy.alloc(i, data[i].size());
+          strcpy(dummy[i], data[i].c_str());
+        }
+        checkCall(H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
+      }
+      else {
+        auto fixedStrSize=H5Tget_size(fixedStringTypeID);
+        vector<char> buf(fixedStrSize*size, '\0');
+        for(size_t i=0; i<size; i++) {
+          auto &e=data[i];
+          if(e.size()>fixedStrSize)
+            throw Exception(getPath(), "The string to write has length "+to_string(e.size())+
+                                       " which is longer than the defined fixed string size of "+to_string(fixedStrSize)+".");
+          copy(e.begin(), e.end(), buf.begin()+fixedStrSize*i);
+        }
+        checkCall(H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &buf[0]));
+      }
+    }
   }
-  
+
   template<>
   void VectorSerie<string>::getRow(const int row, size_t size, string data[]) {
     if(size!=dims[1])
@@ -279,10 +351,21 @@ namespace H5 {
     hsize_t count[]={1, dims[1]};
     checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
   
-    VecStr dummy(dims[1]);
-    checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
-    for(unsigned int i=0; i<dims[1]; i++)
-      data[i]=dummy[i];
+    if(fixedStringTypeID<0) {
+      VecStr dummy(dims[1]);
+      checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
+      for(unsigned int i=0; i<dims[1]; i++)
+        data[i]=dummy[i];
+    }
+    else {
+      auto fixedStrSize=H5Tget_size(fixedStringTypeID);
+      vector<char> buf(fixedStrSize*dims[1]);
+      checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &buf[0]));
+      for(unsigned int i=0; i<static_cast<size_t>(dims[1]); i++) {
+        char *start=&buf[i*fixedStrSize];
+        data[i]=string(start, strnlen(start, fixedStrSize));
+      }
+    }
  }
   
   template<>
@@ -296,10 +379,21 @@ namespace H5 {
   
     ScopedHID colDataSpaceID(H5Screate_simple(2, count, nullptr), &H5Sclose);
   
-    VecStr dummy(rows);
-    checkCall(H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
-    for(unsigned int i=0; i<rows; i++)
-      data[i]=dummy[i];
+    if(fixedStringTypeID<0) {
+      VecStr dummy(rows);
+      checkCall(H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
+      for(unsigned int i=0; i<rows; i++)
+        data[i]=dummy[i];
+    }
+    else {
+      auto fixedStrSize=H5Tget_size(fixedStringTypeID);
+      vector<char> buf(fixedStrSize*rows);
+      checkCall(H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &buf[0]));
+      for(unsigned int i=0; i<static_cast<size_t>(rows); i++) {
+        char *start=&buf[i*fixedStrSize];
+        data[i]=string(start, strnlen(start, fixedStrSize));
+      }
+    }
   }
 
 

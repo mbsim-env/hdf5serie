@@ -24,6 +24,7 @@
 
 #include <hdf5serie/interface.h>
 #include <hdf5serie/file.h>
+#include "hdf5serie/options.h"
 #include <vector>
 #include <boost/multi_array.hpp>
 
@@ -65,18 +66,19 @@ namespace H5 {
     friend class Container<Object, GroupBase>;
     private:
       hid_t memDataTypeID; // no need to useScopedHID since only a static hid_t is stored here
+      ScopedHID fixedStringTypeID;
       ScopedHID memDataSpaceID;
       ScopedHID memDataSpaceCacheID;
       ScopedHID fileDataSpaceID;
       hsize_t dims[2];
       boost::multi_array<T, 2> cache;
+      boost::multi_array<char, 3> cacheFixedSizeStr;
       size_t cacheRow;
-      void writeToHDF5(size_t nrRows, size_t cacheSize, const T* data);
+      void writeToHDF5(size_t nrRows, size_t cacheSize, const std::conditional_t<std::is_same_v<T,std::string>,char,T>* data);
       void openIDandFileDataSpaceID();
     protected:
       VectorSerie(int dummy, GroupBase *parent_, const std::string &name_);
-      VectorSerie(GroupBase *parent_, const std::string &name_, int cols,
-        int compression=File::getDefaultCompression(), int chunkSize=File::getDefaultChunkSize(), int cacheSize=File::getDefaultCacheSize());
+      VectorSerie(GroupBase *parent_, const std::string &name_, int cols, const Options &opts={});
       ~VectorSerie() override;
       void close() override;
       void refresh() override;

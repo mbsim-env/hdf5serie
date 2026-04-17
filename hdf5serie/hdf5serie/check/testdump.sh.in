@@ -14,5 +14,7 @@ echo DUMPSERIE timeserie
 @XC_EXEC_PREFIX@ ../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserie || exit
 echo DUMPSERIE timeserieStr
 @XC_EXEC_PREFIX@ ../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserieStr || exit
+echo DUMPSERIE timeserieFixedStr
+@XC_EXEC_PREFIX@ ../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserieFixedStr || exit
 echo DUMPSERIE timeserieComplex
 @XC_EXEC_PREFIX@ ../dump/h5dumpserie@EXEEXT@ test2d.h5/timeserieComplex

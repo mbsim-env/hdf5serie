@@ -11,6 +11,7 @@ libhdf5serie_la_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/hdf5serie $(FMATVEC_C
 libhdf5serie_la_LIBADD   = $(FMATVEC_LIBS) -l@BOOST_FILESYSTEM_LIB@ -l@BOOST_THREAD_LIB@ -l@BOOST_CHRONO_LIB@ $(LIBS)
 
 hdf5serieinclude_HEADERS = toh5type.h file.h group.h interface.h \
+  options.h \
   simple.h \
   simpleattribute.h \
   simpledataset.h\

@@ -8,7 +8,7 @@ HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, c
 }
 
 template<class T>
-HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_) : HDF5SERIE_BASECLASS(parent_, name_) {
+HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, const Options &opts) : HDF5SERIE_BASECLASS(parent_, name_) {
   memDataTypeID=toH5Type<T>();
   memDataSpaceID.reset(H5Screate(H5S_SCALAR), &H5Sclose);
   #ifdef HDF5SERIE_DATASETTYPE
@@ -94,23 +94,20 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *p
 }
 
 template<class T>
-HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_, int fixedStrSize, int compression) : HDF5SERIE_BASECLASS(parent_, name_) {
+HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_, const Options &opts) : HDF5SERIE_BASECLASS(parent_, name_) {
   size=size_;
   if constexpr(is_same_v<T, string>) {
-    if(fixedStrSize<0)
+    if(opts.fixedStrSize<0)
       memDataTypeID=toH5Type<T>();
     else {
       fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
-      if(H5Tset_size(fixedStringTypeID, fixedStrSize)<0)
+      if(H5Tset_size(fixedStringTypeID, opts.fixedStrSize)<0)
         throw Exception({}, "Internal error: Can not create variable length string datatype.");
       memDataTypeID=fixedStringTypeID;
     }
   }
-  else {
-    if(fixedStrSize>=0)
-      throw Exception({}, "A fixed string size is only possible with T=string.");
+  else
     memDataTypeID=toH5Type<T>();
-  }
   hsize_t dims[1];
   dims[0]=size;
   memDataSpaceID.reset(H5Screate_simple(1, dims, nullptr), &H5Sclose);
@@ -119,7 +116,7 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
     checkCall(H5Pset_attr_phase_change(propID, 0, 0));
     if(size>0) {
       checkCall(H5Pset_chunk(propID, 1, dims));
-      if(compression>0) checkCall(H5Pset_deflate(propID, compression));
+      if(opts.compression>0) checkCall(H5Pset_deflate(propID, opts.compression));
     }
   #endif
   id.reset(HDF5SERIE_H5XCREATE, &HDF5SERIE_H5XCLOSE);
@@ -238,24 +235,21 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PAREN
 }
 
 template<class T>
-HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_, int fixedStrSize, int compression) : HDF5SERIE_BASECLASS(parent_, name_) {
+HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_, const Options &opts) : HDF5SERIE_BASECLASS(parent_, name_) {
   rows=rows_;
   cols=cols_;
   if constexpr(is_same_v<T, string>) {
-    if(fixedStrSize<0)
+    if(opts.fixedStrSize<0)
       memDataTypeID=toH5Type<T>();
     else {
       fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
-      if(H5Tset_size(fixedStringTypeID, fixedStrSize)<0)
+      if(H5Tset_size(fixedStringTypeID, opts.fixedStrSize)<0)
         throw Exception({}, "Internal error: Can not create variable length string datatype.");
       memDataTypeID=fixedStringTypeID;
     }
   }
-  else {
-    if(fixedStrSize>=0)
-      throw Exception({}, "A fixed string size is only possible with T=string.");
+  else
     memDataTypeID=toH5Type<T>();
-  }
   hsize_t dims[2];
   dims[0]=rows;
   dims[1]=cols;
@@ -265,7 +259,7 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
     checkCall(H5Pset_attr_phase_change(propID, 0, 0));
     if(rows>0 && cols>0) {
       checkCall(H5Pset_chunk(propID, 2, dims));
-      if(compression>0) checkCall(H5Pset_deflate(propID, compression));
+      if(opts.compression>0) checkCall(H5Pset_deflate(propID, opts.compression));
     }
   #endif
   id.reset(HDF5SERIE_H5XCREATE, &HDF5SERIE_H5XCLOSE);

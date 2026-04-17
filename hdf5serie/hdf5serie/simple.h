@@ -46,7 +46,7 @@ class HDF5SERIE_CLASS : public HDF5SERIE_BASECLASS {
      * If \a rows is not 0 and \a column is not 0 see create(), if \a rows and \a columns is 0 see open()
      */
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, const Options &opts={});
 
     ~HDF5SERIE_CLASS() override;
 
@@ -89,9 +89,7 @@ class HDF5SERIE_CLASS<std::vector<T> > : public HDF5SERIE_BASECLASS {
     int size;
   protected:
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_, int fixedStrSize, int compression);
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_, int fixedStrSize) : HDF5SERIE_CLASS(parent_, name_, size_, fixedStrSize, File::getDefaultCompression()) {};
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_) : HDF5SERIE_CLASS(parent_, name_, size_, -1) {};
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int size_, const Options &opts={});
     ~HDF5SERIE_CLASS() override;
     void close() override;
     void enableSWMR() override;
@@ -121,9 +119,7 @@ class HDF5SERIE_CLASS<std::vector<std::vector<T> > > : public HDF5SERIE_BASECLAS
     int cols;
   protected:
     HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_);
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_, int fixedStrSize, int compression);
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_, int fixedStrSize) : HDF5SERIE_CLASS(parent_, name_, rows_, cols_, fixedStrSize, File::getDefaultCompression()) {}
-    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_) : HDF5SERIE_CLASS(parent_, name_, rows_, cols_, -1) {}
+    HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, int rows_, int cols_, const Options &opts={});
     ~HDF5SERIE_CLASS() override;
     void close() override;
     void enableSWMR() override;

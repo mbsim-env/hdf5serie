@@ -24,6 +24,7 @@
 
 #include <hdf5serie/interface.h>
 #include <hdf5serie/file.h>
+#include <hdf5serie/options.h>
 #include <vector>
 
 namespace H5 {
