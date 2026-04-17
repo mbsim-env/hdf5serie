@@ -291,10 +291,13 @@ namespace H5 {
     if(cacheSize>1) {
       auto fixedStrSize=H5Tget_size(fixedStringTypeID);
       for(size_t i=0; i<size; ++i) {
-        if(data[i].size()>fixedStrSize)
+        auto strSize = data[i].size();
+        if(strSize>fixedStrSize)
           throw Exception(getPath(), "The string to write has length "+to_string(data[i].size())+
                                      " which is longer than the defined fixed string size of "+to_string(fixedStrSize)+".");
-        strcpy(&cacheFixedSizeStr[cacheRow][i][0], data[i].data());
+        memcpy(&cacheFixedSizeStr[cacheRow][i][0], data[i].data(), strSize);
+        if(strSize<fixedStrSize)
+          memset(&cacheFixedSizeStr[cacheRow][i][strSize], 0, fixedStrSize-strSize);
       }
       cacheRow++;
       if(cacheRow>=cacheSize) {
@@ -328,6 +331,8 @@ namespace H5 {
             throw Exception(getPath(), "The string to write has length "+to_string(e.size())+
                                        " which is longer than the defined fixed string size of "+to_string(fixedStrSize)+".");
           copy(e.begin(), e.end(), buf.begin()+fixedStrSize*i);
+          auto strSize = data[i].size();
+          memset(&buf[fixedStrSize*i+strSize], 0, fixedStrSize-strSize);
         }
         checkCall(H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &buf[0]));
       }
