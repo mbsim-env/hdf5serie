@@ -55,6 +55,10 @@ namespace H5 {
     else
       memDataTypeID=toH5Type<T>();
 
+    if constexpr(std::is_same_v<T, string>)
+      if(fixedStringTypeID>=0)
+        bufChar.resize(H5Tget_size(fixedStringTypeID)*dims[1]);
+
     // create mem space
     hsize_t memDims[]={1, dims[1]};
     memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
@@ -111,6 +115,10 @@ namespace H5 {
     checkCall(H5Pset_chunk_cache(apl, 521, sizeof(T)*dims[1]*opts.chunkSize, 0.75));
     id.reset(H5Dcreate2(parent->getID(), name.c_str(), memDataTypeID,
                        fileDataSpaceID, H5P_DEFAULT, propID, apl), &H5Dclose);
+
+    if constexpr(std::is_same_v<T, string>)
+      if(fixedStringTypeID>=0)
+        bufChar.resize(H5Tget_size(fixedStringTypeID)*dims[1]);
 
     hsize_t memDims[]={1, dims[1]};
     memDataSpaceID.reset(H5Screate_simple(2, memDims, nullptr), &H5Sclose);
@@ -322,17 +330,16 @@ namespace H5 {
       }
       else {
         auto fixedStrSize=H5Tget_size(fixedStringTypeID);
-        vector<char> buf(fixedStrSize*size, '\0');
         for(size_t i=0; i<size; i++) {
           auto &e=data[i];
           if(e.size()>fixedStrSize)
             throw Exception(getPath(), "The string to write has length "+to_string(e.size())+
                                        " which is longer than the defined fixed string size of "+to_string(fixedStrSize)+".");
-          copy(e.begin(), e.end(), buf.begin()+fixedStrSize*i);
+          copy(e.begin(), e.end(), bufChar.begin()+fixedStrSize*i);
           auto strSize = data[i].size();
-          memset(&buf[fixedStrSize*i+strSize], 0, fixedStrSize-strSize);
+          memset(&bufChar[fixedStrSize*i+strSize], 0, fixedStrSize-strSize);
         }
-        checkCall(H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &buf[0]));
+        checkCall(H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &bufChar[0]));
       }
     }
   }
@@ -362,10 +369,9 @@ namespace H5 {
     }
     else {
       auto fixedStrSize=H5Tget_size(fixedStringTypeID);
-      vector<char> buf(fixedStrSize*dims[1]);
-      checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &buf[0]));
+      checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &bufChar[0]));
       for(unsigned int i=0; i<static_cast<size_t>(dims[1]); i++) {
-        char *start=&buf[i*fixedStrSize];
+        char *start=&bufChar[i*fixedStrSize];
         data[i]=string(start, strnlen(start, fixedStrSize));
       }
     }
@@ -390,10 +396,10 @@ namespace H5 {
     }
     else {
       auto fixedStrSize=H5Tget_size(fixedStringTypeID);
-      vector<char> buf(fixedStrSize*rows);
-      checkCall(H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &buf[0]));
+      bufChar.resize(fixedStrSize*max(dims[1],rows));
+      checkCall(H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &bufChar[0]));
       for(unsigned int i=0; i<static_cast<size_t>(rows); i++) {
-        char *start=&buf[i*fixedStrSize];
+        char *start=&bufChar[i*fixedStrSize];
         data[i]=string(start, strnlen(start, fixedStrSize));
       }
     }

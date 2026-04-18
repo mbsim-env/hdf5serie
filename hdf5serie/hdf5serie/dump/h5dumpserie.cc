@@ -68,7 +68,20 @@ string delim=" ";
 string mynan="nan";
 int precision=numeric_limits<double>::digits10+1;
 
-void printRow(Dataset *d, const vector<int> &cols, int row);
+enum class DSType {
+  simpleDataSet1D,
+  simpleDataSet2D,
+  vectorSerie,
+};
+
+using VariantVectorCTYPE = variant<
+#   define FOREACHKNOWNTYPE(CTYPE, H5TYPE) vector<CTYPE>,
+#   include "hdf5serie/knowntypes.def"
+#   undef FOREACHKNOWNTYPE
+    nullptr_t
+>;
+
+void printRow(Dataset *d, DSType dsType, hid_t atomType, VariantVectorCTYPE &buf, const vector<int> &cols, int row);
 
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
@@ -236,6 +249,42 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  vector<DSType> dsType(arg.size());
+  vector<hid_t> atomType(arg.size());
+  vector<VariantVectorCTYPE> buf(arg.size());
+  for(unsigned int k=0; k<arg.size(); k++) {
+#   define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+    { \
+      if(auto *dd=dynamic_cast<VectorSerie<CTYPE>*>(dataSet[k]); dd) { \
+        dsType[k] = DSType::vectorSerie; \
+        atomType[k] = H5TYPE; \
+        buf[k] = vector<CTYPE>(dd->getColumns()); \
+      } \
+    }
+#   include "hdf5serie/knowntypes.def"
+#   undef FOREACHKNOWNTYPE
+
+#   define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+    { \
+      if(auto *dd=dynamic_cast<SimpleDataset<vector<CTYPE> >*>(dataSet[k]); dd) { \
+        dsType[k] = DSType::simpleDataSet1D; \
+        atomType[k] = H5TYPE; \
+      } \
+    }
+#   include "hdf5serie/knowntypes.def"
+#   undef FOREACHKNOWNTYPE
+
+#   define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
+    { \
+      if(auto *dd=dynamic_cast<SimpleDataset<vector<vector<CTYPE> > >*>(dataSet[k]); dd) { \
+        dsType[k] = DSType::simpleDataSet2D; \
+        atomType[k] = H5TYPE; \
+      } \
+    }
+#   include "hdf5serie/knowntypes.def"
+#   undef FOREACHKNOWNTYPE
+  }
+
   cout<<setprecision(precision)<<scientific;
   for(unsigned int row=0; row<maxrows; row++) {
     for(unsigned int k=0; k<arg.size(); k++) {
@@ -248,7 +297,7 @@ int main(int argc, char* argv[]) {
       }
       
       cout<<(k==0?"":delim);
-      printRow(dataSet[k], column[k], row);
+      printRow(dataSet[k], dsType[k], atomType[k], buf[k], column[k], row);
     }
     cout<<endl;
   }
@@ -284,16 +333,15 @@ ostream& operator<<(ostream& os, const Format<complex<T>>& format) {
   return os;
 }
 
-void printRow(Dataset *d, const vector<int> &cols, int row) {
+void printRow(Dataset *d, DSType dsType, hid_t atomType, VariantVectorCTYPE &buf, const vector<int> &cols, int row) {
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   { \
-    VectorSerie<CTYPE> *dd=dynamic_cast<VectorSerie<CTYPE>*>(d); \
-    if(dd) { \
-      vector<CTYPE> vec(dd->getColumns()); \
-      dd->getRow(row, vec); \
+    if(dsType==DSType::vectorSerie && atomType==H5TYPE) { \
+      VectorSerie<CTYPE> *dd=static_cast<VectorSerie<CTYPE>*>(d); \
+      dd->getRow(row, std::get<vector<CTYPE>>(buf)); \
       bool first=true; \
       for(auto i : cols) { \
-        cout<<(first?"":delim)<<Format(vec[i-1]); \
+        cout<<(first?"":delim)<<Format(std::get<vector<CTYPE>>(buf)[i-1]); \
         first=false; \
       } \
     } \
@@ -303,8 +351,8 @@ void printRow(Dataset *d, const vector<int> &cols, int row) {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   { \
-    SimpleDataset<vector<CTYPE> > *dd=dynamic_cast<SimpleDataset<vector<CTYPE> >*>(d); \
-    if(dd) { \
+    if(dsType==DSType::simpleDataSet1D && atomType==H5TYPE) { \
+      SimpleDataset<vector<CTYPE> > *dd=static_cast<SimpleDataset<vector<CTYPE> >*>(d); \
       vector<CTYPE> vec=dd->read(); \
       cout<<Format(vec[row]); \
     } \
@@ -314,8 +362,8 @@ void printRow(Dataset *d, const vector<int> &cols, int row) {
 
 # define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
   { \
-    SimpleDataset<vector<vector<CTYPE> > > *dd=dynamic_cast<SimpleDataset<vector<vector<CTYPE> > >*>(d); \
-    if(dd) { \
+    if(dsType==DSType::simpleDataSet2D && atomType==H5TYPE) { \
+      SimpleDataset<vector<vector<CTYPE> > > *dd=static_cast<SimpleDataset<vector<vector<CTYPE> > >*>(d); \
       vector<vector<CTYPE> > mat=dd->read(); \
       for(size_t i=0; i<mat[0].size(); ++i) \
         cout<<(i==0?"":delim)<<Format(mat[row][i]); \

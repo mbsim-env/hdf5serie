@@ -73,6 +73,7 @@ namespace H5 {
       hsize_t dims[2];
       boost::multi_array<T, 2> cache;
       boost::multi_array<char, 3> cacheFixedSizeStr;
+      std::vector<char> bufChar;
       size_t cacheRow;
       void writeToHDF5(size_t nrRows, size_t cacheSize, const std::conditional_t<std::is_same_v<T,std::string>,char,T>* data);
       void openIDandFileDataSpaceID();
