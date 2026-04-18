@@ -150,12 +150,9 @@ void HDF5SERIE_CLASS<vector<string> >::write(const vector<string>& data) {
   if(static_cast<int>(data.size())!=size)
     throw Exception(getPath(), "the dimension does not match");
   if(fixedStringTypeID<0) {
-    VecStr buf(size);
-    for(unsigned int i=0; i<static_cast<size_t>(size); i++) {
-      auto &e=data[i];
-      buf.alloc(i, e.size());
-      strcpy(buf[i], e.c_str());
-    }
+    vector<const char*> buf(size);
+    for(unsigned int i=0; i<static_cast<size_t>(size); i++)
+      buf[i] = data[i].c_str();
     checkCall(HDF5SERIE_H5XWRITE(&buf[0]));
   }
   else {
@@ -298,13 +295,11 @@ void HDF5SERIE_CLASS<vector<vector<string> > >::write(const vector<vector<string
   if(static_cast<int>(data.size())!=rows || static_cast<int>(data[0].size())!=cols)
     throw Exception(getPath(), "Size mismatch in write.");
   if(fixedStringTypeID<0) {
-    VecStr buf(rows*cols);
+    vector<const char*> buf(rows*cols);
     int i=0;
     for(const auto & ir : data)
-      for(auto ic=ir.begin(); ic!=ir.end(); ++ic, ++i) {
-        buf.alloc(i, ic->size());
-        strcpy(buf[i], ic->c_str());
-      }
+      for(auto ic=ir.begin(); ic!=ir.end(); ++ic, ++i)
+        buf[i] = ic->c_str();
     checkCall(HDF5SERIE_H5XWRITE(&buf[0]));
   }
   else {

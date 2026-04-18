@@ -315,11 +315,9 @@ namespace H5 {
       checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
     
       if(fixedStringTypeID<0) {
-        VecStr dummy(dims[1]);
-        for(unsigned int i=0; i<dims[1]; i++) {
-          dummy.alloc(i, data[i].size());
-          strcpy(dummy[i], data[i].c_str());
-        }
+        vector<const char*> dummy(dims[1]);
+        for(unsigned int i=0; i<dims[1]; i++)
+          dummy[i] = data[i].c_str();
         checkCall(H5Dwrite(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
       }
       else {
@@ -371,7 +369,7 @@ namespace H5 {
         data[i]=string(start, strnlen(start, fixedStrSize));
       }
     }
- }
+  }
   
   template<>
   void VectorSerie<string>::getColumn(const int column, size_t size, string data[]) {

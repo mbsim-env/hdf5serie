@@ -452,12 +452,14 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
     dataStr.emplace_back("bb");
     dataStr.emplace_back("ccc");
     tsStr->append(dataStr);
+    tsStr->getColumn(0);
     VectorSerie<string> *tsFixedStr=file.createChildObject<VectorSerie<string> >("timeserieFixedStr")(3, Options{}._fixedStrSize(3));
     vector<string> dataFixedStr;
     dataFixedStr.emplace_back("a");
     dataFixedStr.emplace_back("bb");
     dataFixedStr.emplace_back("ccc");
     tsFixedStr->append(dataFixedStr);
+    tsFixedStr->getColumn(0);
     VectorSerie<complex<double>> *tsComplex=file.createChildObject<VectorSerie<complex<double>> >("timeserieComplex")(3);
     vector<complex<double>> dataComplex;
     dataComplex.emplace_back(3.4,7.2);
