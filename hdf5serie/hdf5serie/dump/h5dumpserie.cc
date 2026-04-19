@@ -63,6 +63,7 @@ using namespace std;
 
 string comment="#";
 string quote="\"";
+string linefeed="\\n";
 string complexFormat="%1%+%2%i";
 string delim=" ";
 string mynan="nan";
@@ -127,6 +128,12 @@ int main(int argc, char* argv[]) {
   i=find(arg.begin(), arg.end(), "-q");
   if(i!=arg.end()) {
     quote=*(i+1);
+    arg.erase(i, i+2);
+  }
+
+  i=find(arg.begin(), arg.end(), "-l");
+  if(i!=arg.end()) {
+    linefeed=*(i+1);
     arg.erase(i, i+2);
   }
 
@@ -318,7 +325,9 @@ ostream& operator<<(ostream& os, const Format<T>& format) {
 }
 template<>
 ostream& operator<<(ostream& os, const Format<string>& format) {
-  os<<quote<<format.data<<quote;
+  auto data = format.data;
+  boost::replace_all(data, "\n", linefeed);
+  os<<quote<<data<<quote;
   return os;
 }
 template<typename T>
