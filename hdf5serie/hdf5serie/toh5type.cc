@@ -32,8 +32,10 @@ hid_t returnVarLenStrDatatypeID() {
   static hid_t varLenStrDataTypeID=-1;
   if(varLenStrDataTypeID<0) {
     varLenStrDataTypeID=H5Tcopy(H5T_C_S1);
+    if(H5Tset_cset(varLenStrDataTypeID, H5T_CSET_UTF8)<0)
+      throw Exception({}, "Internal error: Can not set UTF-8 as character encoding.");
     if(H5Tset_size(varLenStrDataTypeID, H5T_VARIABLE)<0)
-      throw Exception({}, "Internal error: Can not create varaible length string datatype.");
+      throw Exception({}, "Internal error: Can not create variable length string datatype.");
   }
   return varLenStrDataTypeID;
 }

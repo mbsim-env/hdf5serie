@@ -45,6 +45,8 @@ namespace H5 {
       bool isVarStr = H5Tis_variable_str(stringTypeID) > 0;
       if(!isVarStr) {
         fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
+        if(H5Tset_cset(fixedStringTypeID, H5T_CSET_UTF8)<0)
+          throw Exception({}, "Internal error: Can not set UTF-8 as character encoding.");
         if(H5Tset_size(fixedStringTypeID, H5Tget_size(stringTypeID))<0)
           throw Exception({}, "Internal error: Can not create variable length string datatype.");
         memDataTypeID=fixedStringTypeID;
@@ -93,6 +95,8 @@ namespace H5 {
         memDataTypeID=toH5Type<T>();
       else {
         fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
+        if(H5Tset_cset(fixedStringTypeID, H5T_CSET_UTF8)<0)
+          throw Exception({}, "Internal error: Can not set UTF-8 as character encoding.");
         if(H5Tset_size(fixedStringTypeID, opts.fixedStrSize)<0)
           throw Exception({}, "Internal error: Can not create variable length string datatype.");
         memDataTypeID=fixedStringTypeID;
