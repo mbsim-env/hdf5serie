@@ -27,7 +27,7 @@ template<class T>
 class HDF5SERIE_CLASS : public HDF5SERIE_BASECLASS {
   friend class Container<HDF5SERIE_CONTAINERBASECLASS, HDF5SERIE_PARENTCLASS>;
   private:
-    hid_t memDataTypeID; // no need to use ScopedHID since only a static hid_t is stored here
+    ScopedHID memDataTypeID;
     ScopedHID memDataSpaceID;
   protected:
     /** \brief Constructor for opening or creating a attribute/dataset
@@ -83,8 +83,7 @@ template<class T>
 class HDF5SERIE_CLASS<std::vector<T> > : public HDF5SERIE_BASECLASS {
   friend class Container<HDF5SERIE_CONTAINERBASECLASS, HDF5SERIE_PARENTCLASS>;
   private:
-    hid_t memDataTypeID; // no need to use SScopedHID since only a static hid_t is stored here
-    ScopedHID fixedStringTypeID;
+    ScopedHID memDataTypeID;
     ScopedHID memDataSpaceID;
     int size;
   protected:
@@ -112,8 +111,7 @@ template<class T>
 class HDF5SERIE_CLASS<std::vector<std::vector<T> > > : public HDF5SERIE_BASECLASS {
   friend class Container<HDF5SERIE_CONTAINERBASECLASS, HDF5SERIE_PARENTCLASS>;
   private:
-    hid_t memDataTypeID; // no need to use SScopedHID since only a static hid_t is stored here
-    ScopedHID fixedStringTypeID;
+    ScopedHID memDataTypeID;
     ScopedHID memDataSpaceID;
     int rows;
     int cols;

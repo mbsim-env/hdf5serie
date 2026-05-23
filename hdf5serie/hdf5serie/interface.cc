@@ -164,7 +164,8 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
     case 0:
       if(attributeType) *attributeType=simpleAttributeScalar;
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-      if(H5Tequal(ntd.get(), H5TYPE)) \
+      if(H5Tequal(ntd.get(), H5TYPE) || \
+         (H5Tget_class(ntd.get()) == H5T_STRING && H5Tget_class(H5TYPE) == H5T_STRING)) \
         return openChildAttribute<SimpleAttribute<CTYPE> >(name_);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
@@ -176,7 +177,8 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED) {
         if(attributeType) *attributeType=simpleAttributeVector;
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-        if(H5Tequal(ntd.get(), H5TYPE)) \
+        if(H5Tequal(ntd.get(), H5TYPE) || \
+         (H5Tget_class(ntd.get()) == H5T_STRING && H5Tget_class(H5TYPE) == H5T_STRING)) \
           return openChildAttribute<SimpleAttribute<vector<CTYPE> > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
@@ -191,7 +193,8 @@ Attribute *Object::openChildAttribute(const std::string &name_, ElementType *att
          dims[1]==maxDims[1] && dims[1]!=H5S_UNLIMITED) {
         if(attributeType) *attributeType=simpleAttributeMatrix;
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-        if(H5Tequal(ntd.get(), H5TYPE)) \
+        if(H5Tequal(ntd.get(), H5TYPE) || \
+         (H5Tget_class(ntd.get()) == H5T_STRING && H5Tget_class(H5TYPE) == H5T_STRING)) \
           return openChildAttribute<SimpleAttribute<vector<vector<CTYPE> > > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE

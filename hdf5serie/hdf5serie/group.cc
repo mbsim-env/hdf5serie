@@ -86,7 +86,8 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
     case 0:
       if(objectType) *objectType=simpleDatasetScalar;
 #     define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-      if(H5Tequal(ntd.get(), H5TYPE)) \
+      if(H5Tequal(ntd.get(), H5TYPE) || \
+         (H5Tget_class(ntd.get()) == H5T_STRING && H5Tget_class(H5TYPE) == H5T_STRING)) \
         return openChildObject<SimpleDataset<CTYPE> >(name_);
 #     include "hdf5serie/knowntypes.def"
 #     undef FOREACHKNOWNTYPE
@@ -98,7 +99,8 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
       if(dims[0]==maxDims[0] && dims[0]!=H5S_UNLIMITED) {
         if(objectType) *objectType=simpleDatasetVector;
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-        if(H5Tequal(ntd.get(), H5TYPE)) \
+        if(H5Tequal(ntd.get(), H5TYPE) || \
+           (H5Tget_class(ntd.get()) == H5T_STRING && H5Tget_class(H5TYPE) == H5T_STRING)) \
           return openChildObject<SimpleDataset<vector<CTYPE> > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
@@ -113,7 +115,8 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
          dims[1]==maxDims[1] && dims[1]!=H5S_UNLIMITED) {
         if(objectType) *objectType=simpleDatasetMatrix;
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-        if(H5Tequal(ntd.get(), H5TYPE)) \
+        if(H5Tequal(ntd.get(), H5TYPE) || \
+           (H5Tget_class(ntd.get()) == H5T_STRING && H5Tget_class(H5TYPE) == H5T_STRING)) \
           return openChildObject<SimpleDataset<vector<vector<CTYPE> > > >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE
@@ -126,7 +129,8 @@ Dataset *GroupBase::openChildDataset(const string &name_, ElementType *objectTyp
          dims[1]==maxDims[1] && dims[1]!=H5S_UNLIMITED) {
         if(objectType) *objectType=vectorSerie;
 #       define FOREACHKNOWNTYPE(CTYPE, H5TYPE) \
-        if(H5Tequal(ntd.get(), H5TYPE)) \
+        if(H5Tequal(ntd.get(), H5TYPE) || \
+           (H5Tget_class(ntd.get()) == H5T_STRING && H5Tget_class(H5TYPE) == H5T_STRING)) \
           return openChildObject<VectorSerie<CTYPE> >(name_);
 #       include "hdf5serie/knowntypes.def"
 #       undef FOREACHKNOWNTYPE

@@ -42,6 +42,7 @@ namespace H5 {
   #define HDF5SERIE_H5XWRITE(buf) H5Dwrite(id, memDataTypeID, memDataSpaceID, memDataSpaceID, H5P_DEFAULT, buf)
   #define HDF5SERIE_H5XREAD(buf) H5Dread(id, memDataTypeID, memDataSpaceID, memDataSpaceID, H5P_DEFAULT, buf)
   #define HDF5SERIE_H5XGET_SPACE H5Dget_space(id)
+  #define HDF5SERIE_H5XGET_TYPE H5Dget_type(id)
 
   #include "simple.cc"
 

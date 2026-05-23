@@ -1,15 +1,14 @@
 // open
 template<class T>
 HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_) : HDF5SERIE_BASECLASS(parent_, name_) {
-  memDataTypeID=toH5Type<T>();
-
   id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
+  memDataTypeID.reset(HDF5SERIE_H5XGET_TYPE, &H5Tclose);
   memDataSpaceID.reset(H5Screate(H5S_SCALAR), &H5Sclose);
 }
 
 template<class T>
 HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, const std::string& name_, const Options &opts) : HDF5SERIE_BASECLASS(parent_, name_) {
-  memDataTypeID=toH5Type<T>();
+  memDataTypeID.reset(H5Tcopy(toH5Type<T>()), &H5Tclose);
   memDataSpaceID.reset(H5Screate(H5S_SCALAR), &H5Sclose);
   #ifdef HDF5SERIE_DATASETTYPE
     ScopedHID propID(H5Pcreate(H5P_DATASET_CREATE), &H5Pclose);
@@ -73,26 +72,7 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *p
   checkCall(H5Sget_simple_extent_dims(memDataSpaceID, dims, nullptr));
   size=dims[0];
 
-  if constexpr(is_same_v<T, string>) {
-#ifdef HDF5SERIE_DATASETTYPE
-    ScopedHID stringTypeID(H5Dget_type(id), &H5Tclose);
-    bool isVarStr = H5Tis_variable_str(stringTypeID) > 0;
-    if(!isVarStr) {
-      fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
-      if(H5Tset_cset(fixedStringTypeID, H5T_CSET_UTF8)<0)
-        throw Exception({}, "Internal error: Can not set UTF-8 as character encoding.");
-      if(H5Tset_size(fixedStringTypeID, H5Tget_size(stringTypeID))<0)
-        throw Exception({}, "Internal error: Can not create variable length string datatype.");
-      memDataTypeID=fixedStringTypeID;
-    }
-    else
-      memDataTypeID=toH5Type<T>();
-#else
-    memDataTypeID=toH5Type<T>();
-#endif
-  }
-  else
-    memDataTypeID=toH5Type<T>();
+  memDataTypeID.reset(HDF5SERIE_H5XGET_TYPE, &H5Tclose);
 }
 
 template<class T>
@@ -100,18 +80,15 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *parent_, con
   size=size_;
   if constexpr(is_same_v<T, string>) {
     if(opts.fixedStrSize<0)
-      memDataTypeID=toH5Type<T>();
+      memDataTypeID.reset(H5Tcopy(toH5Type<T>()), &H5Tclose);
     else {
-      fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
-      if(H5Tset_cset(fixedStringTypeID, H5T_CSET_UTF8)<0)
-        throw Exception({}, "Internal error: Can not set UTF-8 as character encoding.");
-      if(H5Tset_size(fixedStringTypeID, opts.fixedStrSize)<0)
-        throw Exception({}, "Internal error: Can not create variable length string datatype.");
-      memDataTypeID=fixedStringTypeID;
+      memDataTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
+      checkCall(H5Tset_cset(memDataTypeID, H5T_CSET_UTF8));
+      checkCall(H5Tset_size(memDataTypeID, opts.fixedStrSize));
     }
   }
   else
-    memDataTypeID=toH5Type<T>();
+    memDataTypeID.reset(H5Tcopy(toH5Type<T>()), &H5Tclose);
   hsize_t dims[1];
   dims[0]=size;
   memDataSpaceID.reset(H5Screate_simple(1, dims, nullptr), &H5Sclose);
@@ -153,14 +130,14 @@ template<>
 void HDF5SERIE_CLASS<vector<string> >::write(const vector<string>& data) {
   if(static_cast<int>(data.size())!=size)
     throw Exception(getPath(), "the dimension does not match");
-  if(fixedStringTypeID<0) {
+  if(H5Tis_variable_str(memDataTypeID)) {
     vector<const char*> buf(size);
     for(unsigned int i=0; i<static_cast<size_t>(size); i++)
       buf[i] = data[i].c_str();
     checkCall(HDF5SERIE_H5XWRITE(&buf[0]));
   }
   else {
-    auto fixedStrSize=H5Tget_size(fixedStringTypeID);
+    auto fixedStrSize=H5Tget_size(memDataTypeID);
     vector<char> buf(fixedStrSize*size, '\0');
     for(int i=0; i<size; i++) {
       auto &e=data[i];
@@ -182,14 +159,14 @@ vector<T> HDF5SERIE_CLASS<vector<T> >::read() {
 template<>
 vector<string> HDF5SERIE_CLASS<vector<string> >::read() {
   vector<string> data;
-  if(fixedStringTypeID<0) {
+  if(H5Tis_variable_str(memDataTypeID)) {
     VecStr buf(size);
     checkCall(HDF5SERIE_H5XREAD(&buf[0]));
     for(unsigned int i=0; i<static_cast<size_t>(size); i++)
       data.emplace_back(buf[i]);
   }
   else {
-    auto fixedStrSize=H5Tget_size(fixedStringTypeID);
+    auto fixedStrSize=H5Tget_size(memDataTypeID);
     vector<char> buf(fixedStrSize*size);
     checkCall(HDF5SERIE_H5XREAD(&buf[0]));
     for(unsigned int i=0; i<static_cast<size_t>(size); i++) {
@@ -216,25 +193,7 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PAREN
   rows=dims[0];
   cols=dims[1];
 
-  if constexpr(is_same_v<T, string>) {
-#ifdef HDF5SERIE_DATASETTYPE
-    ScopedHID stringTypeID(H5Dget_type(id), &H5Tclose);
-    if(H5Tis_variable_str(stringTypeID) == 0) {
-      fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
-      if(H5Tset_cset(fixedStringTypeID, H5T_CSET_UTF8)<0)
-        throw Exception({}, "Internal error: Can not set UTF-8 as character encoding.");
-      if(H5Tset_size(fixedStringTypeID, H5Tget_size(stringTypeID))<0)
-        throw Exception({}, "Internal error: Can not create variable length string datatype.");
-      memDataTypeID=fixedStringTypeID;
-    }
-    else
-      memDataTypeID=toH5Type<T>();
-#else
-    memDataTypeID=toH5Type<T>();
-#endif
-  }
-  else
-    memDataTypeID=toH5Type<T>();
+  memDataTypeID.reset(HDF5SERIE_H5XGET_TYPE, &H5Tclose);
 }
 
 template<class T>
@@ -243,18 +202,15 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(HDF5SERIE_PARENTCLASS *par
   cols=cols_;
   if constexpr(is_same_v<T, string>) {
     if(opts.fixedStrSize<0)
-      memDataTypeID=toH5Type<T>();
+      memDataTypeID.reset(H5Tcopy(toH5Type<T>()), &H5Tclose);
     else {
-      fixedStringTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
-      if(H5Tset_cset(fixedStringTypeID, H5T_CSET_UTF8)<0)
-        throw Exception({}, "Internal error: Can not set UTF-8 as character encoding.");
-      if(H5Tset_size(fixedStringTypeID, opts.fixedStrSize)<0)
-        throw Exception({}, "Internal error: Can not create variable length string datatype.");
-      memDataTypeID=fixedStringTypeID;
+      memDataTypeID.reset(H5Tcopy(H5T_C_S1), &H5Tclose);
+      checkCall(H5Tset_cset(memDataTypeID, H5T_CSET_UTF8));
+      checkCall(H5Tset_size(memDataTypeID, opts.fixedStrSize));
     }
   }
   else
-    memDataTypeID=toH5Type<T>();
+    memDataTypeID.reset(H5Tcopy(toH5Type<T>()), &H5Tclose);
   hsize_t dims[2];
   dims[0]=rows;
   dims[1]=cols;
@@ -302,7 +258,7 @@ template<>
 void HDF5SERIE_CLASS<vector<vector<string> > >::write(const vector<vector<string> >& data) {
   if(static_cast<int>(data.size())!=rows || static_cast<int>(data[0].size())!=cols)
     throw Exception(getPath(), "Size mismatch in write.");
-  if(fixedStringTypeID<0) {
+  if(H5Tis_variable_str(memDataTypeID)) {
     vector<const char*> buf(rows*cols);
     int i=0;
     for(const auto & ir : data)
@@ -311,7 +267,7 @@ void HDF5SERIE_CLASS<vector<vector<string> > >::write(const vector<vector<string
     checkCall(HDF5SERIE_H5XWRITE(&buf[0]));
   }
   else {
-    auto fixedStrSize=H5Tget_size(fixedStringTypeID);
+    auto fixedStrSize=H5Tget_size(memDataTypeID);
     vector<char> buf(fixedStrSize*rows*cols, '\0');
     for(int r=0; r<rows; r++)
       for(int c=0; c<cols; c++) {
@@ -342,7 +298,7 @@ vector<vector<T> > HDF5SERIE_CLASS<vector<vector<T> > >::read() {
 template<>
 vector<vector<string> > HDF5SERIE_CLASS<vector<vector<string> > >::read() {
   vector<vector<string> > ret(rows);
-  if(fixedStringTypeID<0) {
+  if(H5Tis_variable_str(memDataTypeID)) {
     VecStr buf(rows*cols);
     checkCall(HDF5SERIE_H5XREAD(&buf[0]));
     int r=0, c;
@@ -354,7 +310,7 @@ vector<vector<string> > HDF5SERIE_CLASS<vector<vector<string> > >::read() {
     }
   }
   else {
-    auto fixedStrSize=H5Tget_size(fixedStringTypeID);
+    auto fixedStrSize=H5Tget_size(memDataTypeID);
     vector<char> buf(fixedStrSize*rows*cols);
     checkCall(HDF5SERIE_H5XREAD(&buf[0]));
     for(int r=0; r<rows; ++r) {

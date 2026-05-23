@@ -65,8 +65,7 @@ namespace H5 {
   class VectorSerie : public Dataset {
     friend class Container<Object, GroupBase>;
     private:
-      hid_t memDataTypeID; // no need to useScopedHID since only a static hid_t is stored here
-      ScopedHID fixedStringTypeID;
+      ScopedHID memDataTypeID;
       ScopedHID memDataSpaceID;
       ScopedHID memDataSpaceCacheID;
       ScopedHID fileDataSpaceID;

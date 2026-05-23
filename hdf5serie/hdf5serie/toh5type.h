@@ -82,7 +82,7 @@ int main() {
 
 namespace H5 {
 
-hid_t returnVarLenStrDatatypeID();
+hid_t returnVarLenUTF8StrDatatypeID();
 
 template<typename T> hid_t returnComplexDoubleDatatypeID();
 
