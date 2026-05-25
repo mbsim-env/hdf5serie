@@ -318,6 +318,35 @@ class Settings {
     }
 };
 
+//mfmf
+void utf8TruncateByBytes(string& s, size_t maxBytes) {
+  if(s.size() <= maxBytes)
+    return;
+  size_t b = maxBytes;
+  //   move backward as long as we are on a UTF-8 continuation byte 0b10XXXXXX
+  while(b > 0 && (static_cast<unsigned char>(s[b]) & 0b11000000) == 0b10000000)
+    --b;
+  s.resize(b);
+}
+void utf8TruncateByChars(string& s, size_t maxChars) {
+  size_t b = 0;
+  size_t c = 0;
+  while(b < s.size() && c < maxChars) {
+    //                                      one byte character 0b0XXXXXXX
+    if     ((static_cast<unsigned char>(s[b]) & 0b10000000) == 0b00000000) b+=1;
+    //                                     two bytes character 0b110XXXXX
+    else if((static_cast<unsigned char>(s[b]) & 0b11100000) == 0b11000000) b+=2;
+    //                                      one byte character 0b1110XXXX
+    else if((static_cast<unsigned char>(s[b]) & 0b11110000) == 0b11100000) b+=3;
+    //                                      one byte character 0b11110XXX
+    else if((static_cast<unsigned char>(s[b]) & 0b11111000) == 0b11110000) b+=4;
+    // error
+    else throw runtime_error("Invalid UTF-8 string.");
+    ++c;
+  }
+  s.resize( b);
+}
+//mfmf
 File::File(const boost::filesystem::path &filename_, FileAccess type_,
            const function<void()> &closeRequestCallback_,
            const function<void()> &refreshCallback_,

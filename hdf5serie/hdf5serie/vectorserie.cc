@@ -40,7 +40,7 @@ namespace H5 {
     // open the dataset, get column size and chunk size, close dataset again
     openIDandFileDataSpaceID();
 
-    memDataTypeID.reset(H5Dget_type(id), &H5Tclose);
+    memDataTypeID = getMemDataTypeID<T>(ScopedHID(H5Dget_type(id), &H5Tclose), getPath(), "VectorSerie");
 
     if constexpr(std::is_same_v<T, string>)
       if(!H5Tis_variable_str(memDataTypeID))

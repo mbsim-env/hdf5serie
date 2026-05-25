@@ -51,6 +51,40 @@ namespace bfs = boost::filesystem;
 
 int worker(File::FileAccess writeType, bool callEnableSWMR);
 
+template<class T1, class T2>
+int checkConversion() {
+  vector<T1> data(3);
+  {
+    File file("convert.h5", File::write);
+    VectorSerie<T1> *ts=file.createChildObject<VectorSerie<T1> >("test")(3);
+    vector<string> colhead;
+    colhead.emplace_back("col1");
+    colhead.emplace_back("col2");
+    colhead.emplace_back("col3");
+    ts->setColumnLabel(colhead);
+    ts->setDescription("mydesctipsldfk");
+    data[0] = static_cast<T1>(8.3);
+    data[1] = static_cast<T1>(3.6);
+    data[2] = static_cast<T1>(7.2);
+    ts->append(data);
+  }
+  {
+    File file("convert.h5", File::read);
+    auto *ts=file.openChildObject<VectorSerie<T2> >("test");
+    using LesserType = std::conditional_t<(sizeof(T1) < sizeof(T2)), T1, T2>;
+    bool e0 = static_cast<LesserType>(ts->getRow(0)[0]) != static_cast<LesserType>(data[0]);
+    bool e1 = static_cast<LesserType>(ts->getRow(0)[1]) != static_cast<LesserType>(data[1]);
+    bool e2 = static_cast<LesserType>(ts->getRow(0)[2]) != static_cast<LesserType>(data[2]);
+    cout<<static_cast<LesserType>(ts->getRow(0)[0])<<" "<<data[0]<<" "<<e0<<endl;
+    cout<<static_cast<LesserType>(ts->getRow(0)[1])<<" "<<data[1]<<" "<<e1<<endl;
+    cout<<static_cast<LesserType>(ts->getRow(0)[2])<<" "<<data[2]<<" "<<e2<<endl;
+    if(e0) return 1;
+    if(e1) return 1;
+    if(e2) return 1;
+    return 0;
+  }
+}
+
 int main() {
 #ifdef _WIN32
   SetConsoleCP(CP_UTF8);
@@ -65,6 +99,11 @@ int main() {
   ret += worker(File::write, false);
   ret += worker(File::writeWithRename, true);
   ret += worker(File::writeWithRename, false);
+
+  ret += checkConversion<float, double>();
+  ret += checkConversion<double, float>();
+  ret += checkConversion<int, long>();
+  ret += checkConversion<long, int>();
 
   return ret;
 }

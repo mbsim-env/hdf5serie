@@ -2,7 +2,7 @@
 template<class T>
 HDF5SERIE_CLASS<T>::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *parent_, const std::string& name_) : HDF5SERIE_BASECLASS(parent_, name_) {
   id.reset(HDF5SERIE_H5XOPEN, &HDF5SERIE_H5XCLOSE);
-  memDataTypeID.reset(HDF5SERIE_H5XGET_TYPE, &H5Tclose);
+  memDataTypeID = getMemDataTypeID<T>(ScopedHID(HDF5SERIE_H5XGET_TYPE, &H5Tclose), getPath(), BOOST_PP_STRINGIZE(HDF5SERIE_CLASS));
   memDataSpaceID.reset(H5Screate(H5S_SCALAR), &H5Sclose);
 }
 
@@ -72,7 +72,7 @@ HDF5SERIE_CLASS<vector<T> >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PARENTCLASS *p
   checkCall(H5Sget_simple_extent_dims(memDataSpaceID, dims, nullptr));
   size=dims[0];
 
-  memDataTypeID.reset(HDF5SERIE_H5XGET_TYPE, &H5Tclose);
+  memDataTypeID = getMemDataTypeID<T>(ScopedHID(HDF5SERIE_H5XGET_TYPE, &H5Tclose), getPath(), BOOST_PP_STRINGIZE(HDF5SERIE_CLASS));
 }
 
 template<class T>
@@ -193,7 +193,7 @@ HDF5SERIE_CLASS<vector<vector<T> > >::HDF5SERIE_CLASS(int dummy, HDF5SERIE_PAREN
   rows=dims[0];
   cols=dims[1];
 
-  memDataTypeID.reset(HDF5SERIE_H5XGET_TYPE, &H5Tclose);
+  memDataTypeID = getMemDataTypeID<T>(ScopedHID(HDF5SERIE_H5XGET_TYPE, &H5Tclose), getPath(), BOOST_PP_STRINGIZE(HDF5SERIE_CLASS));
 }
 
 template<class T>
