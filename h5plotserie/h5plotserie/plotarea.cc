@@ -63,6 +63,8 @@ PlotWindow::PlotWindow(QWidget *parent) : QMdiSubWindow(parent) {
   plot = new QwtPlot();
   setWidget(plot);
 
+  plot->setMinimumSize(QSize(100,150));
+
   plot->setCanvasBackground(Qt::white);
 
   zoom = new QwtPlotZoomer(plot->canvas());
