@@ -119,15 +119,17 @@ void Curves::modifyPlotData(PlotData pd, const QString &mode) {
 
 void Curves::plotCurrentTab() {
   auto *plotWindow = static_cast<PlotWindow*>(static_cast<PlotArea*>(static_cast<MainWindow*>(parent()->parent())->getPlotArea())->activeSubWindow());
-  plotWindow->detachPlot();
-  auto *plotDataTable = static_cast<PlotDataTable*>(currentWidget());
-  for (int i=0; i<plotDataTable->rowCount(); i++) {
-    PlotData pd;
-    for (int j=0; j<pd.numberOfItems(); j++)
-      pd.setValue(j, plotDataTable->item(i, j)->text());
-    plotWindow->plotDataSet(pd, i);
+  if(plotWindow) {
+    plotWindow->detachPlot();
+    auto *plotDataTable = static_cast<PlotDataTable*>(currentWidget());
+    for (int i=0; i<plotDataTable->rowCount(); i++) {
+      PlotData pd;
+      for (int j=0; j<pd.numberOfItems(); j++)
+        pd.setValue(j, plotDataTable->item(i, j)->text());
+      plotWindow->plotDataSet(pd, i);
+    }
+    plotWindow->replotPlot();
   }
-  plotWindow->replotPlot();
 }
 
 void Curves::plotAllTabs() {
