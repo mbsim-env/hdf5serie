@@ -79,17 +79,17 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   connect(fileBrowser, &QTreeWidget::currentItemChanged, this, &DataSelection::updatePath);
   connect(fileBrowser, &QTreeWidget::itemPressed, this, &DataSelection::currentItemClicked);
   connect(currentData, &QListWidget::itemPressed, this, &DataSelection::currentDataClicked);
-  connect(new QShortcut(QKeySequence("Return"),this), &QShortcut::activated, this, [=]() { keyPressed(0); });
-  connect(new QShortcut(QKeySequence("Shift+Return"),this), &QShortcut::activated, this, [=]() { keyPressed(1); });
-  connect(new QShortcut(QKeySequence("Ctrl+Return"),this), &QShortcut::activated, this, [=]() { keyPressed(2); });
-  connect(new QShortcut(QKeySequence("0"),this), &QShortcut::activated, this, [=](){ expandToDepth(-1); });
-  connect(new QShortcut(QKeySequence("1"),this), &QShortcut::activated, this, [=](){ expandToDepth(0); });
-  connect(new QShortcut(QKeySequence("2"),this), &QShortcut::activated, this, [=](){ expandToDepth(1); });
-  connect(new QShortcut(QKeySequence("3"),this), &QShortcut::activated, this, [=](){ expandToDepth(2); });
-  connect(new QShortcut(QKeySequence("4"),this), &QShortcut::activated, this, [=](){ expandToDepth(3); });
-  connect(new QShortcut(QKeySequence("5"),this), &QShortcut::activated, this, [=](){ expandToDepth(4); });
-  connect(new QShortcut(QKeySequence("Shift++"),this), &QShortcut::activated, this, [=](){ expandToDepth(1000); });
-  connect(new QShortcut(QKeySequence("Shift+-"),this), &QShortcut::activated, this, [=](){ expandToDepth(-1); });
+  connect(new QShortcut(QKeySequence("Return"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=]() { keyPressed(0); });
+  connect(new QShortcut(QKeySequence("Shift+Return"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=]() { keyPressed(1); });
+  connect(new QShortcut(QKeySequence("Ctrl+Return"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=]() { keyPressed(2); });
+  connect(new QShortcut(QKeySequence("0"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=](){ expandToDepth(-1); });
+  connect(new QShortcut(QKeySequence("1"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=](){ expandToDepth(0); });
+  connect(new QShortcut(QKeySequence("2"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=](){ expandToDepth(1); });
+  connect(new QShortcut(QKeySequence("3"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=](){ expandToDepth(2); });
+  connect(new QShortcut(QKeySequence("4"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=](){ expandToDepth(3); });
+  connect(new QShortcut(QKeySequence("5"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=](){ expandToDepth(4); });
+  connect(new QShortcut(QKeySequence("Shift++"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=](){ expandToDepth(1000); });
+  connect(new QShortcut(QKeySequence("Shift+-"),this,nullptr,nullptr,Qt::WidgetWithChildrenShortcut), &QShortcut::activated, this, [=](){ expandToDepth(-1); });
 }
 
 DataSelection::~DataSelection() {
