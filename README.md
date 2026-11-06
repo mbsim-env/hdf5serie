@@ -14,3 +14,44 @@ Current Daily Build Status of the MBSim-Environment
 | msys2win64-dailyrelease | build | [![image](https://www.mbsim-env.de/service/builds/current/msys2win64-dailyrelease/nrFailed.svg) / ![image](https://www.mbsim-env.de/service/builds/current/msys2win64-dailyrelease/nrAll.svg)](https://www.mbsim-env.de/builds/run/current/msys2win64-dailyrelease/master/master/master/master/) |
 | msys2win64-dailyrelease | examples | [![image](https://www.mbsim-env.de/service/runexamples/current/msys2win64-dailyrelease/nrFailed.svg) / ![image](https://www.mbsim-env.de/service/runexamples/current/msys2win64-dailyrelease/nrAll.svg)](https://www.mbsim-env.de/runexamples/run/current/msys2win64-dailyrelease/master/master/master/master/) |
 | - | manuals | [![image](https://www.mbsim-env.de/service/manuals/nrFailed.svg) / ![image](https://www.mbsim-env.de/service/manuals/nrAll.svg)](https://www.mbsim-env.de/service/home/#manuals) |
+
+
+
+# hdf5serie (Time Series in HDF5)
+
+HDF5Series provides a high-level C++ API for writing and reading time-series data in the HDF5 format.
+
+It extends the standard HDF5 functionality with inter-process communication (IPC), enabling seamless support for HDF5's Single-Writer/Multiple-Reader (SWMR) capabilities.
+
+The library also includes h5plotserie, a lightweight graphical viewer for visualizing stored time-series data.
+
+
+
+# The MBSim Environment
+
+This repository is embed in the GitHub organization [MBSim-Env](https://github.com/mbsim-env/)
+
+The MBSim Environment (MBSim-Env) is a scientific software project with
+a long-standing history and a dedicated development and release infrastructure.
+
+For further information about the project, its scientific background,
+and its development, please visit the official project homepage:
+
+[www.mbsim-env.de](https://www.mbsim-env.de/)
+
+## Project Resources
+
+The project maintains its own infrastructure for continuous integration,
+automated testing, documentation generation, and official software releases.
+
+The following resources are available on the official project website:
+
+* [Documentation](https://www.mbsim-env.de/service/docu/) - Technical documentation and user guides.
+* [Releases](https://www.mbsim-env.de/service/releases/) - Official software releases.
+* [Nightly and CI Builds](https://www.mbsim-env.de/service/home/) - Development builds and continuous integration results.
+
+## Project History and Maintenance
+
+The official homepage also provides an overview of the scientific history and development of MBSim-Env.
+
+It is primarily maintained by [Markus Friedrich](https://github.com/friedrichatgc).
