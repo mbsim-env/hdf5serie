@@ -225,11 +225,15 @@ namespace H5 {
       return;
     }
 
-    hsize_t start[]={(hsize_t)row,0};
-    hsize_t count[]={1, dims[1]};
-    checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
+    if(row < static_cast<int>(dims[0])) {
+      hsize_t start[]={(hsize_t)row,0};
+      hsize_t count[]={1, dims[1]};
+      checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
 
-    checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]));
+      checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &data[0]));
+    }
+    else
+      std::copy(cache[row-dims[0]].begin(), cache[row-dims[0]].end(), data);
  }
 
   template<class T>
@@ -237,13 +241,17 @@ namespace H5 {
     hsize_t rows=getRows();
     if(size!=rows)
       throw Exception(getPath(), "dataset dimension does not match");
+
     hsize_t start[]={0, (hsize_t)column};
-    hsize_t count[]={rows, 1};
+    hsize_t count[]={min(rows, dims[0]), 1};
     checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
 
     ScopedHID colDataSpaceID(H5Screate_simple(2, count, nullptr), &H5Sclose);
 
     checkCall(H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, data));
+
+    for(auto r = dims[0]; r < rows; ++r)
+      data[r] = cache[r-dims[0]][column];
   }
 
   template<class T>
@@ -343,22 +351,31 @@ namespace H5 {
       return;
     }
 
-    hsize_t start[]={(hsize_t)row,0};
-    hsize_t count[]={1, dims[1]};
-    checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
+    if(row < static_cast<int>(dims[0])) {
+      hsize_t start[]={(hsize_t)row,0};
+      hsize_t count[]={1, dims[1]};
+      checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
   
-    if(H5Tis_variable_str(memDataTypeID)) {
-      VecStr dummy(dims[1]);
-      checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
-      for(unsigned int i=0; i<dims[1]; i++)
-        data[i]=dummy[i];
+      if(H5Tis_variable_str(memDataTypeID)) {
+        VecStr dummy(dims[1]);
+        checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &dummy[0]));
+        for(unsigned int i=0; i<dims[1]; i++)
+          data[i]=dummy[i];
+      }
+      else {
+        auto fixedStrSize=H5Tget_size(memDataTypeID);
+        checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &bufChar[0]));
+        for(unsigned int i=0; i<static_cast<size_t>(dims[1]); i++) {
+          char *start=&bufChar[i*fixedStrSize];
+          data[i]=string(start, strnlen(start, fixedStrSize));
+        }
+      }
     }
     else {
       auto fixedStrSize=H5Tget_size(memDataTypeID);
-      checkCall(H5Dread(id, memDataTypeID, memDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &bufChar[0]));
-      for(unsigned int i=0; i<static_cast<size_t>(dims[1]); i++) {
-        char *start=&bufChar[i*fixedStrSize];
-        data[i]=string(start, strnlen(start, fixedStrSize));
+      for(size_t c=0; c<size; ++c) {
+        const char* x = &cacheFixedSizeStr[row-dims[0]][c][0];
+        data[c] = string(x, strnlen(x, fixedStrSize));
       }
     }
   }
@@ -369,7 +386,7 @@ namespace H5 {
     if(size!=rows)
       throw Exception(getPath(), "dataset dimension does not match");
     hsize_t start[]={0, (hsize_t)column};
-    hsize_t count[]={rows, 1};
+    hsize_t count[]={min(rows, dims[0]), 1};
     checkCall(H5Sselect_hyperslab(fileDataSpaceID, H5S_SELECT_SET, start, nullptr, count, nullptr));
   
     ScopedHID colDataSpaceID(H5Screate_simple(2, count, nullptr), &H5Sclose);
@@ -382,11 +399,16 @@ namespace H5 {
     }
     else {
       auto fixedStrSize=H5Tget_size(memDataTypeID);
-      bufChar.resize(fixedStrSize*max(dims[1],rows));
+      bufChar.resize(fixedStrSize*max(dims[1],count[0]));
       checkCall(H5Dread(id, memDataTypeID, colDataSpaceID, fileDataSpaceID, H5P_DEFAULT, &bufChar[0]));
-      for(unsigned int i=0; i<static_cast<size_t>(rows); i++) {
+      for(unsigned int i=0; i<static_cast<size_t>(count[0]); i++) {
         char *start=&bufChar[i*fixedStrSize];
         data[i]=string(start, strnlen(start, fixedStrSize));
+      }
+
+      for(auto r = dims[0]; r < rows; ++r) {
+        const char* x = &cacheFixedSizeStr[r-dims[0]][column][0];
+        data[r] = string(x, strnlen(x, fixedStrSize));
       }
     }
   }

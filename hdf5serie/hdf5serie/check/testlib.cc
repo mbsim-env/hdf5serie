@@ -475,6 +475,17 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
       data[2]=3.4+i;
       ts->append(data);
     }
+    auto row1 = ts->getRow(1);
+    if(row1[0]!=1.2+1 || row1[1]!=2.3+1 || row1[2]!=3.4+1) {
+      cout<<"Wrong content in getRow double"<<endl;
+      return false;
+    }
+    auto col1 = ts->getColumn(1);
+    if(col1[0]!=2.3+0 || col1[1]!=2.3+1 || col1[2]!=2.3+2 || col1[3]!=2.3+3 || col1[4]!=2.3+4 || col1[5]!=2.3+5 || col1[6]!=2.3+6 ||
+       col1[7]!=2.3+7 || col1[8]!=2.3+8 || col1[9]!=2.3+9 || col1[10]!=2.3+10 || col1[11]!=2.3+11 || col1[12]!=2.3+12 || col1[13]!=2.3+13 || col1[14]!=2.3+14) {
+      cout<<"Wrong content in getColumn double"<<endl;
+      return false;
+    }
     vector<double> out;
     out=ts->getRow(1);
     ts->getRow(2, out);
@@ -498,7 +509,17 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
     dataFixedStr.emplace_back("bb");
     dataFixedStr.emplace_back("ccc");
     tsFixedStr->append(dataFixedStr);
-    tsFixedStr->getColumn(0);
+    tsFixedStr->append(dataFixedStr);
+    auto row2 = tsFixedStr->getRow(1);
+    if(row2[0]!="a" || row2[1]!="bb" || row2[2]!="ccc") {
+      cout<<"Wrong content in getRow double"<<endl;
+      return false;
+    }
+    auto col2 = tsFixedStr->getColumn(1);
+    if(col2[0]!="bb" || col2[1]!="bb") {
+      cout<<"Wrong content in getColumn double"<<endl;
+      return false;
+    }
     VectorSerie<complex<double>> *tsComplex=file.createChildObject<VectorSerie<complex<double>> >("timeserieComplex")(3);
     vector<complex<double>> dataComplex;
     dataComplex.emplace_back(3.4,7.2);
@@ -507,8 +528,10 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
     tsComplex->append(dataComplex);
     if(callEnableSWMR)
       file.enableSWMR();
+    return true;
   };
-  write("test2d.h5");
+  if(!write("test2d.h5"))
+    return 1;
   {
   File file("test2d.h5", File::read);
   auto *ts=file.openChildObject<VectorSerie<double> >("timeserie");
@@ -522,7 +545,8 @@ int worker(File::FileAccess writeType, bool callEnableSWMR) {
   }
   {
   File::setDefaultCacheSize(6);
-  write("test2dcache.h5");
+  if(!write("test2dcache.h5"))
+    return 1;
   File::setDefaultCacheSize(0);
   }
   {

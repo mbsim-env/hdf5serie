@@ -73,7 +73,7 @@ namespace H5 {
       boost::multi_array<T, 2> cache;
       boost::multi_array<char, 3> cacheFixedSizeStr;
       std::vector<char> bufChar;
-      size_t cacheRow;
+      size_t cacheRow { 0 };
       void writeToHDF5(size_t nrRows, size_t cacheSize, const std::conditional_t<std::is_same_v<T,std::string>,char,T>* data);
       void openIDandFileDataSpaceID();
     protected:
@@ -184,7 +184,7 @@ namespace H5 {
   template<class T>
   int VectorSerie<T>::getRows() {
     checkCall(H5Sget_simple_extent_dims(fileDataSpaceID, dims, nullptr));
-    return dims[0];
+    return dims[0]+cacheRow;
   }
 
   template<class T>
