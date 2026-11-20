@@ -108,10 +108,14 @@ AbstractViewFilter::AbstractViewFilter(QAbstractItemView *view_, int nameCol_, i
   });
   layout->addWidget(filterLE, 0, 1);
   connect(filterLE, &QLineEdit::textEdited, this, &AbstractViewFilter::applyFilter);
-  connect(view->model(), &QAbstractItemModel::dataChanged, this, [this](const QModelIndex &index, const QModelIndex &bottomRight){
+  connect(view->model(), &QAbstractItemModel::dataChanged, this, [this](const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles){
     if(filterLE->text().isEmpty())
       return;
-    updateItem(index);
+    for(auto r : roles)
+      if(r != Qt::ForegroundRole) {
+        updateItem(topLeft);
+        break;
+      }
   });
 }
 
@@ -126,7 +130,7 @@ void AbstractViewFilter::updateTooltip() {
   }
   else if(typeCol==-1) {
     filterLE->setToolTip(tr("Filter the tree, by applying the given filter on the item names (column %1)."
-                           "Or on the type by :&lt;filter&gt; or on a derived type by ::&lt;filter&gt;."
+                           "Or on the item type by :&lt;filter&gt; (using case/filter-type below) or on a derived item type by ::&lt;filter&gt; (case-sensitive, full-name)."
                            "<dl><dt>Case sensitivity:</dt><dd>%2</dd>"
                            "<dt>Filter type:</dt><dd>%3</dd></dl>").arg(nameCol+1)
                                              .arg(caseSensitive?"case sensitive":"case insensitive")
@@ -199,7 +203,9 @@ void AbstractViewFilter::updateMatch(const QModelIndex &index, const QRegExp &fi
         if(obj) {
           QString str=obj->metaObject()->className();
           str=str.replace(typePrefix, "");
-          if(str==filter.pattern().mid(1))
+          QRegExp filter2(filter);
+          filter2.setPattern(filter.pattern().mid(1));
+          if(filter2.indexIn(str)>=0)
             m.me=true;
         }
       }
@@ -211,7 +217,8 @@ void AbstractViewFilter::updateMatch(const QModelIndex &index, const QRegExp &fi
     else {
       if(filter.pattern().startsWith(":")) { // starting with : => direct type search
         const QModelIndex &colIndex=view->model()->index(index.row(), typeCol, index.parent());
-        QRegExp filter2(filter.pattern().mid(1));
+        QRegExp filter2(filter);
+        filter2.setPattern(filter.pattern().mid(1));
         if(filter2.indexIn(view->model()->data(colIndex, Qt::DisplayRole).value<QString>())>=0)
           m.me=true;
       }
