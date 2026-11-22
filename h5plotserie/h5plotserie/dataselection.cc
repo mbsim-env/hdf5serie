@@ -64,6 +64,9 @@ DataSelection::DataSelection(QWidget * parent) : QSplitter(parent) {
   fileBrowser->setHeaderHidden(true);
   fileBrowser->setColumnCount(1);
   dataSelectionFilter=new OpenMBVGUI::AbstractViewFilter(fileBrowser);
+  dataSelectionFilter->setColumnMap({
+      {"", {0, "the object's name"}},
+  });
   fileSelection->addWidget(dataSelectionFilter, 0,0,1,2);
 
   auto * pathLabel=new QLabel("Path:");
