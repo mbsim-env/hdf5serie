@@ -119,7 +119,8 @@ MainWindow::MainWindow(const QStringList &arg) {
   }
 
   // auto exit if everything is finished
-  if(arg.contains("--autoExit")) {
+  autoExit = arg.contains("--autoExit");
+  if(autoExit) {
     auto timer=new QTimer(this);
     connect(timer, &QTimer::timeout, this, [this, timer](){
       timer->stop();
@@ -232,6 +233,8 @@ void MainWindow::showEvent(QShowEvent *event) {
   QSettings settings;
   restoreGeometry(settings.value("mainwindow/geometry").toByteArray());
   restoreState(settings.value("mainwindow/state").toByteArray());
+  if(autoExit)
+    setWindowState(Qt::WindowMinimized);
   QMainWindow::showEvent(event);
 }
 

@@ -35,6 +35,7 @@ class MainWindow : public QMainWindow {
     Curves* getCurves() { return curves; }
     PlotArea* getPlotArea() { return plotArea; }
     DataSelection* getDataSelection() { return dataSelection; }
+    bool autoExit;
 
   private:
     void about();
