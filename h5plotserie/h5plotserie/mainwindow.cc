@@ -124,8 +124,9 @@ MainWindow::MainWindow(const QStringList &arg) {
     auto timer=new QTimer(this);
     connect(timer, &QTimer::timeout, this, [this, timer](){
       timer->stop();
-      if(!close())
-        timer->start(100);
+      auto ret=close();
+      (void)ret;
+      assert(ret);
     });
     timer->start(100);
   }
@@ -233,8 +234,11 @@ void MainWindow::showEvent(QShowEvent *event) {
   QSettings settings;
   restoreGeometry(settings.value("mainwindow/geometry").toByteArray());
   restoreState(settings.value("mainwindow/state").toByteArray());
-  if(autoExit)
+  static bool firstCall = true;
+  if(autoExit && firstCall) {
+    firstCall = false;
     setWindowState(Qt::WindowMinimized);
+  }
   QMainWindow::showEvent(event);
 }
 
